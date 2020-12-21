@@ -20,16 +20,21 @@ properties(
 pipeline {
     agent {
         docker { 
-            image 'lsstts/mtm1m3_sim:latest'
-            args '--entrypoint="" -u root'
+            image 'centos/devtoolset-7-toolchain-centos7'
+            args '-u root'
         }
     }
 
-    environment {
-        SALUSER_HOME = "/home/saluser"
-    }
-
     stages {
+        stage('Install dependencies') {
+            steps {
+                sh """
+                    yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+                    yum install -y make boost-devel catch-devel
+                """
+            }
+        }
+
         stage('Cloning source') {
             steps {
                 checkout scm
@@ -39,15 +44,13 @@ pipeline {
         stage('Test') {
             steps {
                 sh """
-                    source $SALUSER_HOME/.setup_salobj.sh
-
-                    export PATH=/opt/lsst/software/stack/python/miniconda3-4.7.12/envs/lsst-scipipe-448abc6/bin:$PATH
-
+                    make
                     make junit
                 """
+
+                junit 'tests/*.xml'
             }
         }
 
-        junit 'tests/*.xml
     }
 }
