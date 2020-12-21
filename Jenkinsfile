@@ -19,27 +19,35 @@ properties(
 
 pipeline {
     agent {
-        docker { image 'lsstts/mtm1m3_sim:latest' }
+        docker { 
+            image 'lsstts/mtm1m3_sim:latest'
+            args '--entrypoint="" -u root'
+        }
     }
 
-    def SALUSER_HOME = "/home/saluser"
-    def BRANCH = (env.CHANGE_BRANCH != null) ? env.CHANGE_BRANCH : env.BRANCH_NAME
+    environment {
+        SALUSER_HOME = "/home/saluser"
+    }
 
     stages {
         stage('Cloning source') {
-            dir('ts_cRIOcpp') {
-                git branch: BRANCH, url: 'https://github.com/lsst-ts/ts_cRIOcpp'
+            steps {
+                checkout scm
             }
         }
 
         stage('Test') {
-            if (params.clean) {
-                sh 'make clean'
-            }
+            steps {
+                sh """
+                    source $SALUSER_HOME/.setup_salobj.sh
 
-            dir('ts_cRIOcpp') {
-                sh 'source $SALUSER_HOME/.setup_salobj.sh && make run_tests'
+                    export PATH=/opt/lsst/software/stack/python/miniconda3-4.7.12/envs/lsst-scipipe-448abc6/bin:$PATH
+
+                    make junit
+                """
             }
         }
+
+        junit 'tests/*.xml
     }
 }
