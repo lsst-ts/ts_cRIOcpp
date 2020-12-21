@@ -1,7 +1,7 @@
 /*
  * Singleton template.
  *
- * Developed for the Telescope & Site Software Systems.
+ * Developed for the Rubin Observatory Telescope and Site Software.
  * This product includes software developed by the LSST Project
  * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
  * this distribution for details of code ownership.
@@ -23,29 +23,48 @@
 #ifndef __Singleton__
 #define __Singleton__
 
+#include <memory>
+
+namespace LSST {
+namespace cRIO {
+
 /**
  * Singleton template.
+ *
+ * Use as:
+ *
+ * @code
+ *
+ * class MySingleton final : public Singleton<MySingleton> {
+ * public:
+ *     MySingleton(token) : _int(4) {}
+ *
+ * private:
+ *     int _int;
+ * };
+ *
+ * @endcode
  */
-template<typename T>
+template <typename T>
 class Singleton {
 public:
     static T& instance();
 
     Singleton(const Singleton&) = delete;
-    Singleton& operator= (const Singleton) = delete;
+    Singleton& operator=(const Singleton) = delete;
 
 protected:
     struct token {};
     Singleton() {}
 };
 
-#include <memory>
-
-template<typename T>
-T& Singleton<T>::instance()
-{
+template <typename T>
+T& Singleton<T>::instance() {
     static T instance{token{}};
     return instance;
 }
 
-#endif // ! __Singleton__
+}  // namespace cRIO
+}  // namespace LSST
+
+#endif  // ! __Singleton__

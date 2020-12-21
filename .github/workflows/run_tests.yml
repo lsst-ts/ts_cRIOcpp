@@ -1,0 +1,39 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  centos:
+    runs-on: ubuntu-latest
+    container:
+      image: centos/devtoolset-7-toolchain-centos7
+      options: -u root
+    steps:
+    - name: Install dependencies
+      run: |
+        yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        yum install -y make boost-devel catch-devel
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: make run_tests
+      run: |
+        make
+        make run_tests
+
+  ubuntu:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Install dependencies
+      run: |
+        sudo apt update -y
+        sudo apt install -y make g++ libboost-dev catch
+    - name: Checkout
+      uses: actions/checkout@v2
+    - name: make run_tests
+      run: |
+        make
+        make run_tests
