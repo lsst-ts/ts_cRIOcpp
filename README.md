@@ -9,6 +9,12 @@ internal Command queue. ControllerThread command queue is thread safe (access
 to it is quarded by mutex and condition_variable).
 
 ```cpp
+class TestCommand:public Command
+{
+public:
+    void execute() override { ..do something.. }
+
+};
 // run controller thread
 std::thread controller([] { ControllerThread::get().run(); });
 
