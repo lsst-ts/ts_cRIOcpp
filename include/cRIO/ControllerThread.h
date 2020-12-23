@@ -25,6 +25,7 @@
 #define CONTROLLERTHREAD_H_
 
 #include <cRIO/Command.h>
+#include <cRIO/Singleton.h>
 
 #include <condition_variable>
 #include <mutex>
@@ -34,21 +35,21 @@ namespace LSST {
 namespace cRIO {
 
 /**
- * @brief The controller thread is responsible for executing commands.
+ * The controller thread is responsible for executing commands.
  *
  * Holds command queue. Command is enqueued in SubscriberThread after being
  * received from SAL. Command is then dequeued in ControllerThread and passed
- * to the Controller::execute method. Singleton, as only a single instance
+ * to the Controller::_execute method. Singleton, as only a single instance
  * should occur in an application. Runs in a single thread - provides guarantee
- * that only single command is being executed in any moment.
+ * that only a single command is being executed at any moment.
  */
-class ControllerThread {
+class ControllerThread : public Singleton<ControllerThread> {
 public:
     ControllerThread();
     ~ControllerThread();
 
     /**
-     * @brief Return singleton instance.
+     * Return singleton instance.
      *
      * @return singleton instance
      */
@@ -58,14 +59,15 @@ public:
     void stop();
 
     /**
-     * @brief Put command into queue.
+     * Put command into queue.
+     *
+     * @param command Command to enqueue. ControllerThread takes ownership of
+     * the passed Command and will dispose it (delete it) after command is
+     * executed or when queue is cleared.
      */
     void enqueue(Command* command);
 
 private:
-    ControllerThread& operator=(const ControllerThread&) = delete;
-    ControllerThread(const ControllerThread&) = delete;
-
     void _clear();
     void _execute(Command* command);
 

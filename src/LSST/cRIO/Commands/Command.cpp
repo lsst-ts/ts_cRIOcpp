@@ -29,7 +29,6 @@ namespace cRIO {
 Command::~Command() {}
 
 bool Command::validate() { return true; }
-void Command::execute() {}
 void Command::ackInProgress() {}
 void Command::ackComplete() {}
 void Command::ackFailed(std::string reason) {}

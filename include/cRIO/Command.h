@@ -30,11 +30,13 @@ namespace LSST {
 namespace cRIO {
 
 /**
- * @brief Parent class for all commands.
+ * Parent class for all commands.
  *
  * Follows Command Pattern from Design Patterns. Encapsulates command executed
- * in M1M3 SS. Commands are created from SAL messages by
- * CommandFactory::create() and M1M3SSSubscriber in SubscriberThread::run().
+ * in ContollerThread. Pure virtual methed ::execute() shall be overriden in
+ * child classes, implementing specific commands.
+ *
+ * @see ContollerThread
  */
 class Command {
 protected:
@@ -43,28 +45,34 @@ protected:
 public:
     virtual ~Command();
 
-    /*!
+    /**
      * Gets the command ID.
      */
     virtual int32_t getCommandID() { return commandID; }
 
-    /*!
+    /**
      * Validates the command.
+     *
+     * @return true if command is valid and can be executed
      */
     virtual bool validate();
-    /*!
+
+    /**
      * Executes the command.
      */
-    virtual void execute();
-    /*!
+    virtual void execute() = 0;
+
+    /**
      * Acknowledges the command is in progress.
      */
     virtual void ackInProgress();
-    /*!
+
+    /**
      * Acknowledges the command has completed successfully.
      */
     virtual void ackComplete();
-    /*!
+
+    /**
      * Acknowledges the command has failed.
      * @param[in] reason The reason why the command has failed.
      */
