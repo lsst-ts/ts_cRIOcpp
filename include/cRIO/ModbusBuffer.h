@@ -107,6 +107,8 @@ public:
 
     void readEndOfFrame();
 
+    void writeBuffer(void *data, size_t len);
+
     void writeSubnet(uint8_t data);
     void writeLength(uint16_t data);
     void writeI8(int8_t data);

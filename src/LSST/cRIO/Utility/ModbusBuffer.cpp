@@ -22,7 +22,9 @@
 #include <cRIO/Timestamp.h>
 #include <string.h>
 #include <spdlog/spdlog.h>
+
 #include <stdexcept>
+#include <arpa/inet.h>
 
 using namespace std;
 
@@ -175,6 +177,13 @@ double ModbusBuffer::readTimestamp() {
 
 void ModbusBuffer::readEndOfFrame() { _index++; }
 
+void ModbusBuffer::writeBuffer(void* data, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        _buffer[_index] = writeByteInstruction((reinterpret_cast<uint8_t*>(data))[i]);
+        _index++;
+    }
+}
+
 void ModbusBuffer::writeSubnet(uint8_t data) {
     _index += 1;
     _buffer[_index - 1] = (uint16_t)data;
@@ -185,15 +194,11 @@ void ModbusBuffer::writeLength(uint16_t data) {
     _buffer[_index - 1] = data;
 }
 
-void ModbusBuffer::writeI8(int8_t data) {
-    _index += 1;
-    _buffer[_index - 1] = writeByteInstruction((uint8_t)data);
-}
+void ModbusBuffer::writeI8(int8_t data) { writeBuffer(reinterpret_cast<uint8_t*>(&data), 1); }
 
 void ModbusBuffer::writeI16(int16_t data) {
-    _index += 2;
-    _buffer[_index - 2] = writeByteInstruction((uint8_t)(data >> 8));
-    _buffer[_index - 1] = writeByteInstruction((uint8_t)data);
+    int16_t d = htons(data);
+    writeBuffer(reinterpret_cast<uint8_t*>(&d), 2);
 }
 
 void ModbusBuffer::writeI24(int32_t data) {
@@ -204,39 +209,27 @@ void ModbusBuffer::writeI24(int32_t data) {
 }
 
 void ModbusBuffer::writeI32(int32_t data) {
-    _index += 4;
-    _buffer[_index - 4] = writeByteInstruction((uint8_t)(data >> 24));
-    _buffer[_index - 3] = writeByteInstruction((uint8_t)(data >> 16));
-    _buffer[_index - 2] = writeByteInstruction((uint8_t)(data >> 8));
-    _buffer[_index - 1] = writeByteInstruction((uint8_t)data);
+    int32_t d = htonl(data);
+    writeBuffer(reinterpret_cast<uint8_t*>(&d), 4);
 }
 
-void ModbusBuffer::writeU8(uint8_t data) {
-    _index += 1;
-    _buffer[_index - 1] = writeByteInstruction(data);
-}
+void ModbusBuffer::writeU8(uint8_t data) { writeBuffer(&data, 1); }
 
 void ModbusBuffer::writeU16(uint16_t data) {
-    _index += 2;
-    _buffer[_index - 2] = writeByteInstruction((uint8_t)(data >> 8));
-    _buffer[_index - 1] = writeByteInstruction((uint8_t)data);
+    uint16_t d = htons(data);
+    writeBuffer(reinterpret_cast<uint8_t*>(&d), 2);
 }
 
 void ModbusBuffer::writeU32(uint32_t data) {
-    _index += 4;
-    _buffer[_index - 4] = writeByteInstruction((uint8_t)(data >> 24));
-    _buffer[_index - 3] = writeByteInstruction((uint8_t)(data >> 16));
-    _buffer[_index - 2] = writeByteInstruction((uint8_t)(data >> 8));
-    _buffer[_index - 1] = writeByteInstruction((uint8_t)data);
+    uint32_t d = htonl(data);
+    writeBuffer(reinterpret_cast<uint8_t*>(&d), 4);
 }
 
 void ModbusBuffer::writeSGL(float data) {
-    memcpy(_floatPointBuffer, &data, sizeof(float));
-    _index += 4;
-    _buffer[_index - 4] = writeByteInstruction((uint8_t)_floatPointBuffer[3]);
-    _buffer[_index - 3] = writeByteInstruction((uint8_t)_floatPointBuffer[2]);
-    _buffer[_index - 2] = writeByteInstruction((uint8_t)_floatPointBuffer[1]);
-    _buffer[_index - 1] = writeByteInstruction((uint8_t)_floatPointBuffer[0]);
+    uint32_t* db = reinterpret_cast<uint32_t*>(&data);
+    uint32_t d = htonl(*db);
+
+    writeBuffer((uint8_t*)&d, 4);
 }
 
 void ModbusBuffer::writeCRC(int32_t length) {
