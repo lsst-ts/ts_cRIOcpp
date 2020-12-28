@@ -1,10 +1,10 @@
 /*
  * This file is part of LSST cRIO CPP tests. Tests ControllerThread.
  *
- * Developed for the Telescope & Site Software Systems.  This product includes
- * software developed by the LSST Project (https://www.lsst.org). See the
- * COPYRIGHT file at the top-level directory of this distribution for details
- * of code ownership.
+ * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
+ * This product includes software developed by the Vera C.Rubin Observatory Project
+ * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
+ * this distribution for details of code ownership.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
@@ -29,7 +29,7 @@
 using namespace LSST::cRIO;
 using namespace std::chrono_literals;
 
-int tv = 0;
+int tv;
 
 class TestCommand : public Command {
 public:
@@ -37,18 +37,21 @@ public:
 };
 
 TEST_CASE("Run ControllerThread and join it", "[ControllerThread]") {
+    tv = 0;
     REQUIRE(tv == 0);
 
     // run controller thread
-    ControllerThread::get().run();
+    ControllerThread::instance().start();
+
+    std::this_thread::sleep_for(100ms);
 
     // enqueue command into controller thread
-    ControllerThread::get().enqueue(new TestCommand());
+    ControllerThread::instance().enqueue(new TestCommand());
 
     std::this_thread::sleep_for(1ms);
 
     // stop controller thread
-    ControllerThread::get().stop();
+    ControllerThread::instance().stop();
 
     REQUIRE(tv == 1);
 }
@@ -58,16 +61,16 @@ TEST_CASE("Queue to controller before run", "[ControllerThread]") {
     REQUIRE(tv == 0);
 
     for (int i = 0; i < 10; i++) {
-        ControllerThread::get().enqueue(new TestCommand());
+        ControllerThread::instance().enqueue(new TestCommand());
     }
 
     // run controller thread
-    ControllerThread::get().run();
+    ControllerThread::instance().start();
 
     std::this_thread::sleep_for(10ms);
 
     // stop controller thread
-    ControllerThread::get().stop();
+    ControllerThread::instance().stop();
 
     REQUIRE(tv == 10);
 }

@@ -1,24 +1,22 @@
 /*
- * This file is part of LSST M1M3 support system package.
  *
- * Developed for the LSST Data Management System.
- * This product includes software developed by the LSST Project
- * (https://www.lsst.org).
- * See the COPYRIGHT file at the top-level directory of this distribution
- * for details of code ownership.
+ * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
+ * This product includes software developed by the Vera C.Rubin Observatory Project
+ * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
+ * this distribution for details of code ownership.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #ifndef CONTROLLERTHREAD_H_
@@ -26,10 +24,8 @@
 
 #include <cRIO/Command.h>
 #include <cRIO/Singleton.h>
+#include <cRIO/Thread.h>
 
-#include <condition_variable>
-#include <mutex>
-#include <thread>
 #include <queue>
 
 namespace LSST {
@@ -44,9 +40,9 @@ namespace cRIO {
  * should occur in an application. Runs in a single thread - provides guarantee
  * that only a single command is being executed at any moment.
  */
-class ControllerThread : public Singleton<ControllerThread> {
+class ControllerThread : public Thread, public Singleton<ControllerThread> {
 public:
-    ControllerThread();
+    ControllerThread(token);
     ~ControllerThread();
 
     /**
@@ -56,19 +52,7 @@ public:
      */
     static ControllerThread& get();
 
-    /**
-     * Runs the thread. Starts new thread running the loop querying for new
-     * commands.
-     */
-    void run();
-
-    /**
-     * Stops queue run.
-     */
-    void stop();
-
-    /**
-     * Put command into queue.
+    /* Put command into queue.
      *
      * @param command Command to enqueue. ControllerThread takes ownership of
      * the passed Command and will dispose it (delete it) after command is
@@ -76,18 +60,15 @@ public:
      */
     void enqueue(Command* command);
 
+protected:
+    void run() override;
+
 private:
-    void _run();
     void _runCommands();
     void _clear();
     void _execute(Command* command);
 
-    bool _keepRunning;
-    std::mutex _mutex;
     std::queue<Command*> _queue;
-    std::condition_variable _cv;
-
-    std::thread *_thread;
 };
 
 }  // namespace cRIO
