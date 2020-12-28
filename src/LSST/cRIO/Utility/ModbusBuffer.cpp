@@ -102,14 +102,18 @@ uint16_t ModbusBuffer::calculateCRC(std::vector<uint8_t> data) {
 
 uint16_t ModbusBuffer::calculateCRC(int32_t length) { return calculateCRC(getReadData(length)); }
 
+void ModbusBuffer::readBuffer(void* buf, size_t len) {
+    for (size_t i = 0; i < len; i++, _index++) {
+        (reinterpret_cast<uint8_t*>(buf))[i] = readInstructionByte(_buffer[_index]);
+    }
+}
+
 uint16_t ModbusBuffer::readLength() { return _buffer[_index++]; }
 
 int32_t ModbusBuffer::readI32() {
-    _index += 4;
-    return ((int32_t)readInstructionByte(_buffer[_index - 4]) << 24) |
-           ((int32_t)readInstructionByte(_buffer[_index - 3]) << 16) |
-           ((int32_t)readInstructionByte(_buffer[_index - 2]) << 8) |
-           ((int32_t)readInstructionByte(_buffer[_index - 1]));
+    int32_t db;
+    readBuffer(&db, 4);
+    return ntohl(db);
 }
 
 uint8_t ModbusBuffer::readU8() {
@@ -118,17 +122,15 @@ uint8_t ModbusBuffer::readU8() {
 }
 
 uint16_t ModbusBuffer::readU16() {
-    _index += 2;
-    return ((uint16_t)readInstructionByte(_buffer[_index - 2]) << 8) |
-           ((uint16_t)readInstructionByte(_buffer[_index - 1]));
+    uint16_t db;
+    readBuffer(&db, 2);
+    return ntohs(db);
 }
 
 uint32_t ModbusBuffer::readU32() {
-    _index += 4;
-    return ((uint32_t)readInstructionByte(_buffer[_index - 4]) << 24) |
-           ((uint32_t)readInstructionByte(_buffer[_index - 3]) << 16) |
-           ((uint32_t)readInstructionByte(_buffer[_index - 2]) << 8) |
-           ((uint32_t)readInstructionByte(_buffer[_index - 1]));
+    uint32_t db;
+    readBuffer(&db, 4);
+    return ntohl(db);
 }
 
 uint64_t ModbusBuffer::readU48() {
@@ -142,14 +144,9 @@ uint64_t ModbusBuffer::readU48() {
 }
 
 float ModbusBuffer::readSGL() {
-    _index += 4;
-    _floatPointBuffer[3] = readInstructionByte(_buffer[_index - 4]);
-    _floatPointBuffer[2] = readInstructionByte(_buffer[_index - 3]);
-    _floatPointBuffer[1] = readInstructionByte(_buffer[_index - 2]);
-    _floatPointBuffer[0] = readInstructionByte(_buffer[_index - 1]);
-    float data;
-    memcpy(&data, _floatPointBuffer, sizeof(float));
-    return data;
+    uint32_t d = readU32();
+    float* db = reinterpret_cast<float*>(&d);
+    return *db;
 }
 
 std::string ModbusBuffer::readString(int32_t length) {
@@ -227,9 +224,7 @@ void ModbusBuffer::writeU32(uint32_t data) {
 
 void ModbusBuffer::writeSGL(float data) {
     uint32_t* db = reinterpret_cast<uint32_t*>(&data);
-    uint32_t d = htonl(*db);
-
-    writeBuffer((uint8_t*)&d, 4);
+    writeU32(*db);
 }
 
 void ModbusBuffer::writeCRC(int32_t length) {

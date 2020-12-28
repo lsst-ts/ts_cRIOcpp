@@ -83,6 +83,8 @@ public:
      */
     uint16_t calculateCRC(int32_t length);
 
+    void readBuffer(void* buf, size_t len);
+
     uint16_t readLength();
     int32_t readI32();
     uint8_t readU8();
@@ -107,7 +109,7 @@ public:
 
     void readEndOfFrame();
 
-    void writeBuffer(void *data, size_t len);
+    void writeBuffer(void* data, size_t len);
 
     void writeSubnet(uint8_t data);
     void writeLength(uint16_t data);
