@@ -29,6 +29,7 @@
 
 #include <condition_variable>
 #include <mutex>
+#include <thread>
 #include <queue>
 
 namespace LSST {
@@ -55,7 +56,15 @@ public:
      */
     static ControllerThread& get();
 
+    /**
+     * Runs the thread. Starts new thread running the loop querying for new
+     * commands.
+     */
     void run();
+
+    /**
+     * Stops queue run.
+     */
     void stop();
 
     /**
@@ -68,6 +77,8 @@ public:
     void enqueue(Command* command);
 
 private:
+    void _run();
+    void _runCommands();
     void _clear();
     void _execute(Command* command);
 
@@ -75,6 +86,8 @@ private:
     std::mutex _mutex;
     std::queue<Command*> _queue;
     std::condition_variable _cv;
+
+    std::thread *_thread;
 };
 
 }  // namespace cRIO

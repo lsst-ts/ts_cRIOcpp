@@ -35,7 +35,10 @@ ControllerThread::ControllerThread() : _keepRunning(true) {
     SPDLOG_DEBUG("ControllerThread: ControllerThread()");
 }
 
-ControllerThread::~ControllerThread() { _clear(); }
+ControllerThread::~ControllerThread() {
+    _thread = NULL;
+    _clear();
+}
 
 ControllerThread& ControllerThread::get() {
     static ControllerThread controllerThread;
@@ -43,17 +46,11 @@ ControllerThread& ControllerThread::get() {
 }
 
 void ControllerThread::run() {
-    SPDLOG_INFO("ControllerThread: Start");
-    while (_keepRunning) {
-        std::unique_lock<std::mutex> lock(_mutex);
-        _cv.wait(lock, [this] { return (_queue.empty() == false) || (_keepRunning == false); });
-        while (!_queue.empty()) {
-            Command* command = _queue.front();
-            _queue.pop();
-            _execute(command);
-        }
+    if (_thread) {
+        throw std::runtime_error("ControllerThread: Cannot run a thread twice!");
     }
-    SPDLOG_INFO("ControllerThread: Completed");
+    _thread = new std::thread(&ControllerThread::_run, this);
+    _cv.notify_one();
 }
 
 void ControllerThread::stop() {
@@ -62,6 +59,30 @@ void ControllerThread::stop() {
         _keepRunning = false;
     }
     _cv.notify_one();
+    _thread->join();
+    delete _thread;
+    _thread = NULL;
+}
+
+void ControllerThread::_run() {
+    SPDLOG_INFO("ControllerThread: Start");
+    std::unique_lock<std::mutex> lock(_mutex);
+    // runs commands already queued
+    _runCommands();
+    while (_keepRunning) {
+        _cv.wait(lock);
+        _runCommands();
+    }
+    SPDLOG_INFO("ControllerThread: Completed");
+}
+
+// _mutex must be locked by calling method to guard _queue access!!
+void ControllerThread::_runCommands() {
+    while (!_queue.empty()) {
+        Command* command = _queue.front();
+        _queue.pop();
+        _execute(command);
+    }
 }
 
 void ControllerThread::_clear() {

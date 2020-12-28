@@ -26,8 +26,6 @@
 #include <cRIO/Command.h>
 #include <cRIO/ControllerThread.h>
 
-#include <thread>
-
 using namespace LSST::cRIO;
 using namespace std::chrono_literals;
 
@@ -42,17 +40,34 @@ TEST_CASE("Run ControllerThread and join it", "[ControllerThread]") {
     REQUIRE(tv == 0);
 
     // run controller thread
-    std::thread controller([] { ControllerThread::get().run(); });
+    ControllerThread::get().run();
 
     // enqueue command into controller thread
     ControllerThread::get().enqueue(new TestCommand());
 
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_for(1ms);
 
     // stop controller thread
     ControllerThread::get().stop();
 
     REQUIRE(tv == 1);
+}
 
-    controller.join();
+TEST_CASE("Queue to controller before run", "[ControllerThread]") {
+    tv = 0;
+    REQUIRE(tv == 0);
+
+    for (int i = 0; i < 10; i++) {
+        ControllerThread::get().enqueue(new TestCommand());
+    }
+
+    // run controller thread
+    ControllerThread::get().run();
+
+    std::this_thread::sleep_for(10ms);
+
+    // stop controller thread
+    ControllerThread::get().stop();
+
+    REQUIRE(tv == 10);
 }
