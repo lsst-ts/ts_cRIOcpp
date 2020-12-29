@@ -25,7 +25,7 @@ libcRIOcpp.a: $(OBJS)
 	${co}ranlib $@
 
 clean:
-	@$(foreach file,$(OBJS) $(CPP_DEPS) libM1M3SS.a $(shell find -name '*.d'), echo '[RM ] ${file}'; $(RM) -r $(file);)
+	@$(foreach file,$(OBJS) $(CPP_DEPS) libcRIOcpp.a $(shell find -name '*.d'), echo '[RM ] ${file}'; $(RM) -r $(file);)
 
 # file targets
 %.cpp.o: %.cpp.d

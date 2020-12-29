@@ -1,5 +1,5 @@
 /*
- * This file is part of LSST M1M3 tests. Tests Range functions.
+ * This file is part of LSST cRIO CPP tests. Tests LimitTrigger.
  *
  * Developed for the Telescope & Site Software Systems.  This product includes
  * software developed by the LSST Project (https://www.lsst.org). See the
