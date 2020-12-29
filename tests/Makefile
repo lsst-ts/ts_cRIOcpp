@@ -14,7 +14,7 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 
-M1M3_CPPFLAGS := -I"/usr/include" \
+TEST_CPPFLAGS := -I"/usr/include" \
 	-I"../include" \
 	$(pkg-config --cflags catch2 2>/dev/null)
 
@@ -34,12 +34,12 @@ clean:
 
 %.cpp.o: %.cpp.d
 	@echo '[CPP] $(patsubst %.d,%,$<)'
-	${co}$(CPP) $(BOOST_CPPFLAGS) $(SAL_CPPFLAGS) $(M1M3_CPPFLAGS) -c -fmessage-length=0 -o $@ $(patsubst %.d,%,$<)
+	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) $(TEST_CPPFLAGS) -c -fmessage-length=0 -o $@ $(patsubst %.d,%,$<)
 
 %.cpp.d: %.cpp
 	@echo '[DPP] $<'
-	${co}$(CPP) $(BOOST_CPPFLAGS) $(SAL_CPPFLAGS) $(M1M3_CPPFLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'
+	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) $(TEST_CPPFLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'
 
 ${BINARIES}: %: %.cpp.o ../src/libcRIOcpp.a
 	@echo '[TPP] $<'
-	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(BOOST_CPPFLAGS) $(SAL_CPPFLAGS) $(LIBS) $(M1M3_CPPFLAGS) $^
+	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(CPP_FLAGS) $(LIBS) $^
