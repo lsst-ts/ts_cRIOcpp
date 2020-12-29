@@ -42,4 +42,4 @@ clean:
 
 ${BINARIES}: %: %.cpp.o ../src/libcRIOcpp.a
 	@echo '[TPP] $<'
-	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(CPP_FLAGS) $(LIBS) $^
+	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(LIBS) $^ $(CPP_FLAGS)
