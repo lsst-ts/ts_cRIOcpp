@@ -144,7 +144,6 @@ void ModbusBuffer::readEndOfFrame() { _index++; }
 void ModbusBuffer::writeBuffer(uint8_t* data, size_t len) {
     for (size_t i = 0; i < len; i++) {
         _buffer.push_back(getByteInstruction(data[i]));
-        _index++;
     }
 }
 
@@ -159,7 +158,6 @@ void ModbusBuffer::writeI24(int32_t data) {
     _buffer.push_back(getByteInstruction((uint8_t)(data >> 16)));
     _buffer.push_back(getByteInstruction((uint8_t)(data >> 8)));
     _buffer.push_back(getByteInstruction((uint8_t)data));
-    _index += 3;
 }
 
 void ModbusBuffer::writeI32(int32_t data) {
@@ -187,39 +185,24 @@ void ModbusBuffer::writeSGL(float data) {
 void ModbusBuffer::writeCRC() {
     _buffer.push_back(0x1200 | ((_crcCounter & 0xFF) << 1));
     _buffer.push_back(0x1200 | (((_crcCounter >> 8) & 0xFF) << 1));
-    _index += 2;
     _resetCRC();
 }
 
 void ModbusBuffer::writeDelay(uint32_t delayMicros) {
     _buffer.push_back(delayMicros > 4095 ? (((delayMicros / 1000) + 1) | 0x5000) : (delayMicros | 0x4000));
-    _index++;
 }
 
-void ModbusBuffer::writeEndOfFrame() {
-    _buffer.push_back(FIFO_TX_FRAMEEND);
-    _index++;
-}
+void ModbusBuffer::writeEndOfFrame() { _buffer.push_back(FIFO_TX_FRAMEEND); }
 
-void ModbusBuffer::writeSoftwareTrigger() {
-    _buffer.push_back(FIFO_TX_WAIT_TRIGGER);
-    _index++;
-}
+void ModbusBuffer::writeSoftwareTrigger() { _buffer.push_back(FIFO_TX_WAIT_TRIGGER); }
 
-void ModbusBuffer::writeTimestamp() {
-    _buffer.push_back(FIFO_TX_TIMESTAMP);
-    _index += 1;
-}
+void ModbusBuffer::writeTimestamp() { _buffer.push_back(FIFO_TX_TIMESTAMP); }
 
-void ModbusBuffer::writeTriggerIRQ() {
-    _buffer.push_back(FIFO_TX_IRQTRIGGER);
-    _index += 1;
-}
+void ModbusBuffer::writeTriggerIRQ() { _buffer.push_back(FIFO_TX_IRQTRIGGER); }
 
 void ModbusBuffer::writeWaitForRx(uint32_t timeoutMicros) {
     _buffer.push_back(timeoutMicros > 4095 ? (((timeoutMicros / 1000) + 1) | FIFO_TX_WAIT_LONG_RX)
                                            : (timeoutMicros | FIFO_TX_WAIT_RX));
-    _index += 1;
 }
 
 uint16_t ModbusBuffer::getByteInstruction(uint8_t data) {
