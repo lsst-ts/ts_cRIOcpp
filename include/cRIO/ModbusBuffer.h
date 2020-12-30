@@ -34,25 +34,27 @@ namespace cRIO {
  *
  * 8bit data are stored as 16bit values. Real data are left shifted by 1. Last
  * bit (0, transmitted first) is start bit, always 1 for ILC communication.
+ *
+ * Doesn't handle subnet. Doesn't handle FPGA FIFO read/writes - that's
+ * responsibility of FPGA. ModbusBuffer handles only serialization & de
+ * serialization of FPGA's FIFO data.
  */
 class ModbusBuffer {
 public:
     ModbusBuffer();
     virtual ~ModbusBuffer();
 
-    int32_t getIndex();
-    void setIndex(int32_t index);
-    void incIndex(int32_t inc);
+    int32_t getIndex() { return _index; }
+    uint16_t* getBuffer() { return &_buffer[0]; }
+    size_t getLength() { return _buffer.size(); }
+
     void skipToNextFrame();
-    uint16_t* getBuffer();
-    void set(int32_t index, uint16_t data);
-    void setLength(int32_t length);
-    int32_t getLength();
 
     /**
      * Set empty buffer.
      */
     void reset();
+
     bool endOfBuffer();
     bool endOfFrame();
 
@@ -65,34 +67,15 @@ public:
      */
     std::vector<uint8_t> getReadData(int32_t length);
 
-    /**
-     * Calculate Modbus CRC16
-     *
-     * @param data data for CRC16 calculation
-     *
-     * @return calculated Modbus CRC16
-     */
-    static uint16_t calculateCRC(std::vector<uint8_t> data);
-
-    /**
-     * Calculate Modbus from written data
-     *
-     * @param length buffer length
-     *
-     * @return calculated Modbus CRC16
-     */
-    uint16_t calculateCRC(int32_t length);
-
     void readBuffer(void* buf, size_t len);
 
-    uint16_t readLength();
     int32_t readI32();
     uint8_t readU8();
     uint16_t readU16();
     uint32_t readU32();
     uint64_t readU48();
     float readSGL();
-    std::string readString(int32_t length);
+    std::string readString(size_t length);
     uint16_t readCRC();
     double readTimestamp();
 
@@ -109,10 +92,8 @@ public:
 
     void readEndOfFrame();
 
-    void writeBuffer(void* data, size_t len);
+    void writeBuffer(uint8_t* data, size_t len);
 
-    void writeSubnet(uint8_t data);
-    void writeLength(uint16_t data);
     void writeI8(int8_t data);
     void writeI16(int16_t data);
     void writeI24(int32_t data);
@@ -121,16 +102,12 @@ public:
     void writeU16(uint16_t data);
     void writeU32(uint32_t data);
     void writeSGL(float data);
-    void writeCRC(int32_t length);
 
     /**
-     * Return data item to write to buffer.
-     *
-     * @param data data to write.
-     *
-     * @return 16bit for command queue.
+     * Writes CRC for all data already written. Reset internal CRC counter, so
+     * buffer can accept more commands.
      */
-    static inline uint16_t writeByteInstruction(uint8_t data) { return (((uint16_t)data) << 1) | 0x1200; };
+    void writeCRC();
 
     void writeDelay(uint32_t delayMicros);
     void writeEndOfFrame();
@@ -147,12 +124,27 @@ public:
      */
     void pullModbusResponse(uint16_t request, uint64_t& beginTs, uint64_t& endTs, std::vector<uint8_t>& data);
 
+protected:
+    /**
+     * Return data item to write to buffer. Updates CRC counter.
+     *
+     * @param data data to write.
+     *
+     * @return 16bit for command queue.
+     */
+    uint16_t getByteInstruction(uint8_t data);
+
+    void processDataCRC(uint8_t data);
+
 private:
-    uint16_t _buffer[5120];
-    uint8_t _floatPointBuffer[8];
-    uint8_t _stringBuffer[256];
-    int32_t _index;
-    int32_t _length;
+    std::vector<uint16_t> _buffer;
+    uint32_t _index;
+    uint16_t _crcCounter;
+
+    /**
+     * Reset internal CRC counter.
+     */
+    void _resetCRC() { _crcCounter = 0xFFFF; }
 };
 
 }  // namespace cRIO

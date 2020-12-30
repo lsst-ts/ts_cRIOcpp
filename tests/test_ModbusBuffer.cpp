@@ -37,7 +37,7 @@ TEST_CASE("CalculateCRC", "[ModbusBuffer]") {
     // address
     mbuf.writeU8(123);
     mbuf.writeU8(17);
-    mbuf.writeCRC(2);
+    mbuf.writeCRC();
     mbuf.writeEndOfFrame();
 
     uint16_t* buf = mbuf.getBuffer();
@@ -50,12 +50,10 @@ TEST_CASE("CalculateLongCRC", "[ModbusBuffer]") {
     std::vector<uint8_t> data = {0x81, 0x11, 0x10, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAA, 0xFF,
                                  0xBB, 0xCC, 0xDD, 0xEE, 0x11, 0x53, 0x74, 0x61, 0x72};
 
-    REQUIRE(ModbusBuffer::calculateCRC(data) == 0x9FA7);
-
     ModbusBuffer mbuf;
     for (auto d : data) mbuf.writeU8(d);
 
-    mbuf.writeCRC(19);
+    mbuf.writeCRC();
     mbuf.writeEndOfFrame();
 
     REQUIRE(mbuf.getIndex() == 22);
