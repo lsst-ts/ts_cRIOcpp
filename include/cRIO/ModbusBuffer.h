@@ -55,6 +55,8 @@ public:
      */
     void reset();
 
+    void clear();
+
     bool endOfBuffer();
     bool endOfFrame();
 
@@ -76,8 +78,9 @@ public:
     uint64_t readU48();
     float readSGL();
     std::string readString(size_t length);
-    uint16_t readCRC();
     double readTimestamp();
+
+    bool checkCRC();
 
     /**
      * Reads instruction byte from FPGA FIFO.

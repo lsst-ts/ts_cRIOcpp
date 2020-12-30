@@ -70,6 +70,8 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     mbuf.writeU16(0x3456);
     mbuf.writeU32(0x7890abcd);
 
+    mbuf.writeCRC();
+
     uint16_t* buf = mbuf.getBuffer();
 
     // bytes are written left shifted by 1, and masked with 0x12
@@ -95,6 +97,8 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     REQUIRE(mbuf.readU8() == 0x12);
     REQUIRE(mbuf.readU16() == 0x3456);
     REQUIRE(mbuf.readU32() == 0x7890abcd);
+
+    REQUIRE(mbuf.checkCRC() == true);
 }
 
 TEST_CASE("WriteIxx", "[ModbusBuffer]") {
@@ -103,6 +107,7 @@ TEST_CASE("WriteIxx", "[ModbusBuffer]") {
     mbuf.writeI16(0x3456);
     mbuf.writeI32(0x7890abcd);
     mbuf.writeI32(0xf890abcd);
+    mbuf.writeCRC();
 
     uint16_t* buf = mbuf.getBuffer();
 
@@ -131,6 +136,15 @@ TEST_CASE("WriteIxx", "[ModbusBuffer]") {
     REQUIRE(mbuf.readInstructionByte(buf[8]) == 0x90);
     REQUIRE(mbuf.readInstructionByte(buf[9]) == 0xab);
     REQUIRE(mbuf.readInstructionByte(buf[10]) == 0xcd);
+
+    mbuf.reset();
+
+    REQUIRE(mbuf.readU8() == 0x12);
+    REQUIRE(mbuf.readU16() == 0x3456);
+    REQUIRE(mbuf.readU32() == 0x7890abcd);
+    REQUIRE(mbuf.readU32() == 0xf890abcd);
+
+    REQUIRE(mbuf.checkCRC() == true);
 }
 
 TEST_CASE("WriteSGL", "[ModbusBuffer]") {

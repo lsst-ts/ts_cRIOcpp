@@ -41,7 +41,7 @@ const static uint16_t FIFO_RX_ENDFRAME = 0xA000;
 namespace LSST {
 namespace cRIO {
 
-ModbusBuffer::ModbusBuffer() { reset(); }
+ModbusBuffer::ModbusBuffer() { clear(); }
 
 ModbusBuffer::~ModbusBuffer() {}
 
@@ -56,8 +56,12 @@ void ModbusBuffer::skipToNextFrame() {
 
 void ModbusBuffer::reset() {
     _index = 0;
-    _buffer.clear();
     _resetCRC();
+}
+
+void ModbusBuffer::clear() {
+    _buffer.clear();
+    reset();
 }
 
 bool ModbusBuffer::endOfBuffer() { return _index >= _buffer.size(); }
@@ -126,17 +130,18 @@ std::string ModbusBuffer::readString(size_t length) {
     return std::string((const char*)buf, length);
 }
 
-uint16_t ModbusBuffer::readCRC() {
-    _index += 2;
-    return ((uint16_t)readInstructionByte(_buffer[_index - 2])) |
-           ((uint16_t)readInstructionByte(_buffer[_index - 1]) << 8);
-}
-
 double ModbusBuffer::readTimestamp() {
     uint64_t ret;
     readBuffer(&ret, 8);
     ret = le64toh(ret);
     return Timestamp::fromRaw(ret);
+}
+
+bool ModbusBuffer::checkCRC() {
+    uint16_t crc;
+    uint16_t calCrc = _crcCounter;
+    readBuffer(&crc, 2);
+    return le32toh(crc) == calCrc;
 }
 
 void ModbusBuffer::readEndOfFrame() { _index++; }
