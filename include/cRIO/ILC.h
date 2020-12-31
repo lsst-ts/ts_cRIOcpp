@@ -28,14 +28,17 @@ namespace cRIO {
 /**
  * Class filling ModbusBuffer with commands. Should serve single subnet, so
  * allows sending messages with different node addresses.
+ *
+ * Functions timeouts (for writing on command line as RxWait) is specified in
+ * calls to callFunction.
  */
 class ILC : public ModbusBuffer {
 public:
-    void reportServerID(uint8_t address) { callFunction(address, 17); }
-    void reportServerStatus(uint8_t address) { callFunction(address, 18); }
-    void changeILCMode(uint8_t address, uint16_t mode) { callFunction(address, 65, mode); }
-    void setTempILCAddress(uint8_t temporaryAddress) { callFunction(255, 72, temporaryAddress); }
-    void resetServer(uint8_t address) { callFunction(address, 107); }
+    void reportServerID(uint8_t address) { callFunction(address, 17, 835); }
+    void reportServerStatus(uint8_t address) { callFunction(address, 18, 270); }
+    void changeILCMode(uint8_t address, uint16_t mode) { callFunction(address, 65, 335, mode); }
+    void setTempILCAddress(uint8_t temporaryAddress) { callFunction(255, 72, 250, temporaryAddress); }
+    void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
 };
 
 }  // namespace cRIO

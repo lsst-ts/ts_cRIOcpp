@@ -144,17 +144,27 @@ protected:
      *
      * @param address ILC address on subnet
      * @param function ILC function to call
+     * @param timeout function call timeout (excluding transfer times) in us (microseconds)
      */
-    void callFunction(uint8_t address, uint8_t function);
+    void callFunction(uint8_t address, uint8_t function, uint32_t timeout);
 
+    /**
+     * Call function with single parameter.
+     *
+     * @tparam dt parameter type
+     * @param address ILC address on subnet
+     * @param function ILC function to call
+     * @param timeout function call timeout (excluding transfer time) in us (microseconds)
+     * @param p1 function parameter
+     */
     template <typename dt>
-    void callFunction(uint8_t address, uint8_t function, dt p1) {
+    void callFunction(uint8_t address, uint8_t function, uint32_t timeout, dt p1) {
         write(address);
         write(function);
         write<dt>(p1);
         writeCRC();
         writeEndOfFrame();
-        writeWaitForRx(1000);
+        writeWaitForRx(timeout);
     }
 
 private:

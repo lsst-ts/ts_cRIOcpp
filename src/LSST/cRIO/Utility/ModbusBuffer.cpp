@@ -174,12 +174,12 @@ void ModbusBuffer::processDataCRC(uint8_t data) {
     }
 }
 
-void ModbusBuffer::callFunction(uint8_t address, uint8_t function) {
+void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t timeout) {
     write(address);
     write(function);
     writeCRC();
     writeEndOfFrame();
-    writeWaitForRx(1000);
+    writeWaitForRx(timeout);
 }
 
 }  // namespace cRIO
