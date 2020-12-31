@@ -25,6 +25,9 @@
 #include <string>
 #include <vector>
 
+#include <arpa/inet.h>
+#include <endian.h>
+
 namespace LSST {
 namespace cRIO {
 
@@ -97,14 +100,10 @@ public:
 
     void writeBuffer(uint8_t* data, size_t len);
 
-    void writeI8(int8_t data);
-    void writeI16(int16_t data);
+    template <typename dt>
+    void write(dt data);
+
     void writeI24(int32_t data);
-    void writeI32(int32_t data);
-    void writeU8(uint8_t data);
-    void writeU16(uint16_t data);
-    void writeU32(uint32_t data);
-    void writeSGL(float data);
 
     /**
      * Writes CRC for all data already written. Reset internal CRC counter, so
@@ -149,6 +148,46 @@ private:
      */
     void _resetCRC() { _crcCounter = 0xFFFF; }
 };
+
+template <>
+inline void ModbusBuffer::write(int8_t data) {
+    writeBuffer(reinterpret_cast<uint8_t*>(&data), 1);
+}
+
+template <>
+inline void ModbusBuffer::write(int16_t data) {
+    int16_t d = htons(data);
+    writeBuffer(reinterpret_cast<uint8_t*>(&d), 2);
+}
+
+template <>
+inline void ModbusBuffer::write(int32_t data) {
+    int32_t d = htonl(data);
+    writeBuffer(reinterpret_cast<uint8_t*>(&d), 4);
+}
+
+template <>
+inline void ModbusBuffer::write(uint8_t data) {
+    writeBuffer(&data, 1);
+}
+
+template <>
+inline void ModbusBuffer::write(uint16_t data) {
+    uint16_t d = htons(data);
+    writeBuffer(reinterpret_cast<uint8_t*>(&d), 2);
+}
+
+template <>
+inline void ModbusBuffer::write(uint32_t data) {
+    uint32_t d = htonl(data);
+    writeBuffer(reinterpret_cast<uint8_t*>(&d), 4);
+}
+
+template <>
+inline void ModbusBuffer::write(float data) {
+    uint32_t* db = reinterpret_cast<uint32_t*>(&data);
+    write<uint32_t>(*db);
+}
 
 }  // namespace cRIO
 }  // namespace LSST

@@ -35,8 +35,8 @@ using namespace LSST::cRIO;
 TEST_CASE("CalculateCRC", "[ModbusBuffer]") {
     ModbusBuffer mbuf;
     // address
-    mbuf.writeU8(123);
-    mbuf.writeU8(17);
+    mbuf.write<uint8_t>(123);
+    mbuf.write<uint8_t>(17);
     mbuf.writeCRC();
     mbuf.writeEndOfFrame();
 
@@ -51,7 +51,7 @@ TEST_CASE("CalculateLongCRC", "[ModbusBuffer]") {
                                  0xBB, 0xCC, 0xDD, 0xEE, 0x11, 0x53, 0x74, 0x61, 0x72};
 
     ModbusBuffer mbuf;
-    for (auto d : data) mbuf.writeU8(d);
+    for (auto d : data) mbuf.write(d);
 
     mbuf.writeCRC();
     mbuf.writeEndOfFrame();
@@ -66,9 +66,9 @@ TEST_CASE("CalculateLongCRC", "[ModbusBuffer]") {
 
 TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     ModbusBuffer mbuf;
-    mbuf.writeU8(0x12);
-    mbuf.writeU16(0x3456);
-    mbuf.writeU32(0x7890abcd);
+    mbuf.write<uint8_t>(0x12);
+    mbuf.write<uint16_t>(0x3456);
+    mbuf.write<uint32_t>(0x7890abcd);
 
     mbuf.writeCRC();
 
@@ -103,10 +103,10 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
 
 TEST_CASE("WriteIxx", "[ModbusBuffer]") {
     ModbusBuffer mbuf;
-    mbuf.writeI8(0x12);
-    mbuf.writeI16(0x3456);
-    mbuf.writeI32(0x7890abcd);
-    mbuf.writeI32(0xf890abcd);
+    mbuf.write<int8_t>(0x12);
+    mbuf.write<int16_t>(0x3456);
+    mbuf.write<int32_t>(0x7890abcd);
+    mbuf.write<int32_t>(0xf890abcd);
     mbuf.writeCRC();
 
     uint16_t* buf = mbuf.getBuffer();
@@ -149,8 +149,8 @@ TEST_CASE("WriteIxx", "[ModbusBuffer]") {
 
 TEST_CASE("WriteSGL", "[ModbusBuffer]") {
     ModbusBuffer mbuf;
-    mbuf.writeSGL(0.123);
-    mbuf.writeSGL(-6758.1234);
+    mbuf.write<float>(0.123);
+    mbuf.write(-6758.1234f);
 
     uint16_t* buf = mbuf.getBuffer();
 
