@@ -98,7 +98,7 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     REQUIRE(mbuf.read<uint16_t>() == 0x3456);
     REQUIRE(mbuf.read<uint32_t>() == 0x7890abcd);
 
-    REQUIRE(mbuf.checkCRC() == true);
+    REQUIRE_NOTHROW(mbuf.checkCRC());
 }
 
 TEST_CASE("WriteIxx", "[ModbusBuffer]") {
@@ -144,13 +144,14 @@ TEST_CASE("WriteIxx", "[ModbusBuffer]") {
     REQUIRE(mbuf.read<uint32_t>() == 0x7890abcd);
     REQUIRE(mbuf.read<uint32_t>() == 0xf890abcd);
 
-    REQUIRE(mbuf.checkCRC() == true);
+    REQUIRE_NOTHROW(mbuf.checkCRC());
 }
 
 TEST_CASE("WriteSGL", "[ModbusBuffer]") {
     ModbusBuffer mbuf;
     mbuf.write<float>(0.123);
     mbuf.write(-6758.1234f);
+    mbuf.writeCRC();
 
     uint16_t* buf = mbuf.getBuffer();
 
@@ -178,4 +179,5 @@ TEST_CASE("WriteSGL", "[ModbusBuffer]") {
 
     REQUIRE(mbuf.read<float>() == 0.123f);
     REQUIRE(mbuf.read<float>() == -6758.1234f);
+    REQUIRE_NOTHROW(mbuf.checkCRC());
 }

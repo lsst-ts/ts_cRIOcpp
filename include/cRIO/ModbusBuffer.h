@@ -81,7 +81,7 @@ public:
     std::string readString(size_t length);
     double readTimestamp();
 
-    bool checkCRC();
+    void checkCRC();
 
     /**
      * Reads instruction byte from FPGA FIFO.
@@ -124,6 +124,8 @@ public:
      */
     void pullModbusResponse(uint16_t request, uint64_t& beginTs, uint64_t& endTs, std::vector<uint8_t>& data);
 
+    void skipRead() { _index++; }
+
 protected:
     /**
      * Return data item to write to buffer. Updates CRC counter.
@@ -135,6 +137,25 @@ protected:
     uint16_t getByteInstruction(uint8_t data);
 
     void processDataCRC(uint8_t data);
+
+    /**
+     * Add to buffer Modbus function. Assumes subnet, data lengths and triggers are
+     * send by FPGA class.
+     *
+     * @param address ILC address on subnet
+     * @param function ILC function to call
+     */
+    void callFunction(uint8_t address, uint8_t function);
+
+    template <typename dt>
+    void callFunction(uint8_t address, uint8_t function, dt p1) {
+        write(address);
+        write(function);
+        write<dt>(p1);
+        writeCRC();
+        writeEndOfFrame();
+        writeWaitForRx(1000);
+    }
 
 private:
     std::vector<uint16_t> _buffer;

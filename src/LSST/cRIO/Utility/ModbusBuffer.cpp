@@ -22,6 +22,7 @@
 #include <cRIO/Timestamp.h>
 #include <string.h>
 #include <spdlog/spdlog.h>
+#include <spdlog/fmt/fmt.h>
 
 #include <stdexcept>
 
@@ -105,14 +106,21 @@ double ModbusBuffer::readTimestamp() {
     return Timestamp::fromRaw(ret);
 }
 
-bool ModbusBuffer::checkCRC() {
+void ModbusBuffer::checkCRC() {
     uint16_t crc;
     uint16_t calCrc = _crcCounter;
     readBuffer(&crc, 2);
-    return le32toh(crc) == calCrc;
+    crc = le32toh(crc);
+    if (crc != calCrc) {
+        throw std::runtime_error(
+                fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}", calCrc, crc));
+    }
 }
 
-void ModbusBuffer::readEndOfFrame() { _index++; }
+void ModbusBuffer::readEndOfFrame() {
+    _index++;
+    _resetCRC();
+}
 
 void ModbusBuffer::writeBuffer(uint8_t* data, size_t len) {
     for (size_t i = 0; i < len; i++) {
@@ -164,6 +172,14 @@ void ModbusBuffer::processDataCRC(uint8_t data) {
             _crcCounter = _crcCounter >> 1;
         }
     }
+}
+
+void ModbusBuffer::callFunction(uint8_t address, uint8_t function) {
+    write(address);
+    write(function);
+    writeCRC();
+    writeEndOfFrame();
+    writeWaitForRx(1000);
 }
 
 }  // namespace cRIO
