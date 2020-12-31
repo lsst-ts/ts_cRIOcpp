@@ -24,8 +24,6 @@
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
 
-#include <stdexcept>
-
 using namespace std;
 
 // masks for FPGA FIFO commands
@@ -39,6 +37,10 @@ const static uint16_t FIFO_RX_ENDFRAME = 0xA000;
 
 namespace LSST {
 namespace cRIO {
+
+CRCError::CRCError(uint16_t calculated, uint16_t received)
+        : std::runtime_error(fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}", calculated,
+                                         received)) {}
 
 ModbusBuffer::ModbusBuffer() { clear(); }
 
@@ -112,8 +114,7 @@ void ModbusBuffer::checkCRC() {
     readBuffer(&crc, 2);
     crc = le32toh(crc);
     if (crc != calCrc) {
-        throw std::runtime_error(
-                fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}", calCrc, crc));
+        throw CRCError(calCrc, crc);
     }
 }
 

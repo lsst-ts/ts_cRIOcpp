@@ -24,12 +24,21 @@
 #include <cRIO/DataTypes.h>
 #include <string>
 #include <vector>
+#include <stdexcept>
 
 #include <arpa/inet.h>
 #include <endian.h>
 
 namespace LSST {
 namespace cRIO {
+
+/**
+ * Exception thrown when calculated CRC doesn't match received CRC.
+ */
+class CRCError : public std::runtime_error {
+public:
+    CRCError(uint16_t calculated, uint16_t received);
+};
 
 /**
  * Utility class for Modbus buffer management. Provides function to write and
@@ -41,6 +50,8 @@ namespace cRIO {
  * Doesn't handle subnet. Doesn't handle FPGA FIFO read/writes - that's
  * responsibility of FPGA. ModbusBuffer handles only serialization & de
  * serialization of FPGA's FIFO data.
+ *
+ * Functions throws std::runtime_error (or its subclass) on any error.
  */
 class ModbusBuffer {
 public:
@@ -58,6 +69,9 @@ public:
      */
     void reset();
 
+    /**
+     * Clears modbus buffer.
+     */
     void clear();
 
     bool endOfBuffer();
@@ -81,6 +95,11 @@ public:
     std::string readString(size_t length);
     double readTimestamp();
 
+    /**
+     * Check that accumulated data CRC matches readed CRC.
+     *
+     * @throw CRCError if CRC doesn't match
+     */
     void checkCRC();
 
     /**
