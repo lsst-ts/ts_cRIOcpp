@@ -26,19 +26,28 @@ namespace LSST {
 namespace cRIO {
 
 /**
- * Class filling ModbusBuffer with commands.
+ * Class filling ModbusBuffer with commands. Should serve single subnet, so
+ * allows sending messages with different node addresses.
  */
 class ILC : public ModbusBuffer {
 public:
+    void reportServerID(uint8_t address) { callFunction(address, 17); }
+    void reportServerStatus(uint8_t address) { callFunction(address, 18); }
+    void changeILCMode(uint8_t address, uint16_t mode);
+    void setTempILCAddress(uint8_t temporatyAddress);
+    void reset(uint8_t address) { callFunction(address, 107); }
+
 protected:
     /**
      * Add to buffer Modbus function. Assumes subnet, data lengths and triggers are
      * send by FPGA class.
      *
      * @param address ILC address on subnet
-     * @param function
+     * @param function ILC function to call
      */
     void callFunction(uint8_t address, uint8_t function);
+
+    void callFunction(uint8_t address, uint8_t function, uint16_t p1);
 };
 
 }  // namespace cRIO

@@ -24,8 +24,17 @@ namespace LSST {
 namespace cRIO {
 
 void ILC::callFunction(uint8_t address, uint8_t function) {
-    writeU8(address);
-    writeU8(function);
+    write(address);
+    write(function);
+    writeCRC();
+    writeEndOfFrame();
+    writeWaitForRx(1000);
+}
+
+void ILC::callFunction(uint8_t address, uint8_t function, uint16_t p1) {
+    write(address);
+    write(function);
+    write(p1);
     writeCRC();
     writeEndOfFrame();
     writeWaitForRx(1000);
