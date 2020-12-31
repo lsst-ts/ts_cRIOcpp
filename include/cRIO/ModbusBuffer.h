@@ -74,12 +74,10 @@ public:
 
     void readBuffer(void* buf, size_t len);
 
-    int32_t readI32();
-    uint8_t readU8();
-    uint16_t readU16();
-    uint32_t readU32();
+    template <typename dt>
+    dt read();
+
     uint64_t readU48();
-    float readSGL();
     std::string readString(size_t length);
     double readTimestamp();
 
@@ -148,6 +146,41 @@ private:
      */
     void _resetCRC() { _crcCounter = 0xFFFF; }
 };
+
+template <>
+inline int32_t ModbusBuffer::read() {
+    int32_t db;
+    readBuffer(&db, 4);
+    return ntohl(db);
+}
+
+template <>
+inline uint8_t ModbusBuffer::read() {
+    uint8_t ret;
+    readBuffer(&ret, 1);
+    return ret;
+}
+
+template <>
+inline uint16_t ModbusBuffer::read() {
+    uint16_t db;
+    readBuffer(&db, 2);
+    return ntohs(db);
+}
+
+template <>
+inline uint32_t ModbusBuffer::read() {
+    uint32_t db;
+    readBuffer(&db, 4);
+    return ntohl(db);
+}
+
+template <>
+inline float ModbusBuffer::read() {
+    uint32_t d = read<uint32_t>();
+    float* db = reinterpret_cast<float*>(&d);
+    return *db;
+}
 
 template <>
 inline void ModbusBuffer::write(int8_t data) {

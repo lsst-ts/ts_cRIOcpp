@@ -82,30 +82,6 @@ void ModbusBuffer::readBuffer(void* buf, size_t len) {
     }
 }
 
-int32_t ModbusBuffer::readI32() {
-    int32_t db;
-    readBuffer(&db, 4);
-    return ntohl(db);
-}
-
-uint8_t ModbusBuffer::readU8() {
-    uint8_t ret;
-    readBuffer(&ret, 1);
-    return ret;
-}
-
-uint16_t ModbusBuffer::readU16() {
-    uint16_t db;
-    readBuffer(&db, 2);
-    return ntohs(db);
-}
-
-uint32_t ModbusBuffer::readU32() {
-    uint32_t db;
-    readBuffer(&db, 4);
-    return ntohl(db);
-}
-
 uint64_t ModbusBuffer::readU48() {
     _index += 6;
     return ((uint64_t)readInstructionByte(_buffer[_index - 6]) << 40) |
@@ -114,12 +90,6 @@ uint64_t ModbusBuffer::readU48() {
            ((uint64_t)readInstructionByte(_buffer[_index - 3]) << 16) |
            ((uint64_t)readInstructionByte(_buffer[_index - 2]) << 8) |
            ((uint64_t)readInstructionByte(_buffer[_index - 1]));
-}
-
-float ModbusBuffer::readSGL() {
-    uint32_t d = readU32();
-    float* db = reinterpret_cast<float*>(&d);
-    return *db;
 }
 
 std::string ModbusBuffer::readString(size_t length) {
