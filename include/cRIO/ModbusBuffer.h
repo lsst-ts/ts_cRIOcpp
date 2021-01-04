@@ -130,15 +130,6 @@ public:
     void skipRead() { _index++; }
 
 protected:
-    /**
-     * Return data item to write to buffer. Updates CRC counter.
-     *
-     * @param data data to write.
-     *
-     * @return 16bit for command queue.
-     */
-    uint16_t getByteInstruction(uint8_t data);
-
     void processDataCRC(uint8_t data);
 
     /**
@@ -217,6 +208,15 @@ private:
         }
         return (uint8_t)((_buffer[_index++] >> 1) & 0xFF);
     }
+
+    /**
+     * Return data item to write to buffer. Updates CRC counter.
+     *
+     * @param data data to write.
+     *
+     * @return 16bit for command queue.
+     */
+    uint16_t _getByteInstruction(uint8_t data);
 };
 
 template <>

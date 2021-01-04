@@ -115,14 +115,14 @@ void ModbusBuffer::readEndOfFrame() {
 
 void ModbusBuffer::writeBuffer(uint8_t* data, size_t len) {
     for (size_t i = 0; i < len; i++) {
-        _buffer.push_back(getByteInstruction(data[i]));
+        _buffer.push_back(_getByteInstruction(data[i]));
     }
 }
 
 void ModbusBuffer::writeI24(int32_t data) {
-    _buffer.push_back(getByteInstruction((uint8_t)(data >> 16)));
-    _buffer.push_back(getByteInstruction((uint8_t)(data >> 8)));
-    _buffer.push_back(getByteInstruction((uint8_t)data));
+    _buffer.push_back(_getByteInstruction((uint8_t)(data >> 16)));
+    _buffer.push_back(_getByteInstruction((uint8_t)(data >> 8)));
+    _buffer.push_back(_getByteInstruction((uint8_t)data));
 }
 
 void ModbusBuffer::writeCRC() {
@@ -148,11 +148,6 @@ void ModbusBuffer::writeWaitForRx(uint32_t timeoutMicros) {
                                            : (timeoutMicros | FIFO_TX_WAIT_RX));
 }
 
-uint16_t ModbusBuffer::getByteInstruction(uint8_t data) {
-    processDataCRC(data);
-    return 0x1200 | ((static_cast<uint16_t>(data)) << 1);
-}
-
 void ModbusBuffer::processDataCRC(uint8_t data) {
     _crcCounter = _crcCounter ^ (uint16_t(data));
     for (int j = 0; j < 8; j++) {
@@ -173,6 +168,11 @@ void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t time
     writeWaitForRx(timeout);
 
     _pushCommanded(address, function);
+}
+
+uint16_t ModbusBuffer::_getByteInstruction(uint8_t data) {
+    processDataCRC(data);
+    return 0x1200 | ((static_cast<uint16_t>(data)) << 1);
 }
 
 }  // namespace cRIO
