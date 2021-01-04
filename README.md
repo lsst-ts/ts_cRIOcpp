@@ -35,13 +35,13 @@ following codes (both decimal and hexadecimal code values are shown):
 
 ILCs provides those generic functions:
 
-Code | Hex  | Description
- --- | ---  | -----------
-17   | 0x11 | Report Server ID
-18   | 0x12 | Report Server Status
-65   | 0x41 | Change ILC Mode
-72   | 0x48 | Set Temp ILC Address
-107  | 0x6b | Reset Server
+Code | Hex  | Error | Description
+ --- | ---  | ----- | -----------
+17   | 0x11 | 145   | Report Server ID
+18   | 0x12 | 146   | Report Server Status
+65   | 0x41 | 193   | Change ILC Mode
+72   | 0x48 | 200   | Set Temp ILC Address
+107  | 0x6b | 235   | Reset Server
 
 ### Firmware flash functions
 

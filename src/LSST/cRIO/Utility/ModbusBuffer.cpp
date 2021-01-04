@@ -38,12 +38,6 @@ const static uint16_t FIFO_RX_ENDFRAME = 0xA000;
 namespace LSST {
 namespace cRIO {
 
-CRCError::CRCError(uint16_t calculated, uint16_t received)
-        : std::runtime_error(fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}", calculated,
-                                         received)) {}
-
-EndOfBuffer::EndOfBuffer() : std::runtime_error("End of buffer while reading response") {}
-
 ModbusBuffer::ModbusBuffer() { clear(); }
 
 ModbusBuffer::~ModbusBuffer() {}
@@ -55,7 +49,8 @@ void ModbusBuffer::reset() {
 
 void ModbusBuffer::clear() {
     _buffer.clear();
-    _commanded.clear();
+    std::queue<std::pair<uint8_t, uint8_t>> emptyQ;
+    _commanded.swap(emptyQ);
     reset();
 }
 
@@ -148,6 +143,23 @@ void ModbusBuffer::writeWaitForRx(uint32_t timeoutMicros) {
                                            : (timeoutMicros | FIFO_TX_WAIT_RX));
 }
 
+ModbusBuffer::CRCError::CRCError(uint16_t calculated, uint16_t received)
+        : std::runtime_error(fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}", calculated,
+                                         received)) {}
+
+ModbusBuffer::EndOfBuffer::EndOfBuffer() : std::runtime_error("End of buffer while reading response") {}
+
+ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t function)
+        : std::runtime_error(
+                  fmt::format("Received response {1} with address {0} without matching send function.",
+                              address, function)) {}
+
+ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t function, uint8_t expectedAddress,
+                                                   uint8_t expectedFunction)
+        : std::runtime_error(fmt::format("Invalid response received - expected {2} (0x{2:02x}) from {3}, got "
+                                         "{1} (0x{1:02x}) from {0}",
+                                         address, function, expectedAddress, expectedFunction)) {}
+
 void ModbusBuffer::processDataCRC(uint8_t data) {
     _crcCounter = _crcCounter ^ (uint16_t(data));
     for (int j = 0; j < 8; j++) {
@@ -168,6 +180,17 @@ void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t time
     writeWaitForRx(timeout);
 
     _pushCommanded(address, function);
+}
+
+void ModbusBuffer::checkCommanded(uint8_t address, uint8_t function) {
+    if (_commanded.empty()) {
+        throw UnmatchedFunction(address, function);
+    }
+    std::pair<uint8_t, uint8_t> last = _commanded.front();
+    _commanded.pop();
+    if (last.first != address || last.second != function) {
+        throw UnmatchedFunction(address, function, last.first, last.second);
+    }
 }
 
 uint16_t ModbusBuffer::_getByteInstruction(uint8_t data) {

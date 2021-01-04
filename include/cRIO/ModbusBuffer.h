@@ -22,28 +22,16 @@
 #define MODBUSBUFFER_H_
 
 #include <cRIO/DataTypes.h>
+#include <queue>
 #include <string>
-#include <vector>
 #include <stdexcept>
+#include <vector>
 
 #include <arpa/inet.h>
 #include <endian.h>
 
 namespace LSST {
 namespace cRIO {
-
-/**
- * Exception thrown when calculated CRC doesn't match received CRC.
- */
-class CRCError : public std::runtime_error {
-public:
-    CRCError(uint16_t calculated, uint16_t received);
-};
-
-class EndOfBuffer : public std::runtime_error {
-public:
-    EndOfBuffer();
-};
 
 /**
  * Utility class for Modbus buffer management. Provides function to write and
@@ -129,6 +117,26 @@ public:
 
     void skipRead() { _index++; }
 
+    /**
+     * Exception thrown when calculated CRC doesn't match received CRC.
+     */
+    class CRCError : public std::runtime_error {
+    public:
+        CRCError(uint16_t calculated, uint16_t received);
+    };
+
+    class EndOfBuffer : public std::runtime_error {
+    public:
+        EndOfBuffer();
+    };
+
+    class UnmatchedFunction : public std::runtime_error {
+    public:
+        UnmatchedFunction(uint8_t address, uint8_t function);
+        UnmatchedFunction(uint8_t address, uint8_t function, uint8_t expectedAddress,
+                          uint8_t expectedFunction);
+    };
+
 protected:
     void processDataCRC(uint8_t data);
 
@@ -170,7 +178,8 @@ protected:
      * Checks that received response matches expected response.
      *
      * @param address ILC address on subnet
-     * @param function ILC function code; can be error response
+     * @param function ILC function code; if check is performed for error response, must equal to called
+     * function
      *
      * @throw std::runtime_error or its subclass on error.
      * @throw ILCException when ILC function is received.
@@ -182,7 +191,7 @@ private:
     uint32_t _index;
     uint16_t _crcCounter;
 
-    std::vector<std::pair<uint8_t, uint8_t>> _commanded;
+    std::queue<std::pair<uint8_t, uint8_t>> _commanded;
 
     /**
      * Reset internal CRC counter.
@@ -191,7 +200,7 @@ private:
 
     void _pushCommanded(uint8_t address, uint8_t function) {
         if (address > 0 && address < 248) {
-            _commanded.push_back(std::pair<uint8_t, uint8_t>(address, function));
+            _commanded.push(std::pair<uint8_t, uint8_t>(address, function));
         }
     }
 

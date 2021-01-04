@@ -22,8 +22,28 @@
 
 #include <cRIO/ModbusBuffer.h>
 
+#include <functional>
+#include <map>
+
 namespace LSST {
 namespace cRIO {
+
+/**
+ * Thrown when an unknown response function is received. As unknown function
+ * response means unknown message length and hence unknown CRC position and
+ * start of a new frame, the preferred handling when such error is seen is to
+ * flush response buffer and send ILC's queries again.
+ */
+class ILCUnknownResponse : public std::runtime_error {
+public:
+    /**
+     * Constructed with data available during response.
+     *
+     * @param address ILC address
+     * @param function ILC function. Response for this function is unknown at the moment.
+     */
+    ILCUnknownResponse(uint8_t address, uint8_t function);
+};
 
 /**
  * Thrown when ILC error response is received.
@@ -31,7 +51,7 @@ namespace cRIO {
 class ILCException : public std::runtime_error {
 public:
     /**
-     * The class is constructed when an error is received. Contains
+     * The class is constructed when an ILC's error response is received.
      *
      * @param address ILC address
      * @param function ILC (error) function received
@@ -55,6 +75,9 @@ public:
     void setTempILCAddress(uint8_t temporaryAddress) { callFunction(255, 72, 250, temporaryAddress); }
     void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
 
+    void addResponse(uint8_t function, std::function<void(uint8_t)> action, uint8_t errorResponse,
+                     std::function<void(uint8_t, uint8_t)> errorAction = nullptr);
+
     /**
      * Process received data. Reads function code, check CRC, check that the
      * function was called in request (using _commanded buffer) and calls
@@ -67,6 +90,10 @@ public:
      * @throw std::runtime_error subclass on any detected error.
      */
     void processResponse(uint16_t* response, size_t length);
+
+private:
+    std::map<uint8_t, std::function<void(uint8_t)>> _actions;
+    std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
 };
 
 }  // namespace cRIO
