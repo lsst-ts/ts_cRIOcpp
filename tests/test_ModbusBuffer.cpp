@@ -42,8 +42,8 @@ TEST_CASE("CalculateCRC", "[ModbusBuffer]") {
 
     uint16_t* buf = mbuf.getBuffer();
 
-    REQUIRE(mbuf.readInstructionByte(buf[2]) == 0xe3);
-    REQUIRE(mbuf.readInstructionByte(buf[3]) == 0x4c);
+    REQUIRE(buf[2] == (0x1200 | (0xe3 << 1)));
+    REQUIRE(buf[3] == (0x1200 | (0x4c << 1)));
 }
 
 TEST_CASE("CalculateLongCRC", "[ModbusBuffer]") {
@@ -60,8 +60,8 @@ TEST_CASE("CalculateLongCRC", "[ModbusBuffer]") {
 
     uint16_t* buf = mbuf.getBuffer();
 
-    REQUIRE(mbuf.readInstructionByte(buf[19]) == 0xA7);
-    REQUIRE(mbuf.readInstructionByte(buf[20]) == 0x9F);
+    REQUIRE(buf[19] == (0x1200 | (0xA7 << 1)));
+    REQUIRE(buf[20] == (0x1200 | (0x9F << 1)));
 }
 
 TEST_CASE("WriteUxx", "[ModbusBuffer]") {
@@ -83,14 +83,6 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     REQUIRE(buf[4] == 0x1320);
     REQUIRE(buf[5] == 0x1356);
     REQUIRE(buf[6] == 0x139a);
-
-    REQUIRE(mbuf.readInstructionByte(buf[0]) == 0x12);
-    REQUIRE(mbuf.readInstructionByte(buf[1]) == 0x34);
-    REQUIRE(mbuf.readInstructionByte(buf[2]) == 0x56);
-    REQUIRE(mbuf.readInstructionByte(buf[3]) == 0x78);
-    REQUIRE(mbuf.readInstructionByte(buf[4]) == 0x90);
-    REQUIRE(mbuf.readInstructionByte(buf[5]) == 0xab);
-    REQUIRE(mbuf.readInstructionByte(buf[6]) == 0xcd);
 
     mbuf.reset();
 
@@ -125,18 +117,6 @@ TEST_CASE("WriteIxx", "[ModbusBuffer]") {
     REQUIRE(buf[9] == 0x1356);
     REQUIRE(buf[10] == 0x139a);
 
-    REQUIRE(mbuf.readInstructionByte(buf[0]) == 0x12);
-    REQUIRE(mbuf.readInstructionByte(buf[1]) == 0x34);
-    REQUIRE(mbuf.readInstructionByte(buf[2]) == 0x56);
-    REQUIRE(mbuf.readInstructionByte(buf[3]) == 0x78);
-    REQUIRE(mbuf.readInstructionByte(buf[4]) == 0x90);
-    REQUIRE(mbuf.readInstructionByte(buf[5]) == 0xab);
-    REQUIRE(mbuf.readInstructionByte(buf[6]) == 0xcd);
-    REQUIRE(mbuf.readInstructionByte(buf[7]) == 0xf8);
-    REQUIRE(mbuf.readInstructionByte(buf[8]) == 0x90);
-    REQUIRE(mbuf.readInstructionByte(buf[9]) == 0xab);
-    REQUIRE(mbuf.readInstructionByte(buf[10]) == 0xcd);
-
     mbuf.reset();
 
     REQUIRE(mbuf.read<uint8_t>() == 0x12);
@@ -164,16 +144,6 @@ TEST_CASE("WriteSGL", "[ModbusBuffer]") {
     REQUIRE(buf[5] == 0x13a6);
     REQUIRE(buf[6] == 0x1260);
     REQUIRE(buf[7] == 0x13fa);
-
-    REQUIRE(mbuf.readInstructionByte(buf[0]) == 0x3d);
-    REQUIRE(mbuf.readInstructionByte(buf[1]) == 0xfb);
-    REQUIRE(mbuf.readInstructionByte(buf[2]) == 0xe7);
-    REQUIRE(mbuf.readInstructionByte(buf[3]) == 0x6d);
-
-    REQUIRE(mbuf.readInstructionByte(buf[4]) == 0xc5);
-    REQUIRE(mbuf.readInstructionByte(buf[5]) == 0xd3);
-    REQUIRE(mbuf.readInstructionByte(buf[6]) == 0x30);
-    REQUIRE(mbuf.readInstructionByte(buf[7]) == 0xfd);
 
     mbuf.reset();
 

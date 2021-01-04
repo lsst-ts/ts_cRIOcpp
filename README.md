@@ -1,4 +1,4 @@
-# ts_cRIOcpp
+#ts_cRIOcpp
 
 Common functions for C++ development.
 
@@ -11,10 +11,22 @@ tests](tests/test_ControllerThread.cpp) for examples.
 
 ## ILC communication
 
-ILC (Inner-Loop Controllers) are boards used on various M1M3 subsystems. ILCs
+ILC (Inner-Loop Controller) is a board used on various M1M3 subsystems. ILCs
 are commanded through serial Modbus connection. The connections are organized
 on buses, operating on master-worker bus. Either unicasts or broadcasts
 commands are supported. Broadcasts commands obviously doesn't return anything.
+
+### Receiving data from ModBus
+
+After command is send on ModBus, received data are held in a per bus dedicated
+FIFO. Request code is available to copy content of this FIFO into response
+FIFO. Synchronization of sending/receiving is done in FPGA class.
+
+Response data are passed to ILC subclass in processResponse call. This method
+check if responses matches non-broadcast request functions and addresses stored
+in commanded buffer.
+
+### ILC Modbus Functions
 
 ILCs are commanded using custom Modbus functions, which is assigning the
 following codes (both decimal and hexadecimal code values are shown):
@@ -70,3 +82,17 @@ ILCs provides those generic functions:
 * Thermal demand (88 0x58)
 * Thermal status (89 0x59)
 
+## FPGA
+
+Commands are written into 2 bytes (16 bits) commandQueue FIFO in the following format:
+
+Offse         | Description
+ ------------ | -----------------------------------
+0             | Command - see FPGA code for details
+1             | payload length
+2-data length | payload bytes 
+
+Where payload for Modbus uses highest 7 bits for operation code, next 8 bits
+for data, and last bit as start bit (shall be always 0). See
+[Support System FPGA](https://github.com/lsst-ts/ts_m1m3supportFPGA) for
+details.

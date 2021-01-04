@@ -40,6 +40,11 @@ public:
     CRCError(uint16_t calculated, uint16_t received);
 };
 
+class EndOfBuffer : public std::runtime_error {
+public:
+    EndOfBuffer();
+};
+
 /**
  * Utility class for Modbus buffer management. Provides function to write and
  * read cRIO FIFO (FPGA) Modbus buffers.
@@ -61,8 +66,6 @@ public:
     int32_t getIndex() { return _index; }
     uint16_t* getBuffer() { return &_buffer[0]; }
     size_t getLength() { return _buffer.size(); }
-
-    void skipToNextFrame();
 
     /**
      * Set empty buffer.
@@ -102,17 +105,6 @@ public:
      */
     void checkCRC();
 
-    /**
-     * Reads instruction byte from FPGA FIFO.
-     *
-     * @param instruction instruction from Response FIFO.
-     *
-     * @return byte written by the instruction. Start bit is removed.
-     */
-    static inline uint8_t readInstructionByte(uint16_t instruction) {
-        return (uint8_t)((instruction >> 1) & 0xFF);
-    }
-
     void readEndOfFrame();
 
     void writeBuffer(uint8_t* data, size_t len);
@@ -135,14 +127,6 @@ public:
     void writeTriggerIRQ();
     void writeWaitForRx(uint32_t timeoutMicros);
 
-    /**
-     * Fills buffer with data from response, returns start and end timestamps.
-     * Checks for CRC.
-     *
-     * Throws exception on error.
-     */
-    void pullModbusResponse(uint16_t request, uint64_t& beginTs, uint64_t& endTs, std::vector<uint8_t>& data);
-
     void skipRead() { _index++; }
 
 protected:
@@ -159,7 +143,8 @@ protected:
 
     /**
      * Add to buffer Modbus function. Assumes subnet, data lengths and triggers are
-     * send by FPGA class.
+     * send by FPGA class. If non-broadcast address is passed, stores address
+     * and function into _commanded buffer.
      *
      * @param address ILC address on subnet
      * @param function ILC function to call
@@ -168,7 +153,9 @@ protected:
     void callFunction(uint8_t address, uint8_t function, uint32_t timeout);
 
     /**
-     * Call function with single parameter.
+     * Call Modbus function with single parameter.
+     *
+     * @see callFunction(uint8_t, uint8_t, uint32_t)
      *
      * @tparam dt parameter type
      * @param address ILC address on subnet
@@ -184,17 +171,52 @@ protected:
         writeCRC();
         writeEndOfFrame();
         writeWaitForRx(timeout);
+
+        _pushCommanded(address, function);
     }
+
+    /**
+     * Checks that received response matches expected response.
+     *
+     * @param address ILC address on subnet
+     * @param function ILC function code; can be error response
+     *
+     * @throw std::runtime_error or its subclass on error.
+     * @throw ILCException when ILC function is received.
+     */
+    void checkCommanded(uint8_t address, uint8_t function);
 
 private:
     std::vector<uint16_t> _buffer;
     uint32_t _index;
     uint16_t _crcCounter;
 
+    std::vector<std::pair<uint8_t, uint8_t>> _commanded;
+
     /**
      * Reset internal CRC counter.
      */
     void _resetCRC() { _crcCounter = 0xFFFF; }
+
+    void _pushCommanded(uint8_t address, uint8_t function) {
+        if (address > 0 && address < 248) {
+            _commanded.push_back(std::pair<uint8_t, uint8_t>(address, function));
+        }
+    }
+
+    /**
+     * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
+     *
+     * @throw EndOfBuffer if asking for instruction after end of the buffer
+     *
+     * @return byte written by the instruction. Start bit is removed.
+     */
+    uint8_t _readInstructionByte() {
+        if (endOfBuffer()) {
+            throw EndOfBuffer();
+        }
+        return (uint8_t)((_buffer[_index++] >> 1) & 0xFF);
+    }
 };
 
 template <>

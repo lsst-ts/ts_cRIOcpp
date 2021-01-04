@@ -42,18 +42,11 @@ CRCError::CRCError(uint16_t calculated, uint16_t received)
         : std::runtime_error(fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}", calculated,
                                          received)) {}
 
+EndOfBuffer::EndOfBuffer() : std::runtime_error("End of buffer while reading response") {}
+
 ModbusBuffer::ModbusBuffer() { clear(); }
 
 ModbusBuffer::~ModbusBuffer() {}
-
-void ModbusBuffer::skipToNextFrame() {
-    // Scan for the end of frame marker
-    while (!endOfFrame() && !endOfBuffer()) {
-        _index++;
-    }
-    // Increment to the address of the next message in the buffer
-    _index++;
-}
 
 void ModbusBuffer::reset() {
     _index = 0;
@@ -62,6 +55,7 @@ void ModbusBuffer::reset() {
 
 void ModbusBuffer::clear() {
     _buffer.clear();
+    _commanded.clear();
     reset();
 }
 
@@ -72,27 +66,23 @@ bool ModbusBuffer::endOfFrame() { return _buffer[_index] == FIFO_RX_ENDFRAME; }
 std::vector<uint8_t> ModbusBuffer::getReadData(int32_t length) {
     std::vector<uint8_t> data;
     for (size_t i = _index - length; i < _index; i++) {
-        data.push_back(readInstructionByte(_buffer[i]));
+        data.push_back(_readInstructionByte());
     }
     return data;
 }
 
 void ModbusBuffer::readBuffer(void* buf, size_t len) {
-    for (size_t i = 0; i < len; i++, _index++) {
-        uint8_t d = readInstructionByte(_buffer[_index]);
+    for (size_t i = 0; i < len; i++) {
+        uint8_t d = _readInstructionByte();
         processDataCRC(d);
         (reinterpret_cast<uint8_t*>(buf))[i] = d;
     }
 }
 
 uint64_t ModbusBuffer::readU48() {
-    _index += 6;
-    return ((uint64_t)readInstructionByte(_buffer[_index - 6]) << 40) |
-           ((uint64_t)readInstructionByte(_buffer[_index - 5]) << 32) |
-           ((uint64_t)readInstructionByte(_buffer[_index - 4]) << 24) |
-           ((uint64_t)readInstructionByte(_buffer[_index - 3]) << 16) |
-           ((uint64_t)readInstructionByte(_buffer[_index - 2]) << 8) |
-           ((uint64_t)readInstructionByte(_buffer[_index - 1]));
+    return ((uint64_t)_readInstructionByte() << 40) | ((uint64_t)_readInstructionByte() << 32) |
+           ((uint64_t)_readInstructionByte() << 24) | ((uint64_t)_readInstructionByte() << 16) |
+           ((uint64_t)_readInstructionByte() << 8) | ((uint64_t)_readInstructionByte());
 }
 
 std::string ModbusBuffer::readString(size_t length) {
@@ -181,6 +171,8 @@ void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t time
     writeCRC();
     writeEndOfFrame();
     writeWaitForRx(timeout);
+
+    _pushCommanded(address, function);
 }
 
 }  // namespace cRIO

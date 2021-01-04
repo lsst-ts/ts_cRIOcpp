@@ -26,6 +26,21 @@ namespace LSST {
 namespace cRIO {
 
 /**
+ * Thrown when ILC error response is received.
+ */
+class ILCException : public std::runtime_error {
+public:
+    /**
+     * The class is constructed when an error is received. Contains
+     *
+     * @param address ILC address
+     * @param function ILC (error) function received
+     * @param exception exception code
+     */
+    ILCException(uint8_t address, uint8_t function, uint8_t exception);
+};
+
+/**
  * Class filling ModbusBuffer with commands. Should serve single subnet, so
  * allows sending messages with different node addresses.
  *
@@ -39,6 +54,19 @@ public:
     void changeILCMode(uint8_t address, uint16_t mode) { callFunction(address, 65, 335, mode); }
     void setTempILCAddress(uint8_t temporaryAddress) { callFunction(255, 72, 250, temporaryAddress); }
     void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
+
+    /**
+     * Process received data. Reads function code, check CRC, check that the
+     * function was called in request (using _commanded buffer) and calls
+     * method to process data. Repeat until all data are processed.
+     *
+     * @param response response includes response code (0x9) and start bit (need to >> 1 && 0xFF to get the
+     * Modbus data)
+     * @param length data length
+     *
+     * @throw std::runtime_error subclass on any detected error.
+     */
+    void processResponse(uint16_t* response, size_t length);
 };
 
 }  // namespace cRIO
