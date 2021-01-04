@@ -29,38 +29,6 @@ namespace LSST {
 namespace cRIO {
 
 /**
- * Thrown when an unknown response function is received. As unknown function
- * response means unknown message length and hence unknown CRC position and
- * start of a new frame, the preferred handling when such error is seen is to
- * flush response buffer and send ILC's queries again.
- */
-class ILCUnknownResponse : public std::runtime_error {
-public:
-    /**
-     * Constructed with data available during response.
-     *
-     * @param address ILC address
-     * @param function ILC function. Response for this function is unknown at the moment.
-     */
-    ILCUnknownResponse(uint8_t address, uint8_t function);
-};
-
-/**
- * Thrown when ILC error response is received.
- */
-class ILCException : public std::runtime_error {
-public:
-    /**
-     * The class is constructed when an ILC's error response is received.
-     *
-     * @param address ILC address
-     * @param function ILC (error) function received
-     * @param exception exception code
-     */
-    ILCException(uint8_t address, uint8_t function, uint8_t exception);
-};
-
-/**
  * Class filling ModbusBuffer with commands. Should serve single subnet, so
  * allows sending messages with different node addresses.
  *
@@ -90,6 +58,38 @@ public:
      * @throw std::runtime_error subclass on any detected error.
      */
     void processResponse(uint16_t* response, size_t length);
+
+    /**
+     * Thrown when an unknown response function is received. As unknown function
+     * response means unknown message length and hence unknown CRC position and
+     * start of a new frame, the preferred handling when such error is seen is to
+     * flush response buffer and send ILC's queries again.
+     */
+    class UnknownResponse : public std::runtime_error {
+    public:
+        /**
+         * Constructed with data available during response.
+         *
+         * @param address ILC address
+         * @param function ILC function. Response for this function is unknown at the moment.
+         */
+        UnknownResponse(uint8_t address, uint8_t function);
+    };
+
+    /**
+     * Thrown when ILC error response is received.
+     */
+    class Exception : public std::runtime_error {
+    public:
+        /**
+         * The class is constructed when an ILC's error response is received.
+         *
+         * @param address ILC address
+         * @param function ILC (error) function received
+         * @param exception exception code
+         */
+        Exception(uint8_t address, uint8_t function, uint8_t exception);
+    };
 
 private:
     std::map<uint8_t, std::function<void(uint8_t)>> _actions;

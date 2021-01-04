@@ -28,15 +28,6 @@
 namespace LSST {
 namespace cRIO {
 
-ILCUnknownResponse::ILCUnknownResponse(uint8_t address, uint8_t function)
-        : std::runtime_error(fmt::format("Unknown function {1} (0x{1:02x}) in ILC response for address {0}",
-                                         address, function)) {}
-
-ILCException::ILCException(uint8_t address, uint8_t function, uint8_t exception)
-        : std::runtime_error(
-                  fmt::format("ILC Exception {2} (ILC address {0}, ILC response function {1} (0x{1:02x}))",
-                              address, function, exception)) {}
-
 void ILC::addResponse(uint8_t function, std::function<void(uint8_t)> action, uint8_t errorResponse,
                       std::function<void(uint8_t, uint8_t)> errorAction) {
     _actions[function] = action;
@@ -59,14 +50,23 @@ void ILC::processResponse(uint16_t *response, size_t length) {
                 if (errorAction.second) {
                     errorAction.second(address, exception);
                 } else {
-                    throw ILCException(address, function, exception);
+                    throw Exception(address, function, exception);
                 }
             } catch (std::out_of_range &_ex2) {
-                throw ILCUnknownResponse(address, function);
+                throw UnknownResponse(address, function);
             }
         }
     }
 }
+
+ILC::UnknownResponse::UnknownResponse(uint8_t address, uint8_t function)
+        : std::runtime_error(fmt::format("Unknown function {1} (0x{1:02x}) in ILC response for address {0}",
+                                         address, function)) {}
+
+ILC::Exception::Exception(uint8_t address, uint8_t function, uint8_t exception)
+        : std::runtime_error(
+                  fmt::format("ILC Exception {2} (ILC address {0}, ILC response function {1} (0x{1:02x}))",
+                              address, function, exception)) {}
 
 }  // namespace cRIO
 }  // namespace LSST
