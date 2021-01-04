@@ -35,52 +35,64 @@ following codes (both decimal and hexadecimal code values are shown):
 
 ILCs provides those generic functions:
 
-* Report Server ID (17 0x11)
-* Report Server Status (18 0x12)
-* Change ILC Mode (65 0x41)
-* Set Temp ILC Address (72 0x48)
-* Reset Server (107 0x6b)
+Code | Hex  | Description
+ --- | ---  | -----------
+17   | 0x11 | Report Server ID
+18   | 0x12 | Report Server Status
+65   | 0x41 | Change ILC Mode
+72   | 0x48 | Set Temp ILC Address
+107  | 0x6b | Reset Server
 
 ### Firmware flash functions
 
-* Write Application Stats (100 0x64) - writes CRC etc. after flashing)
-* Erase ILC application (101 0x65)
-* Write Application Page (102 0x66)
-* Write Verify Application (103 0x67)
+Code | Hex  | Description
+ --- | ---  | -----------
+100  | 0x64 | Write Application Stats - writes CRC etc. after flashing)
+101  | 0x65 | Erase ILC application
+102  | 0x66 | Write Application Page
+103  | 0x67 | Write Verify Application
 
 ### Pneumatic (FA) ILC functions
 
-* Freeze Sensor Values (68 0x44)
-* Set Boost Value DCA Gains (73 0x49)
-* Read Boost Value DCA Gains (74 0x4a)
-* Force Demand (75 0x4b)
-* Force & Status (76 0x4c)
-* Set ADC scanrate (80 0x50)
-* Read callibration (110 0x6e)
-* Read mezzanine pressure sensors (119 0x77)
-* Report DCA ID (120 0x78)
-* Report DCA Status (121 0x79)
+Code | Hex  | Description
+ --- | ---  | -----------
+68   | 0x44 | Freeze Sensor Values
+73   | 0x49 | Set Boost Value DCA Gains
+74   | 0x4a | Read Boost Value DCA Gains
+75   | 0x4b | Force Demand
+76   | 0x4c | Force & Status
+80   | 0x50 | Set ADC scanrate
+110  | 0x6e | Read callibration
+119  | 0x77 | Read mezzanine pressure sensors
+120  | 0x78 | Report DCA ID
+121  | 0x79 | Report DCA Status
 
 ### Electromechanical (Hardpoint) ILC functions
 
-* Step motor move (66 0x42)
-* Force & Status (67 0x4c)
-* Freeze Sensor Values (68 0x44)
-* Set ADC scanrate (80 0x50)
-* Set ADC Ch Offsets & Sensors (81 0x51)
-* Read callibration (110 0x6e)
+Code | Hex  | Description
+ --- | ---  | -----------
+66   | 0x42 | Step motor move
+67   | 0x4c | Force & Status
+68   | 0x44 | Freeze Sensor Values
+80   | 0x50 | Set ADC scanrate
+81   | 0x51 | Set ADC Ch Offsets & Sensors
+110  | 0x6e | Read callibration
 
 ### Hardpoint monitoring ILC functions
 
-* Read mezzanine pressure sensor (119 0x77)
-* Report mezzanine DCP ID (120 0x78)
-* Report mezzanine DCP Status (121 0x79)
-* Read DCP mezzanine board LVDT instruments (122 0x7a)
+Code | Hex  | Description
+ --- | ---  | -----------
+119  | 0x77 | Read mezzanine pressure sensor
+120  | 0x78 | Report mezzanine DCP ID
+121  | 0x79 | Report mezzanine DCP Status
+122  | 0x7a | Read DCP mezzanine board LVDT instruments
 
 ### Thermal ILC functions
 
-* Thermal demand (88 0x58)
-* Thermal status (89 0x59)
+Code | Hex  | Description
+ --- | ---  | -----------
+88   | 0x58 | Thermal demand
+89   | 0x59 | Thermal status
 
 ## FPGA
 
@@ -90,7 +102,7 @@ Offse         | Description
  ------------ | -----------------------------------
 0             | Command - see FPGA code for details
 1             | payload length
-2-data length | payload bytes 
+2-data length | payload bytes
 
 Where payload for Modbus uses highest 7 bits for operation code, next 8 bits
 for data, and last bit as start bit (shall be always 0). See
