@@ -42,6 +42,10 @@ public:
         responseNetworkNodeOptions = 0;
         responseMajorRev = 0;
         responseMinorRev = 0;
+
+        responseMode = 0;
+        responseStatus = 0;
+        responseFaults = 0;
     }
 
     uint64_t responseUniqueID;
@@ -50,6 +54,10 @@ public:
             responseNetworkNodeOptions, responseMajorRev, responseMinorRev;
 
     std::string responseFirmwareName;
+
+    uint8_t responseMode;
+
+    uint16_t responseStatus, responseFaults;
 
 protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
@@ -63,6 +71,12 @@ protected:
         responseMajorRev = majorRev;
         responseMinorRev = minorRev;
         responseFirmwareName = firmwareName;
+    }
+
+    void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
+        responseMode = mode;
+        responseStatus = status;
+        responseFaults = faults;
     }
 };
 
@@ -100,6 +114,7 @@ TEST_CASE("Parse response", "[ILC]") {
 
     ilc1.reportServerID(132);
 
+    // construct response in ILC
     ilc2.write<uint8_t>(132);
     ilc2.write<uint8_t>(17);
     ilc2.write<uint8_t>(15);
@@ -144,6 +159,80 @@ TEST_CASE("Parse response", "[ILC]") {
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 19), ModbusBuffer::EndOfBuffer);
     ilc2.write<uint8_t>(0xff);
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 21), ModbusBuffer::EndOfBuffer);
+
+    // invalid CRC
+    buf[18] = 0x1200 | (0xe8 << 1);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 20), ModbusBuffer::CRCError);
+}
+
+TEST_CASE("Unmatched response", "[ILC]") {
+    TestILC ilc1;
+    TestILC ilc2;
+
+    ilc1.reportServerID(132);
+    ilc1.reportServerStatus(140);
+
+    // construct response in ILC
+    ilc2.write<uint8_t>(132);
+    ilc2.write<uint8_t>(17);
+    ilc2.write<uint8_t>(15);
+
+    // uniqueID
+    ilc2.write<uint8_t>(1);
+    ilc2.write<uint8_t>(2);
+    ilc2.write<uint8_t>(3);
+    ilc2.write<uint8_t>(4);
+    ilc2.write<uint8_t>(5);
+    ilc2.write<uint8_t>(6);
+
+    ilc2.write<uint8_t>(7);
+    ilc2.write<uint8_t>(8);
+    ilc2.write<uint8_t>(9);
+    ilc2.write<uint8_t>(10);
+    ilc2.write<uint8_t>(11);
+    ilc2.write<uint8_t>(12);
+
+    ilc2.write<uint8_t>('A');
+    ilc2.write<uint8_t>('b');
+    ilc2.write<uint8_t>('C');
+    ilc2.writeCRC();
+
+    // server status
+    ilc2.write<uint8_t>(140);
+    ilc2.write<uint8_t>(18);
+
+    ilc2.write<uint8_t>(4);
+    ilc2.write<uint16_t>(0x0040 | 0x0002);
+    ilc2.write<uint16_t>(0x0004);
+    ilc2.writeCRC();
+
+    uint16_t* buf = ilc2.getBuffer();
+
+    REQUIRE(buf[18] == (0x1200 | (0xe7 << 1)));
+    REQUIRE(buf[19] == (0x1200 | (0xa9 << 1)));
+
+    REQUIRE(buf[27] == (0x1200 | (0x05 << 1)));
+    REQUIRE(buf[28] == (0x1200 | (0xad << 1)));
+
+    REQUIRE_NOTHROW(ilc1.processResponse(buf, 29));
+
+    REQUIRE(ilc1.responseUniqueID == 0x010203040506);
+    REQUIRE(ilc1.responseILCAppType == 7);
+    REQUIRE(ilc1.responseNetworkNodeType == 8);
+    REQUIRE(ilc1.responseILCSelectedOptions == 9);
+    REQUIRE(ilc1.responseNetworkNodeOptions == 10);
+    REQUIRE(ilc1.responseMajorRev == 11);
+    REQUIRE(ilc1.responseMinorRev == 12);
+    REQUIRE(ilc1.responseFirmwareName == "AbC");
+
+    REQUIRE(ilc1.responseMode == 4);
+    REQUIRE(ilc1.responseStatus == 0x0042);
+    REQUIRE(ilc1.responseFaults == 0x0004);
+
+    // invalid length
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 27), ModbusBuffer::EndOfBuffer);
+    ilc2.write<uint8_t>(0xff);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 30), ModbusBuffer::EndOfBuffer);
 
     // invalid CRC
     buf[18] = 0x1200 | (0xe8 << 1);

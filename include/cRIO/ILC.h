@@ -101,7 +101,7 @@ protected:
      * Callback when reponse to ServerID request is received. See LTS-646 Code
      * 17 (0x11) for details.
      *
-     * Types table:
+     * ### Types
      *
      * Value | Description
      * ----- | -----------
@@ -111,7 +111,7 @@ protected:
      * 7     | Hardpoint Monitoring
      * 10    | Bootloader
      *
-     * Selected options table:
+     * ### Selected options
      *
      * <table>
      *   <tr>
@@ -174,6 +174,8 @@ protected:
                                  uint8_t networkNodeType, uint8_t ilcSelectedOptions,
                                  uint8_t networkNodeOptions, uint8_t majorRev, uint8_t minorRev,
                                  std::string firmwareName) = 0;
+
+    virtual void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) = 0;
 
 private:
     std::map<uint8_t, std::function<void(uint8_t)>> _actions;

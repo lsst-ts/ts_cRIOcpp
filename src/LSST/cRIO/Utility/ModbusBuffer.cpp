@@ -101,6 +101,7 @@ void ModbusBuffer::checkCRC() {
     if (crc != calCrc) {
         throw CRCError(calCrc, crc);
     }
+    _resetCRC();
 }
 
 void ModbusBuffer::readEndOfFrame() {

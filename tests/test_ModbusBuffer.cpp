@@ -151,3 +151,26 @@ TEST_CASE("WriteSGL", "[ModbusBuffer]") {
     REQUIRE(mbuf.read<float>() == -6758.1234f);
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }
+
+TEST_CASE("Calculate function response CRC", "[ModbusBuffer]") {
+    ModbusBuffer mbuf;
+    mbuf.write<uint8_t>(140);
+    mbuf.write<uint8_t>(18);
+    mbuf.write<uint8_t>(4);
+    mbuf.write<uint16_t>(0x0040 | 0x0002);
+    mbuf.write<uint16_t>(0x0004);
+    mbuf.writeCRC();
+
+    uint16_t* buf = mbuf.getBuffer();
+    REQUIRE(buf[7] == (0x1200 | (0x05 << 1)));
+    REQUIRE(buf[8] == (0x1200 | (0xad << 1)));
+
+    mbuf.reset();
+
+    REQUIRE(mbuf.read<uint8_t>() == 140);
+    REQUIRE(mbuf.read<uint8_t>() == 18);
+    REQUIRE(mbuf.read<uint8_t>() == 4);
+    REQUIRE(mbuf.read<uint16_t>() == (0x0040 | 0x0002));
+    REQUIRE(mbuf.read<uint16_t>() == 0x0004);
+    REQUIRE_NOTHROW(mbuf.checkCRC());
+}

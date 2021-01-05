@@ -52,6 +52,17 @@ ILC::ILC() {
                                 networkNodeOptions, majorRev, minorRev, fwName);
             },
             145);
+
+    addResponse(
+            18,
+            [this](uint8_t address) {
+                uint8_t mode = read<uint8_t>();
+                uint16_t status = read<uint16_t>();
+                uint16_t faults = read<uint16_t>();
+                checkCRC();
+                processServerStatus(address, mode, status, faults);
+            },
+            146);
 }
 
 void ILC::addResponse(uint8_t function, std::function<void(uint8_t)> action, uint8_t errorResponse,
