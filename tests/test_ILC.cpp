@@ -112,7 +112,12 @@ TEST_CASE("Parse response", "[ILC]") {
     TestILC ilc1;
     TestILC ilc2;
 
-    ilc1.reportServerID(132);
+    auto constructCommands = [&ilc1]() {
+        ilc1.clear();
+        ilc1.reportServerID(132);
+    };
+
+    constructCommands();
 
     // construct response in ILC
     ilc2.write<uint8_t>(132);
@@ -156,12 +161,18 @@ TEST_CASE("Parse response", "[ILC]") {
     REQUIRE(ilc1.responseFirmwareName == "AbC");
 
     // invalid length
+    constructCommands();
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 19), ModbusBuffer::EndOfBuffer);
+
     ilc2.write<uint8_t>(0xff);
+
+    constructCommands();
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::EndOfBuffer);
 
     // invalid CRC
-    buf[18] = 0x1200 | (0xe8 << 1);
+    ilc2.getBuffer()[18] = 0x1200 | (0xe8 << 1);
+
+    constructCommands();
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::CRCError);
 }
 
@@ -169,8 +180,13 @@ TEST_CASE("Unmatched response", "[ILC]") {
     TestILC ilc1;
     TestILC ilc2;
 
-    ilc1.reportServerID(132);
-    ilc1.reportServerStatus(140);
+    auto constructCommands = [&ilc1]() {
+        ilc1.clear();
+        ilc1.reportServerID(132);
+        ilc1.reportServerStatus(140);
+    };
+
+    constructCommands();
 
     // construct response in ILC
     ilc2.write<uint8_t>(132);
@@ -230,11 +246,40 @@ TEST_CASE("Unmatched response", "[ILC]") {
     REQUIRE(ilc1.responseFaults == 0x0004);
 
     // invalid length
+    constructCommands();
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 27), ModbusBuffer::EndOfBuffer);
+
     ilc2.write<uint8_t>(0xff);
+
+    constructCommands();
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::EndOfBuffer);
 
+    // missing command
+    ilc1.clear();
+    ilc1.reportServerID(132);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()),
+                      ModbusBuffer::UnmatchedFunction);
+
+    // invalid address
+    ilc1.clear();
+    ilc1.reportServerID(132);
+    ilc1.reportServerStatus(141);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()),
+                      ModbusBuffer::UnmatchedFunction);
+
+    // missing reply
+    constructCommands();
+    ilc1.resetServer(121);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength() - 1),
+                      ModbusBuffer::UnmatchedFunction);
+
+    // recheck
+    constructCommands();
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength() - 1));
+
     // invalid CRC
-    buf[18] = 0x1200 | (0xe8 << 1);
+    ilc2.getBuffer()[18] = 0x1200 | (0xe8 << 1);
+
+    constructCommands();
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::CRCError);
 }

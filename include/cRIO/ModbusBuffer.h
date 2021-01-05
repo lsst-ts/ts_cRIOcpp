@@ -156,11 +156,17 @@ public:
     void checkCRC();
 
     /**
-     * @throw std::runtime_error if end of frame isn't in buffer
+     * Check that next command is end of frame
+     *
+     * @throw std::runtime_error if end of frame isn't next buffer entry
      */
     void readEndOfFrame();
 
     /**
+     * Returns wait for receive timeout.
+     *
+     * @return timeout in us (microseconds)
+     *
      * @throw std::runtime_error if wait for rx delay command isn't present
      */
     uint32_t readWaitForRx();
@@ -281,14 +287,13 @@ protected:
     }
 
     /**
-     * Checks that received response matches expected response.
+     * Checks that received response matches expected response or no more receive commands are expected.
      *
-     * @param address ILC address on subnet
+     * @param address ILC address on subnet. Use broadcast (0) to check for no more replies expected
      * @param function ILC function code; if check is performed for error response, must equal to called
      * function
      *
-     * @throw std::runtime_error or its subclass on error.
-     * @throw ILCException when ILC function is received.
+     * @throw UnmatchedFunction on error
      */
     void checkCommanded(uint8_t address, uint8_t function);
 

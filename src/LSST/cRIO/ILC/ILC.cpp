@@ -78,6 +78,7 @@ void ILC::processResponse(uint16_t *response, size_t length) {
     while (endOfBuffer() == false) {
         uint8_t address = read<uint8_t>();
         uint8_t function = read<uint8_t>();
+        checkCommanded(address, function);
 
         try {
             _actions.at(function)(address);
@@ -96,6 +97,8 @@ void ILC::processResponse(uint16_t *response, size_t length) {
             }
         }
     }
+
+    checkCommanded(0, 0);
 }
 
 ILC::UnknownResponse::UnknownResponse(uint8_t address, uint8_t function)

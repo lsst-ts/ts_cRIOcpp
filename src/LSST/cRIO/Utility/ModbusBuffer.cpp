@@ -211,6 +211,12 @@ void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t time
 }
 
 void ModbusBuffer::checkCommanded(uint8_t address, uint8_t function) {
+    if (address == 0) {
+        if (!_commanded.empty()) {
+            throw UnmatchedFunction(address, function);
+        }
+        return;
+    }
     if (_commanded.empty()) {
         throw UnmatchedFunction(address, function);
     }
