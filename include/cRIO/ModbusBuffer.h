@@ -52,7 +52,7 @@ public:
     virtual ~ModbusBuffer();
 
     int32_t getIndex() { return _index; }
-    uint16_t* getBuffer() { return &_buffer[0]; }
+    uint16_t* getBuffer() { return _buffer.data(); }
     size_t getLength() { return _buffer.size(); }
 
     /**

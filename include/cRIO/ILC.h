@@ -37,6 +37,11 @@ namespace cRIO {
  */
 class ILC : public ModbusBuffer {
 public:
+    /**
+     * Populate responses for know ILC functions.
+     */
+    ILC();
+
     void reportServerID(uint8_t address) { callFunction(address, 17, 835); }
     void reportServerStatus(uint8_t address) { callFunction(address, 18, 270); }
     void changeILCMode(uint8_t address, uint16_t mode) { callFunction(address, 65, 335, mode); }
@@ -90,6 +95,12 @@ public:
          */
         Exception(uint8_t address, uint8_t function, uint8_t exception);
     };
+
+protected:
+    virtual void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType,
+                                 uint8_t networkNodeType, uint8_t ilcSelectedOptions,
+                                 uint8_t networkNodeOptions, uint8_t majorRev, uint8_t minorRev,
+                                 std::string firmwareName) = 0;
 
 private:
     std::map<uint8_t, std::function<void(uint8_t)>> _actions;

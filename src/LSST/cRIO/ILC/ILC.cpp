@@ -28,6 +28,32 @@
 namespace LSST {
 namespace cRIO {
 
+ILC::ILC() {
+    addResponse(
+            17,
+            [this](uint8_t address) {
+                uint8_t fnLen = read<uint8_t>();
+                if (fnLen < 12) {
+                    throw std::runtime_error(fmt::format(
+                            "invalid ILC function 17 response length - except at least 12, got {}", fnLen));
+                }
+                fnLen -= 12;
+
+                uint64_t uniqueID = readU48();
+                uint8_t ilcAppType = read<uint8_t>();
+                uint8_t networkNodeType = read<uint8_t>();
+                uint8_t ilcSelectedOptions = read<uint8_t>();
+                uint8_t networkNodeOptions = read<uint8_t>();
+                uint8_t majorRev = read<uint8_t>();
+                uint8_t minorRev = read<uint8_t>();
+                std::string fwName = readString(fnLen);
+                checkCRC();
+                processServerID(address, uniqueID, ilcAppType, networkNodeType, ilcSelectedOptions,
+                                networkNodeOptions, majorRev, minorRev, fwName);
+            },
+            145);
+}
+
 void ILC::addResponse(uint8_t function, std::function<void(uint8_t)> action, uint8_t errorResponse,
                       std::function<void(uint8_t, uint8_t)> errorAction) {
     _actions[function] = action;
@@ -36,7 +62,9 @@ void ILC::addResponse(uint8_t function, std::function<void(uint8_t)> action, uin
 }
 
 void ILC::processResponse(uint16_t *response, size_t length) {
-    while (true) {
+    setBuffer(response, length);
+
+    while (endOfBuffer() == false) {
         uint8_t address = read<uint8_t>();
         uint8_t function = read<uint8_t>();
 
