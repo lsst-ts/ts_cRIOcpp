@@ -47,6 +47,10 @@ public:
         responseStatus = 0;
         responseFaults = 0;
 
+        newMode = 0;
+
+        responseNewAddress = 0;
+
         lastReset = 0;
     }
 
@@ -60,6 +64,10 @@ public:
     uint8_t responseMode;
 
     uint16_t responseStatus, responseFaults;
+
+    uint16_t newMode;
+
+    uint8_t responseNewAddress;
 
     uint8_t lastReset;
 
@@ -81,6 +89,12 @@ protected:
         responseMode = mode;
         responseStatus = status;
         responseFaults = faults;
+    }
+
+    void processChangeILCMode(uint8_t address, uint16_t mode) override { newMode = mode; }
+
+    void processSetTempILCAddress(uint8_t address, uint8_t newAddress) override {
+        responseNewAddress = newAddress;
     }
 
     void processResetServer(uint8_t address) override { lastReset = address; }
@@ -180,6 +194,40 @@ TEST_CASE("Parse response", "[ILC]") {
 
     constructCommands();
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::CRCError);
+}
+
+TEST_CASE("Change ILC mode response", "[ILC]") {
+    TestILC ilc1;
+    TestILC ilc2;
+
+    ilc1.changeILCMode(17, 3);
+
+    // construct response in ILC
+    ilc2.write<uint8_t>(17);
+    ilc2.write<uint8_t>(65);
+    ilc2.write<uint16_t>(4);
+    ilc2.writeCRC();
+
+    REQUIRE(ilc1.newMode == 0);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.newMode == 4);
+}
+
+TEST_CASE("Set Temp ILC Address", "[ILC]") {
+    TestILC ilc1;
+    TestILC ilc2;
+
+    ilc1.setTempILCAddress(22);
+
+    // construct response in ILC
+    ilc2.write<uint8_t>(255);
+    ilc2.write<uint8_t>(72);
+    ilc2.write<uint8_t>(22);
+    ilc2.writeCRC();
+
+    REQUIRE(ilc1.responseNewAddress== 0);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.responseNewAddress == 22);
 }
 
 TEST_CASE("Unmatched response", "[ILC]") {

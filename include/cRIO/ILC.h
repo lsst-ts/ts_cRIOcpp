@@ -203,6 +203,16 @@ protected:
     virtual void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) = 0;
 
     /**
+     * Callback for change ILC mode reply.
+     *
+     * @param address ILC address
+     * @param mode new (current) ILC mode
+     */
+    virtual void processChangeILCMode(uint8_t address, uint16_t mode) = 0;
+
+    virtual void processSetTempILCAddress(uint8_t address, uint8_t newAddress) = 0;
+
+    /**
      * Callback for reply from server reset.
      *
      * @param address ILC address

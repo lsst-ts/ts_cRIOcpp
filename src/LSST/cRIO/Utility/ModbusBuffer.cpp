@@ -227,6 +227,12 @@ void ModbusBuffer::checkCommanded(uint8_t address, uint8_t function) {
     }
 }
 
+void ModbusBuffer::_pushCommanded(uint8_t address, uint8_t function) {
+    if ((address > 0 && address < 248) || (address == 255)) {
+        _commanded.push(std::pair<uint8_t, uint8_t>(address, function));
+    }
+}
+
 uint16_t ModbusBuffer::_getByteInstruction(uint8_t data) {
     processDataCRC(data);
     return 0x1200 | ((static_cast<uint16_t>(data)) << 1);

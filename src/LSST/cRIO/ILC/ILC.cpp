@@ -65,6 +65,24 @@ ILC::ILC() {
             146);
 
     addResponse(
+            65,
+            [this](uint8_t address) {
+                uint16_t mode = read<uint16_t>();
+                checkCRC();
+                processChangeILCMode(address, mode);
+            },
+            193);
+
+    addResponse(
+            72,
+            [this](uint8_t address) {
+                uint8_t newAddress = read<uint8_t>();
+                checkCRC();
+                processSetTempILCAddress(address, newAddress);
+            },
+            200);
+
+    addResponse(
             107,
             [this](uint8_t address) {
                 checkCRC();

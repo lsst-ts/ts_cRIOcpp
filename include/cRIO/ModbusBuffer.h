@@ -309,12 +309,8 @@ private:
      */
     void _resetCRC() { _crcCounter = 0xFFFF; }
 
-    void _pushCommanded(uint8_t address, uint8_t function) {
-        if (address > 0 && address < 248) {
-            _commanded.push(std::pair<uint8_t, uint8_t>(address, function));
-        }
-    }
-
+    void _pushCommanded(uint8_t address, uint8_t function);
+  
     /**
      * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
      *
