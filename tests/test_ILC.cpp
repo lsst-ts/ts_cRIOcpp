@@ -46,6 +46,8 @@ public:
         responseMode = 0;
         responseStatus = 0;
         responseFaults = 0;
+
+        lastReset = 0;
     }
 
     uint64_t responseUniqueID;
@@ -58,6 +60,8 @@ public:
     uint8_t responseMode;
 
     uint16_t responseStatus, responseFaults;
+
+    uint8_t lastReset;
 
 protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
@@ -73,11 +77,13 @@ protected:
         responseFirmwareName = firmwareName;
     }
 
-    void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
+    void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) override {
         responseMode = mode;
         responseStatus = status;
         responseFaults = faults;
     }
+
+    void processResetServer(uint8_t address) override { lastReset = address; }
 };
 
 TEST_CASE("Generic functions", "[ILC]") {
@@ -177,8 +183,7 @@ TEST_CASE("Parse response", "[ILC]") {
 }
 
 TEST_CASE("Unmatched response", "[ILC]") {
-    TestILC ilc1;
-    TestILC ilc2;
+    TestILC ilc1, ilc2;
 
     auto constructCommands = [&ilc1]() {
         ilc1.clear();
@@ -245,9 +250,13 @@ TEST_CASE("Unmatched response", "[ILC]") {
     REQUIRE(ilc1.responseStatus == 0x0042);
     REQUIRE(ilc1.responseFaults == 0x0004);
 
+    TestILC ilc3;
+    ilc3.setBuffer(ilc2.getBuffer(), ilc2.getLength());
+
     // invalid length
     constructCommands();
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 27), ModbusBuffer::EndOfBuffer);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength() - 1),
+                      ModbusBuffer::EndOfBuffer);
 
     ilc2.write<uint8_t>(0xff);
 
@@ -282,4 +291,19 @@ TEST_CASE("Unmatched response", "[ILC]") {
 
     constructCommands();
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::CRCError);
+
+    // invalid function
+    ilc2.getBuffer()[1] = 0x1200 | (1 << 1);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()),
+                      ModbusBuffer::UnmatchedFunction);
+
+    // reset function
+    ilc3.write<uint8_t>(17);
+    ilc3.write<uint8_t>(107);
+    ilc3.writeCRC();
+
+    constructCommands();
+    ilc1.resetServer(17);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc3.getBuffer(), ilc3.getLength()));
+    REQUIRE(ilc1.lastReset == 17);
 }

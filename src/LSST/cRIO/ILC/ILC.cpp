@@ -63,6 +63,14 @@ ILC::ILC() {
                 processServerStatus(address, mode, status, faults);
             },
             146);
+
+    addResponse(
+            107,
+            [this](uint8_t address) {
+                checkCRC();
+                processResetServer(address);
+            },
+            235);
 }
 
 void ILC::addResponse(uint8_t function, std::function<void(uint8_t)> action, uint8_t errorResponse,

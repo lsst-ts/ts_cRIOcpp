@@ -193,14 +193,21 @@ protected:
                                  std::string firmwareName) = 0;
 
      /**
-      * Callback for 
+      * Callback for server status reply.
       *
       * @param address ILC address
-      * @param mode
-      * @param status
-      * @param faults
+      * @param mode ILC mode
+      * @param status ILC status
+      * @param faults ILC faults
       */
     virtual void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) = 0;
+
+    /**
+     * Callback for reply from server reset.
+     *
+     * @param address ILC address
+     */
+    virtual void processResetServer(uint8_t address) = 0;
 
 private:
     std::map<uint8_t, std::function<void(uint8_t)>> _actions;
