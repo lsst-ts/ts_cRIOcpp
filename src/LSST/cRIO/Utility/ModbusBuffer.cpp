@@ -105,8 +105,30 @@ void ModbusBuffer::checkCRC() {
 }
 
 void ModbusBuffer::readEndOfFrame() {
+    if (_buffer[_index] != FIFO_TX_FRAMEEND) {
+        throw std::runtime_error(
+                fmt::format("Expected end of frame, finds {:04x} (@ offset {)", _buffer[_index], _index));
+    }
     _index++;
     _resetCRC();
+}
+
+uint32_t ModbusBuffer::readWaitForRx() {
+    uint16_t c = _buffer[_index] & 0xF000;
+    uint32_t ret = 0;
+    switch (c) {
+        case FIFO_TX_WAIT_RX:
+            ret = 0x0FFF & _buffer[_index];
+            break;
+        case FIFO_TX_WAIT_LONG_RX:
+            ret = (0x0FFF & _buffer[_index]) * 1000;
+            break;
+        default:
+            throw std::runtime_error(
+                    fmt::format("Expected wait for RX, finds {:04x} (@ offset {)", _buffer[_index], _index));
+    }
+    _index++;
+    return ret;
 }
 
 void ModbusBuffer::writeBuffer(uint8_t* data, size_t len) {
@@ -128,20 +150,16 @@ void ModbusBuffer::writeCRC() {
 }
 
 void ModbusBuffer::writeDelay(uint32_t delayMicros) {
-    _buffer.push_back(delayMicros > 4095 ? (((delayMicros / 1000) + 1) | 0x5000) : (delayMicros | 0x4000));
+    _buffer.push_back(delayMicros > 0x0FFF ? ((0x0FFF & ((delayMicros / 1000) + 1)) | 0x5000)
+                                           : (delayMicros | 0x4000));
 }
 
 void ModbusBuffer::writeEndOfFrame() { _buffer.push_back(FIFO_TX_FRAMEEND); }
 
-void ModbusBuffer::writeSoftwareTrigger() { _buffer.push_back(FIFO_TX_WAIT_TRIGGER); }
-
-void ModbusBuffer::writeTimestamp() { _buffer.push_back(FIFO_TX_TIMESTAMP); }
-
-void ModbusBuffer::writeTriggerIRQ() { _buffer.push_back(FIFO_TX_IRQTRIGGER); }
-
 void ModbusBuffer::writeWaitForRx(uint32_t timeoutMicros) {
-    _buffer.push_back(timeoutMicros > 4095 ? (((timeoutMicros / 1000) + 1) | FIFO_TX_WAIT_LONG_RX)
-                                           : (timeoutMicros | FIFO_TX_WAIT_RX));
+    _buffer.push_back(timeoutMicros > 0x0FFF
+                              ? ((0x0FFF & ((timeoutMicros / 1000) + 1)) | FIFO_TX_WAIT_LONG_RX)
+                              : (timeoutMicros | FIFO_TX_WAIT_RX));
 }
 
 void ModbusBuffer::setBuffer(uint16_t* buffer, size_t length) {

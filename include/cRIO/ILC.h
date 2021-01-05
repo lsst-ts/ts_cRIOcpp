@@ -34,6 +34,8 @@ namespace cRIO {
  *
  * Functions timeouts (for writing on command line as RxWait) is specified in
  * calls to callFunction.
+ *
+ * Replies received from ILCs shall be processed with ILC::processResponse method.
  */
 class ILC : public ModbusBuffer {
 public:
@@ -48,6 +50,21 @@ public:
     void setTempILCAddress(uint8_t temporaryAddress) { callFunction(255, 72, 250, temporaryAddress); }
     void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
 
+    /**
+     * Add response callbacks. Both function code and error response code shall be specified.
+     *
+     * @param function callback for this function code
+     * @param action action to call when the response is found. Passed address
+     * as sole parameter. Should read response (as length of the response data
+     * is specified by function) and check CRC (see ModbusBuffer::read and
+     * ModbusBuffer::checkCRC)
+     * @param errorResponse error response code 
+     * @param errorAction action to call when error is found. If no action is
+     * specified, raises ILC::Exception. Th action receives two parameters,
+     * address and error code. CRC checking is done in processResponse. This
+     * method shall not manipulate the buffer (e.g. shall not call
+     * ModbusBuffer::read or ModbusBuffer::checkCRC).
+     */
     void addResponse(uint8_t function, std::function<void(uint8_t)> action, uint8_t errorResponse,
                      std::function<void(uint8_t, uint8_t)> errorAction = nullptr);
 
@@ -60,7 +77,7 @@ public:
      * Modbus data)
      * @param length data length
      *
-     * @throw std::runtime_error subclass on any detected error.
+     * @throw std::runtime_error subclass on any detected error
      */
     void processResponse(uint16_t* response, size_t length);
 
@@ -98,8 +115,8 @@ public:
 
 protected:
     /**
-     * Callback when reponse to ServerID request is received. See LTS-646 Code
-     * 17 (0x11) for details.
+     * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for
+     * details.
      *
      * ### Types
      *
@@ -175,6 +192,14 @@ protected:
                                  uint8_t networkNodeOptions, uint8_t majorRev, uint8_t minorRev,
                                  std::string firmwareName) = 0;
 
+     /**
+      * Callback for 
+      *
+      * @param address ILC address
+      * @param mode
+      * @param status
+      * @param faults
+      */
     virtual void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) = 0;
 
 private:

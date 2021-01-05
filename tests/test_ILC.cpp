@@ -93,19 +93,19 @@ TEST_CASE("Generic functions", "[ILC]") {
     REQUIRE(ilc.read<uint8_t>() == 17);
     REQUIRE_NOTHROW(ilc.checkCRC());
     REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE_NOTHROW(ilc.skipRead());
+    REQUIRE(ilc.readWaitForRx() == 835);
 
     REQUIRE(ilc.read<uint8_t>() == 31);
     REQUIRE(ilc.read<uint8_t>() == 18);
     REQUIRE_NOTHROW(ilc.checkCRC());
     REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE_NOTHROW(ilc.skipRead());
+    REQUIRE(ilc.readWaitForRx() == 270);
 
     REQUIRE(ilc.read<uint8_t>() == 134);
     REQUIRE(ilc.read<uint8_t>() == 107);
     REQUIRE_NOTHROW(ilc.checkCRC());
     REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE_NOTHROW(ilc.skipRead());
+    REQUIRE(ilc.readWaitForRx() == 87000);
 }
 
 TEST_CASE("Parse response", "[ILC]") {
@@ -144,7 +144,7 @@ TEST_CASE("Parse response", "[ILC]") {
     REQUIRE(buf[18] == (0x1200 | (0xe7 << 1)));
     REQUIRE(buf[19] == (0x1200 | (0xa9 << 1)));
 
-    REQUIRE_NOTHROW(ilc1.processResponse(buf, 20));
+    REQUIRE_NOTHROW(ilc1.processResponse(buf, ilc2.getLength()));
 
     REQUIRE(ilc1.responseUniqueID == 0x010203040506);
     REQUIRE(ilc1.responseILCAppType == 7);
@@ -158,11 +158,11 @@ TEST_CASE("Parse response", "[ILC]") {
     // invalid length
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 19), ModbusBuffer::EndOfBuffer);
     ilc2.write<uint8_t>(0xff);
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 21), ModbusBuffer::EndOfBuffer);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::EndOfBuffer);
 
     // invalid CRC
     buf[18] = 0x1200 | (0xe8 << 1);
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 20), ModbusBuffer::CRCError);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::CRCError);
 }
 
 TEST_CASE("Unmatched response", "[ILC]") {
@@ -214,7 +214,7 @@ TEST_CASE("Unmatched response", "[ILC]") {
     REQUIRE(buf[27] == (0x1200 | (0x05 << 1)));
     REQUIRE(buf[28] == (0x1200 | (0xad << 1)));
 
-    REQUIRE_NOTHROW(ilc1.processResponse(buf, 29));
+    REQUIRE_NOTHROW(ilc1.processResponse(buf, ilc2.getLength()));
 
     REQUIRE(ilc1.responseUniqueID == 0x010203040506);
     REQUIRE(ilc1.responseILCAppType == 7);
@@ -232,9 +232,9 @@ TEST_CASE("Unmatched response", "[ILC]") {
     // invalid length
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 27), ModbusBuffer::EndOfBuffer);
     ilc2.write<uint8_t>(0xff);
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 30), ModbusBuffer::EndOfBuffer);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::EndOfBuffer);
 
     // invalid CRC
     buf[18] = 0x1200 | (0xe8 << 1);
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 20), ModbusBuffer::CRCError);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::CRCError);
 }

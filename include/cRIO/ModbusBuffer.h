@@ -35,28 +35,52 @@ namespace cRIO {
 
 /**
  * Utility class for Modbus buffer management. Provides function to write and
- * read cRIO FIFO (FPGA) Modbus buffers.
+ * read cRIO FIFO (FPGA) Modbus buffers. Modbus serial bus is serviced inside
+ * FPGA with
+ * [Common_FPGA_Modbus](https://github.com/lsst-ts/Common_FPGA_Modbus) module.
  *
  * 8bit data are stored as 16bit values. Real data are left shifted by 1. Last
- * bit (0, transmitted first) is start bit, always 1 for ILC communication.
+ * bit (0, transmitted first) is start bit, always 0 for ILC communication.
+ * First data bit (transmitted last) is stop bit, shall be 1. So uint8_t data d
+ * needs to be written as:
  *
- * Doesn't handle subnet. Doesn't handle FPGA FIFO read/writes - that's
- * responsibility of FPGA. ModbusBuffer handles only serialization & de
- * serialization of FPGA's FIFO data.
+ * (0x1200 | (d << 1))
+ *
+ * This class doesn't handle subnet. Doesn't handle FPGA FIFO read/writes -
+ * that's responsibility of FPGA. ModbusBuffer handles only serialization & de
+ * serialization of FPGA's FIFO data. Also this class handles CRC calculation,
+ * writes (in output buffers) and checks (for input buffers).
  *
  * Functions throws std::runtime_error (or its subclass) on any error.
  */
 class ModbusBuffer {
 public:
+    /**
+     * Constructs empty ModbusBuffer.
+     */
     ModbusBuffer();
     virtual ~ModbusBuffer();
 
-    int32_t getIndex() { return _index; }
+    /**
+     * Returns buffer memory.  Calls to write* methods can result in
+     * reallocation of the buffer memory, trying to read from getBuffer if that
+     * happens results in undefined behaviour.
+     *
+     * @return uint16_t FIFO buffer
+     */
     uint16_t* getBuffer() { return _buffer.data(); }
+
+    /**
+     * Returns buffer length.
+     *
+     * @return buffer length
+     */
     size_t getLength() { return _buffer.size(); }
 
     /**
-     * Set empty buffer.
+     * Resets internal offset to 0 to start reading message again. Clears
+     * internal CRC counter, so CRC will be recalculated during subsequent
+     * reads.
      */
     void reset();
 
@@ -77,12 +101,50 @@ public:
      */
     std::vector<uint8_t> getReadData(int32_t length);
 
+    /**
+     * Reads data from buffer. Updates CRC as it reads the data. Size of
+     * receiving buffer is assumed to be equal or greater than len.
+     *
+     * @param buf target buffer to read the data
+     * @param len how many bytes shall be read
+     */
     void readBuffer(void* buf, size_t len);
 
+    /**
+     * Template to read next data from message. Data length is specified with
+     * template type. Handles conversion from ILC's big endian (network order).
+     *
+     * Intended usage:
+     *
+     * @code
+     * ModbusBuffer b;
+     * b.setBuffer({(0x1200 | (0x0a << 1)), (0x1200 | (0x0c << 1)), (0x1200 | (0x0d << 1))}, 3);
+     * uint8_t p1 = b.read<uint8_t>();
+     * uint16_t p2 = b.read<uint16_t>();
+     * @endcode
+     *
+     * @tparam dt variable data type. Supported are uint8_t, uint16_t,
+     * uint32_t, uint64_t and int32_t and float.
+     *
+     * @return value of read response
+     */
     template <typename dt>
     dt read();
 
+    /**
+     * Reads 6 bytes (48 bits) unsigned value.
+     *
+     * @return 6 bytes unsigned value read from the buffer
+     */
     uint64_t readU48();
+
+    /**
+     * Reads string of given length from incoming buffer.
+     *
+     * @param length
+     *
+     * @return
+     */
     std::string readString(size_t length);
     double readTimestamp();
 
@@ -93,13 +155,36 @@ public:
      */
     void checkCRC();
 
+    /**
+     * @throw std::runtime_error if end of frame isn't in buffer
+     */
     void readEndOfFrame();
+
+    /**
+     * @throw std::runtime_error if wait for rx delay command isn't present
+     */
+    uint32_t readWaitForRx();
 
     void writeBuffer(uint8_t* data, size_t len);
 
+    /**
+     * Write a value to buffer.
+     *
+     * @tparam dt value data type. Supported are uint8_t, uint16_t, uint32_t,
+     * int8_t, int16_t, int32_t and float.
+     *
+     * @param data value to write to buffer
+     */
     template <typename dt>
     void write(dt data);
 
+    /**
+     * Writes 24bit signed integer.
+     *
+     * @param data 24bit signed integer
+     *
+     * @see write
+     */
     void writeI24(int32_t data);
 
     /**
@@ -108,15 +193,34 @@ public:
      */
     void writeCRC();
 
+    /**
+     * Write FPGA delay command. Delays processing of read buffer by given
+     * number of microseconds.
+     *
+     * @param delayMicros delay in microseconds
+     */
     void writeDelay(uint32_t delayMicros);
+
+    /**
+     * Writes end of the frame. Causes silence on transmitting bus, so
+     * commanded ILC can check CRC of the incomming message and starts to
+     * execute the commanded action.
+     */
     void writeEndOfFrame();
-    void writeSoftwareTrigger();
-    void writeTimestamp();
-    void writeTriggerIRQ();
+
+    /**
+     * Write FPGA Modbus command to wait for ILC response. If no response is received within timeout,
+     *
+     * @param timeoutMicros
+     */
     void writeWaitForRx(uint32_t timeoutMicros);
 
-    void skipRead() { _index++; }
-
+    /**
+     * Sets current read buffer
+     *
+     * @param buffer
+     * @param length
+     */
     void setBuffer(uint16_t* buffer, size_t length);
 
     /**
@@ -256,6 +360,13 @@ inline uint32_t ModbusBuffer::read() {
     uint32_t db;
     readBuffer(&db, 4);
     return ntohl(db);
+}
+
+template <>
+inline uint64_t ModbusBuffer::read() {
+    uint64_t db;
+    readBuffer(&db, 8);
+    return be64toh(db);
 }
 
 template <>
