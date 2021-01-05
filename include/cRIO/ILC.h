@@ -97,6 +97,79 @@ public:
     };
 
 protected:
+    /**
+     * Callback when reponse to ServerID request is received. See LTS-646 Code
+     * 17 (0x11) for details.
+     *
+     * Types table:
+     *
+     * Value | Description
+     * ----- | -----------
+     * 1     | Electromechanical Actuator
+     * 2     | Pneumatic Actuator
+     * 3     | Thermal
+     * 7     | Hardpoint Monitoring
+     * 10    | Bootloader
+     *
+     * Selected options table:
+     *
+     * <table>
+     *   <tr>
+     *     <th>ILC type</th>
+     *     <th>Value</th>
+     *     <th>Description</th>
+     *   </tr>
+     *   <tr>
+     *     <td rowspan=2><b>Electromechanical Actuator ILC</b></td>
+     *     <td>0x00</td>
+     *     <td>Gray Code SSI</td>
+     *   </tr>
+     *   <tr>
+     *     <td>0x01</td>
+     *     <td>Binary SSI</td>
+     *   </tr>
+     *   <tr>
+     *     <td rowspan=2><b>Electromechanical Actuator ILC</b></td>
+     *     <td>0x00</td>
+     *     <td>Gray Code SSI Encoder</td>
+     *   </tr>
+     *   <tr>
+     *     <td>0x01</td>
+     *     <td>Binary SSI Encoder</td>
+     *   </tr>
+     *   <tr>
+     *     <td rowspan=2><b>Pneumatic Actuator ILC</b></td>
+     *     <td>0x00</td>
+     *     <td>Single Load Cell/Axis</td>
+     *   </tr>
+     *   <tr>
+     *     <td>0x02</td>
+     *     <td>Two Load Cells/Axes</td>
+     *   </tr>
+     *   <tr>
+     *     <td><b>Thermal ILC</b></td>
+     *     <td colspan=2>None</td>
+     *   </tr>
+     *   <tr>
+     *     <td><b>Hardpoint Monitoring ILC</b></td>
+     *     <td colspan=2>None</td>
+     *   </tr>
+     *   <tr>
+     *     <td><b>Bootloader</b></td>
+     *     <td colspan=2>None</td>
+     *   </tr>
+     * </table>
+     *
+     * @param address  ILC address
+     * @param uniqueID  ILC unigue ID
+     * @param ilcAppType ILC App (Firmware) Type. See Types table for values
+     * @param networkNodeType ILC Network Node (TEDS) Type. See Types table for values
+     * @param ilcSelectedOptions ILC Selected Options. See Selected Options table for values
+     * @param networkNodeOptions ILC Network Node (TEDS) Options. See Selected Options table for values
+     * @param majorRev Firmware major revision number
+     * @param minorRev Firmware minor revision number
+     * @param firmwareName ASCII name string for ILC firmware
+     */
     virtual void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType,
                                  uint8_t networkNodeType, uint8_t ilcSelectedOptions,
                                  uint8_t networkNodeOptions, uint8_t majorRev, uint8_t minorRev,
