@@ -117,6 +117,8 @@ public:
 
     void skipRead() { _index++; }
 
+    void setBuffer(uint16_t* buffer, size_t length);
+
     /**
      * Exception thrown when calculated CRC doesn't match received CRC.
      */

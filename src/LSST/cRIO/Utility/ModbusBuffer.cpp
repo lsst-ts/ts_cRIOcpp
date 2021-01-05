@@ -75,9 +75,9 @@ void ModbusBuffer::readBuffer(void* buf, size_t len) {
 }
 
 uint64_t ModbusBuffer::readU48() {
-    return ((uint64_t)_readInstructionByte() << 40) | ((uint64_t)_readInstructionByte() << 32) |
-           ((uint64_t)_readInstructionByte() << 24) | ((uint64_t)_readInstructionByte() << 16) |
-           ((uint64_t)_readInstructionByte() << 8) | ((uint64_t)_readInstructionByte());
+    uint64_t ret = 0;
+    readBuffer(reinterpret_cast<uint8_t*>(&ret) + 2, 6);
+    return be64toh(ret);
 }
 
 std::string ModbusBuffer::readString(size_t length) {
@@ -141,6 +141,15 @@ void ModbusBuffer::writeTriggerIRQ() { _buffer.push_back(FIFO_TX_IRQTRIGGER); }
 void ModbusBuffer::writeWaitForRx(uint32_t timeoutMicros) {
     _buffer.push_back(timeoutMicros > 4095 ? (((timeoutMicros / 1000) + 1) | FIFO_TX_WAIT_LONG_RX)
                                            : (timeoutMicros | FIFO_TX_WAIT_RX));
+}
+
+void ModbusBuffer::setBuffer(uint16_t* buffer, size_t length) {
+    _buffer.clear();
+
+    _index = 0;
+    _resetCRC();
+    _buffer.resize(length);
+    memcpy(_buffer.data(), buffer, length * sizeof(uint16_t));
 }
 
 ModbusBuffer::CRCError::CRCError(uint16_t calculated, uint16_t received)
