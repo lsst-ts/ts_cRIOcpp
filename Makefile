@@ -19,7 +19,7 @@ clean:
 tests: tests/Makefile tests/*.cpp
 	@${MAKE} -C tests
 
-run_tests: tests
+run_tests: lib/libcRIOcpp.a tests
 	@${MAKE} -C tests run
 
 junit: tests

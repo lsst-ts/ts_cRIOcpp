@@ -22,9 +22,7 @@
 #include <cRIO/Timestamp.h>
 #include <string.h>
 #include <spdlog/spdlog.h>
-
-#include <stdexcept>
-#include <arpa/inet.h>
+#include <spdlog/fmt/fmt.h>
 
 using namespace std;
 
@@ -40,229 +38,204 @@ const static uint16_t FIFO_RX_ENDFRAME = 0xA000;
 namespace LSST {
 namespace cRIO {
 
-ModbusBuffer::ModbusBuffer() {
-    reset();
-    setLength(0);
-}
+ModbusBuffer::ModbusBuffer() { clear(); }
 
 ModbusBuffer::~ModbusBuffer() {}
 
-int32_t ModbusBuffer::getIndex() { return _index; }
-
-void ModbusBuffer::setIndex(int32_t index) { _index = index; }
-
-void ModbusBuffer::incIndex(int32_t inc) { _index += inc; }
-
-void ModbusBuffer::skipToNextFrame() {
-    // Scan for the end of frame marker
-    while (!endOfFrame() && !endOfBuffer()) {
-        _index++;
-    }
-    // Increment to the address of the next message in the buffer
-    _index++;
+void ModbusBuffer::reset() {
+    _index = 0;
+    _resetCRC();
 }
 
-uint16_t* ModbusBuffer::getBuffer() { return _buffer; }
+void ModbusBuffer::clear() {
+    _buffer.clear();
+    std::queue<std::pair<uint8_t, uint8_t>> emptyQ;
+    _commanded.swap(emptyQ);
+    reset();
+}
 
-void ModbusBuffer::set(int32_t index, uint16_t data) { _buffer[index] = data; }
-
-void ModbusBuffer::setLength(int32_t length) { _length = length; }
-
-int32_t ModbusBuffer::getLength() { return _length; }
-
-void ModbusBuffer::reset() { _index = 0; }
-
-bool ModbusBuffer::endOfBuffer() { return _index >= _length; }
+bool ModbusBuffer::endOfBuffer() { return _index >= _buffer.size(); }
 
 bool ModbusBuffer::endOfFrame() { return _buffer[_index] == FIFO_RX_ENDFRAME; }
 
 std::vector<uint8_t> ModbusBuffer::getReadData(int32_t length) {
     std::vector<uint8_t> data;
-    for (int i = _index - length; i < _index; i++) {
-        data.push_back(readInstructionByte(_buffer[i]));
+    for (size_t i = _index - length; i < _index; i++) {
+        data.push_back(_readInstructionByte());
     }
     return data;
 }
 
-uint16_t ModbusBuffer::calculateCRC(std::vector<uint8_t> data) {
-    uint16_t crc = 0xFFFF;
-    for (auto i : data) {
-        crc = crc ^ (uint16_t(i));
-        for (int j = 0; j < 8; j++) {
-            if (crc & 0x0001) {
-                crc = crc >> 1;
-                crc = crc ^ 0xA001;
-            } else {
-                crc = crc >> 1;
-            }
-        }
-    }
-    return crc;
-}
-
-uint16_t ModbusBuffer::calculateCRC(int32_t length) { return calculateCRC(getReadData(length)); }
-
 void ModbusBuffer::readBuffer(void* buf, size_t len) {
-    for (size_t i = 0; i < len; i++, _index++) {
-        (reinterpret_cast<uint8_t*>(buf))[i] = readInstructionByte(_buffer[_index]);
+    for (size_t i = 0; i < len; i++) {
+        uint8_t d = _readInstructionByte();
+        processDataCRC(d);
+        (reinterpret_cast<uint8_t*>(buf))[i] = d;
     }
-}
-
-uint16_t ModbusBuffer::readLength() { return _buffer[_index++]; }
-
-int32_t ModbusBuffer::readI32() {
-    int32_t db;
-    readBuffer(&db, 4);
-    return ntohl(db);
-}
-
-uint8_t ModbusBuffer::readU8() {
-    _index += 1;
-    return readInstructionByte(_buffer[_index - 1]);
-}
-
-uint16_t ModbusBuffer::readU16() {
-    uint16_t db;
-    readBuffer(&db, 2);
-    return ntohs(db);
-}
-
-uint32_t ModbusBuffer::readU32() {
-    uint32_t db;
-    readBuffer(&db, 4);
-    return ntohl(db);
 }
 
 uint64_t ModbusBuffer::readU48() {
-    _index += 6;
-    return ((uint64_t)readInstructionByte(_buffer[_index - 6]) << 40) |
-           ((uint64_t)readInstructionByte(_buffer[_index - 5]) << 32) |
-           ((uint64_t)readInstructionByte(_buffer[_index - 4]) << 24) |
-           ((uint64_t)readInstructionByte(_buffer[_index - 3]) << 16) |
-           ((uint64_t)readInstructionByte(_buffer[_index - 2]) << 8) |
-           ((uint64_t)readInstructionByte(_buffer[_index - 1]));
+    uint64_t ret = 0;
+    readBuffer(reinterpret_cast<uint8_t*>(&ret) + 2, 6);
+    return be64toh(ret);
 }
 
-float ModbusBuffer::readSGL() {
-    uint32_t d = readU32();
-    float* db = reinterpret_cast<float*>(&d);
-    return *db;
-}
-
-std::string ModbusBuffer::readString(int32_t length) {
-    for (int i = 0; i < length; i++) {
-        _stringBuffer[i] = readInstructionByte(_buffer[_index++]);
-    }
-    return std::string((const char*)_stringBuffer, (size_t)length);
-}
-
-uint16_t ModbusBuffer::readCRC() {
-    _index += 2;
-    return ((uint16_t)readInstructionByte(_buffer[_index - 2])) |
-           ((uint16_t)readInstructionByte(_buffer[_index - 1]) << 8);
+std::string ModbusBuffer::readString(size_t length) {
+    uint8_t buf[length];
+    readBuffer(buf, length);
+    return std::string((const char*)buf, length);
 }
 
 double ModbusBuffer::readTimestamp() {
-    _index += 8;
-    uint64_t data =
-            ((uint64_t)(_buffer[_index - 8] & 0xFF)) | ((uint64_t)(_buffer[_index - 7] & 0xFF)) << 8 |
-            ((uint64_t)(_buffer[_index - 6] & 0xFF)) << 16 | ((uint64_t)(_buffer[_index - 5] & 0xFF)) << 24 |
-            ((uint64_t)(_buffer[_index - 4] & 0xFF)) << 32 | ((uint64_t)(_buffer[_index - 3] & 0xFF)) << 40 |
-            ((uint64_t)(_buffer[_index - 2] & 0xFF)) << 48 | ((uint64_t)(_buffer[_index - 1] & 0xFF)) << 56;
-    return Timestamp::fromRaw(data);
+    uint64_t ret;
+    readBuffer(&ret, 8);
+    ret = le64toh(ret);
+    return Timestamp::fromRaw(ret);
 }
 
-void ModbusBuffer::readEndOfFrame() { _index++; }
+void ModbusBuffer::checkCRC() {
+    uint16_t crc;
+    uint16_t calCrc = _crcCounter;
+    readBuffer(&crc, 2);
+    crc = le32toh(crc);
+    if (crc != calCrc) {
+        throw CRCError(calCrc, crc);
+    }
+    _resetCRC();
+}
 
-void ModbusBuffer::writeBuffer(void* data, size_t len) {
+void ModbusBuffer::readEndOfFrame() {
+    if (_buffer[_index] != FIFO_TX_FRAMEEND) {
+        throw std::runtime_error(
+                fmt::format("Expected end of frame, finds {:04x} (@ offset {)", _buffer[_index], _index));
+    }
+    _index++;
+    _resetCRC();
+}
+
+uint32_t ModbusBuffer::readWaitForRx() {
+    uint16_t c = _buffer[_index] & 0xF000;
+    uint32_t ret = 0;
+    switch (c) {
+        case FIFO_TX_WAIT_RX:
+            ret = 0x0FFF & _buffer[_index];
+            break;
+        case FIFO_TX_WAIT_LONG_RX:
+            ret = (0x0FFF & _buffer[_index]) * 1000;
+            break;
+        default:
+            throw std::runtime_error(
+                    fmt::format("Expected wait for RX, finds {:04x} (@ offset {)", _buffer[_index], _index));
+    }
+    _index++;
+    return ret;
+}
+
+void ModbusBuffer::writeBuffer(uint8_t* data, size_t len) {
     for (size_t i = 0; i < len; i++) {
-        _buffer[_index] = writeByteInstruction((reinterpret_cast<uint8_t*>(data))[i]);
-        _index++;
+        _buffer.push_back(_getByteInstruction(data[i]));
     }
 }
 
-void ModbusBuffer::writeSubnet(uint8_t data) {
-    _index += 1;
-    _buffer[_index - 1] = (uint16_t)data;
-}
-
-void ModbusBuffer::writeLength(uint16_t data) {
-    _index += 1;
-    _buffer[_index - 1] = data;
-}
-
-void ModbusBuffer::writeI8(int8_t data) { writeBuffer(reinterpret_cast<uint8_t*>(&data), 1); }
-
-void ModbusBuffer::writeI16(int16_t data) {
-    int16_t d = htons(data);
-    writeBuffer(reinterpret_cast<uint8_t*>(&d), 2);
-}
-
 void ModbusBuffer::writeI24(int32_t data) {
-    _index += 3;
-    _buffer[_index - 3] = writeByteInstruction((uint8_t)(data >> 16));
-    _buffer[_index - 2] = writeByteInstruction((uint8_t)(data >> 8));
-    _buffer[_index - 1] = writeByteInstruction((uint8_t)data);
+    _buffer.push_back(_getByteInstruction((uint8_t)(data >> 16)));
+    _buffer.push_back(_getByteInstruction((uint8_t)(data >> 8)));
+    _buffer.push_back(_getByteInstruction((uint8_t)data));
 }
 
-void ModbusBuffer::writeI32(int32_t data) {
-    int32_t d = htonl(data);
-    writeBuffer(reinterpret_cast<uint8_t*>(&d), 4);
-}
-
-void ModbusBuffer::writeU8(uint8_t data) { writeBuffer(&data, 1); }
-
-void ModbusBuffer::writeU16(uint16_t data) {
-    uint16_t d = htons(data);
-    writeBuffer(reinterpret_cast<uint8_t*>(&d), 2);
-}
-
-void ModbusBuffer::writeU32(uint32_t data) {
-    uint32_t d = htonl(data);
-    writeBuffer(reinterpret_cast<uint8_t*>(&d), 4);
-}
-
-void ModbusBuffer::writeSGL(float data) {
-    uint32_t* db = reinterpret_cast<uint32_t*>(&data);
-    writeU32(*db);
-}
-
-void ModbusBuffer::writeCRC(int32_t length) {
-    uint16_t crc = calculateCRC(length);
-    _index += 2;
-    _buffer[_index - 2] = writeByteInstruction((uint8_t)crc);
-    _buffer[_index - 1] = writeByteInstruction((uint8_t)(crc >> 8));
+void ModbusBuffer::writeCRC() {
+    _buffer.push_back(0x1200 | ((_crcCounter & 0xFF) << 1));
+    _buffer.push_back(0x1200 | (((_crcCounter >> 8) & 0xFF) << 1));
+    _resetCRC();
 }
 
 void ModbusBuffer::writeDelay(uint32_t delayMicros) {
-    _index += 1;
-    _buffer[_index - 1] = delayMicros > 4095 ? (((delayMicros / 1000) + 1) | 0x5000) : (delayMicros | 0x4000);
+    _buffer.push_back(delayMicros > 0x0FFF ? ((0x0FFF & ((delayMicros / 1000) + 1)) | 0x5000)
+                                           : (delayMicros | 0x4000));
 }
 
-void ModbusBuffer::writeEndOfFrame() {
-    _index += 1;
-    _buffer[_index - 1] = FIFO_TX_FRAMEEND;
-}
-
-void ModbusBuffer::writeSoftwareTrigger() {
-    _index += 1;
-    _buffer[_index - 1] = FIFO_TX_WAIT_TRIGGER;
-}
-
-void ModbusBuffer::writeTimestamp() {
-    _index += 1;
-    _buffer[_index - 1] = FIFO_TX_TIMESTAMP;
-}
-
-void ModbusBuffer::writeTriggerIRQ() {
-    _index += 1;
-    _buffer[_index - 1] = FIFO_TX_IRQTRIGGER;
-}
+void ModbusBuffer::writeEndOfFrame() { _buffer.push_back(FIFO_TX_FRAMEEND); }
 
 void ModbusBuffer::writeWaitForRx(uint32_t timeoutMicros) {
-    _index += 1;
-    _buffer[_index - 1] = timeoutMicros > 4095 ? (((timeoutMicros / 1000) + 1) | FIFO_TX_WAIT_LONG_RX)
-                                               : (timeoutMicros | FIFO_TX_WAIT_RX);
+    _buffer.push_back(timeoutMicros > 0x0FFF
+                              ? ((0x0FFF & ((timeoutMicros / 1000) + 1)) | FIFO_TX_WAIT_LONG_RX)
+                              : (timeoutMicros | FIFO_TX_WAIT_RX));
+}
+
+void ModbusBuffer::setBuffer(uint16_t* buffer, size_t length) {
+    _buffer.clear();
+
+    _index = 0;
+    _resetCRC();
+    _buffer.resize(length);
+    memcpy(_buffer.data(), buffer, length * sizeof(uint16_t));
+}
+
+ModbusBuffer::CRCError::CRCError(uint16_t calculated, uint16_t received)
+        : std::runtime_error(fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}", calculated,
+                                         received)) {}
+
+ModbusBuffer::EndOfBuffer::EndOfBuffer() : std::runtime_error("End of buffer while reading response") {}
+
+ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t function)
+        : std::runtime_error(
+                  fmt::format("Received response {1} with address {0} without matching send function.",
+                              address, function)) {}
+
+ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t function, uint8_t expectedAddress,
+                                                   uint8_t expectedFunction)
+        : std::runtime_error(fmt::format("Invalid response received - expected {2} (0x{2:02x}) from {3}, got "
+                                         "{1} (0x{1:02x}) from {0}",
+                                         address, function, expectedAddress, expectedFunction)) {}
+
+void ModbusBuffer::processDataCRC(uint8_t data) {
+    _crcCounter = _crcCounter ^ (uint16_t(data));
+    for (int j = 0; j < 8; j++) {
+        if (_crcCounter & 0x0001) {
+            _crcCounter = _crcCounter >> 1;
+            _crcCounter = _crcCounter ^ 0xA001;
+        } else {
+            _crcCounter = _crcCounter >> 1;
+        }
+    }
+}
+
+void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t timeout) {
+    write(address);
+    write(function);
+    writeCRC();
+    writeEndOfFrame();
+    writeWaitForRx(timeout);
+
+    _pushCommanded(address, function);
+}
+
+void ModbusBuffer::checkCommanded(uint8_t address, uint8_t function) {
+    if (address == 0) {
+        if (!_commanded.empty()) {
+            throw UnmatchedFunction(address, function);
+        }
+        return;
+    }
+    if (_commanded.empty()) {
+        throw UnmatchedFunction(address, function);
+    }
+    std::pair<uint8_t, uint8_t> last = _commanded.front();
+    _commanded.pop();
+    if (last.first != address || last.second != function) {
+        throw UnmatchedFunction(address, function, last.first, last.second);
+    }
+}
+
+void ModbusBuffer::_pushCommanded(uint8_t address, uint8_t function) {
+    if ((address > 0 && address < 248) || (address == 255)) {
+        _commanded.push(std::pair<uint8_t, uint8_t>(address, function));
+    }
+}
+
+uint16_t ModbusBuffer::_getByteInstruction(uint8_t data) {
+    processDataCRC(data);
+    return 0x1200 | ((static_cast<uint16_t>(data)) << 1);
 }
 
 }  // namespace cRIO
