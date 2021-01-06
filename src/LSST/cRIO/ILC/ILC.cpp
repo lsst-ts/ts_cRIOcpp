@@ -104,7 +104,14 @@ void ILC::processResponse(uint16_t *response, size_t length) {
     while (endOfBuffer() == false) {
         uint8_t address = read<uint8_t>();
         uint8_t function = read<uint8_t>();
-        checkCommanded(address, function);
+
+        // either function response was received, or error response. For error
+        // response, check if the function for which it is used was called.
+        if (_errorActions.find(function) == _errorActions.end()) {
+            checkCommanded(address, function);
+        } else {
+            checkCommanded(address, _errorActions[function].first);
+        }
 
         try {
             _actions.at(function)(address);

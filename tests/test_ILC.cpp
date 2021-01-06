@@ -225,7 +225,7 @@ TEST_CASE("Set Temp ILC Address", "[ILC]") {
     ilc2.write<uint8_t>(22);
     ilc2.writeCRC();
 
-    REQUIRE(ilc1.responseNewAddress== 0);
+    REQUIRE(ilc1.responseNewAddress == 0);
     REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
     REQUIRE(ilc1.responseNewAddress == 22);
 }
@@ -354,4 +354,17 @@ TEST_CASE("Unmatched response", "[ILC]") {
     ilc1.resetServer(17);
     REQUIRE_NOTHROW(ilc1.processResponse(ilc3.getBuffer(), ilc3.getLength()));
     REQUIRE(ilc1.lastReset == 17);
+}
+
+TEST_CASE("Error response", "[ILC]") {
+    TestILC ilc1, ilc2;
+
+    ilc1.reportServerID(103);
+
+    uint8_t buf[3] = {103, 145, 3};
+    ilc2.writeBuffer(buf, 3);
+    ilc2.writeCRC();
+
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ILC::Exception);
+    REQUIRE(ilc1.responseUniqueID == 0);
 }
