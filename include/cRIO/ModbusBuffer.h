@@ -156,6 +156,15 @@ public:
     void checkCRC();
 
     /**
+     * Command FPGA to wait a bit for broadcast to be processed.
+     *
+     * @return delay in us (microseconds)
+     *
+     * @throw std::runtime_error if wait for delay command isn't present
+     */
+    uint32_t readDelay();
+
+    /**
      * Check that next command is end of frame
      *
      * @throw std::runtime_error if end of frame isn't next buffer entry
@@ -285,6 +294,17 @@ protected:
 
         _pushCommanded(address, function);
     }
+
+    /**
+     * Call broadcast function.
+     *
+     * @param address broadcast address. Shall be 0i, 148, 149 or 250. Not checked if in correct range
+     * @param function function to call
+     * @param delay delay in us (microseconds) for broadcast processing. Bus will remain silence for this
+     * number of us to allow ILC process the broadcast function
+     * @param data function parameters. Usually ILC's bus ID indexed array of values to pass to the ILCs
+     */
+    void broadcastFunction(uint8_t address, uint8_t function, uint32_t delay, std::vector<uint8_t> data);
 
     /**
      * Checks that received response matches expected response or no more receive commands are expected.

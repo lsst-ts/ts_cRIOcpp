@@ -181,6 +181,9 @@ public:
     void testFunction(uint8_t address, uint8_t function, uint32_t timeout, const dt&... params) {
         callFunction(address, function, timeout, params...);
     }
+    void testBroadcast(uint8_t address, uint8_t function, uint32_t delay, std::vector<uint8_t> data) {
+        broadcastFunction(address, function, delay, data);
+    }
 };
 
 TEST_CASE("Call function with arguments", "[ModbusBuffer]") {
@@ -198,4 +201,25 @@ TEST_CASE("Call function with arguments", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(mbuf.checkCRC());
     REQUIRE_NOTHROW(mbuf.readEndOfFrame());
     REQUIRE(mbuf.readWaitForRx() == 23);
+}
+
+TEST_CASE("Test broadcast", "[ModbusBuffer]") {
+    TestBuffer mbuf;
+
+    std::vector<uint8_t> data({0x01, 0xff, 0xfe, 0xce, 0xdf, 0xac, 0xef, 0x12, 0x56, 0x78, 0xf7, 0x3a, 0x8f,
+                               0xbb, 0xcc, 0xf1, 0xdd});
+
+    mbuf.testBroadcast(250, 89, 300, data);
+
+    mbuf.reset();
+
+    REQUIRE(mbuf.read<uint8_t>() == 250);
+    REQUIRE(mbuf.read<uint8_t>() == 89);
+
+    for (auto d : data) {
+        REQUIRE(mbuf.read<uint8_t>() == d);
+    }
+    REQUIRE_NOTHROW(mbuf.checkCRC());
+    REQUIRE_NOTHROW(mbuf.readEndOfFrame());
+    REQUIRE(mbuf.readDelay() == 300);
 }
