@@ -58,7 +58,7 @@ public:
      * as sole parameter. Should read response (as length of the response data
      * is specified by function) and check CRC (see ModbusBuffer::read and
      * ModbusBuffer::checkCRC)
-     * @param errorResponse error response code 
+     * @param errorResponse error response code
      * @param errorAction action to call when error is found. If no action is
      * specified, raises ILC::Exception. Th action receives two parameters,
      * address and error code. CRC checking is done in processResponse. This
@@ -192,14 +192,14 @@ protected:
                                  uint8_t networkNodeOptions, uint8_t majorRev, uint8_t minorRev,
                                  std::string firmwareName) = 0;
 
-     /**
-      * Callback for server status reply.
-      *
-      * @param address ILC address
-      * @param mode ILC mode
-      * @param status ILC status
-      * @param faults ILC faults
-      */
+    /**
+     * Callback for server status reply.
+     *
+     * @param address ILC address
+     * @param mode ILC mode
+     * @param status ILC status
+     * @param faults ILC faults
+     */
     virtual void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) = 0;
 
     /**
@@ -219,9 +219,23 @@ protected:
      */
     virtual void processResetServer(uint8_t address) = 0;
 
+    /**
+     * Return counter for broadcast commands.
+     *
+     * @return broadcast counter (shall be in range 0-15)
+     */
+    uint8_t getBroadcastCounter() { return _broadcastCounter; }
+
+    /**
+     * Return next broadcast counter.
+     */
+    uint8_t nextBroadcastCounter();
+
 private:
     std::map<uint8_t, std::function<void(uint8_t)>> _actions;
     std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
+
+    uint8_t _broadcastCounter;
 };
 
 }  // namespace cRIO

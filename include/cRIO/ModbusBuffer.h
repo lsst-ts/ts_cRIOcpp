@@ -300,11 +300,15 @@ protected:
      *
      * @param address broadcast address. Shall be 0i, 148, 149 or 250. Not checked if in correct range
      * @param function function to call
+     * @param counter broadcast counter. ILC provides method to retrieve this
+     * in unicast function to verify the broadcast was received and processed
      * @param delay delay in us (microseconds) for broadcast processing. Bus will remain silence for this
      * number of us to allow ILC process the broadcast function
      * @param data function parameters. Usually ILC's bus ID indexed array of values to pass to the ILCs
+     * @param dataLen number of parameters
      */
-    void broadcastFunction(uint8_t address, uint8_t function, uint32_t delay, std::vector<uint8_t> data);
+    void broadcastFunction(uint8_t address, uint8_t function, uint8_t counter, uint32_t delay, uint8_t* data,
+                           size_t dataLen);
 
     /**
      * Checks that received response matches expected response or no more receive commands are expected.

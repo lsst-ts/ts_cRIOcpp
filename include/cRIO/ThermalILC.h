@@ -37,11 +37,16 @@ public:
      */
     ThermalILC();
 
-    void setThermalDemand(uint8_t address, uint8_t heaterPWM, uint8_t fanRPM) { callFunction(address, 88, 500, heaterPWM, fanRPM); }
+    void setThermalDemand(uint8_t address, uint8_t heaterPWM, uint8_t fanRPM) {
+        callFunction(address, 88, 500, heaterPWM, fanRPM);
+    }
     void reportThermalStatus(uint8_t address) { callFunction(address, 89, 300); }
 
+    void broadcastThermalDemand(uint8_t heaterPWM[96], uint8_t fanRPM[96]);
+
 protected:
-    virtual void processThermalStatus(uint8_t address, uint8_t status, float differentialTemperature, uint8_t fanRPM, float absoluteTemperature) = 0;
+    virtual void processThermalStatus(uint8_t address, uint8_t status, float differentialTemperature,
+                                      uint8_t fanRPM, float absoluteTemperature) = 0;
 };
 
 }  // namespace cRIO

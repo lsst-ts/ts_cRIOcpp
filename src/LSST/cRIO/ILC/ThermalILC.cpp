@@ -40,5 +40,16 @@ ThermalILC::ThermalILC() {
     addResponse(89, thermalStatus, 217);
 }
 
+void ThermalILC::broadcastThermalDemand(uint8_t heaterPWM[96], uint8_t fanRPM[96]) {
+    uint8_t params[192];
+    for (int i = 0, o = 0; i < 96; i++, o++) {
+        params[o] = heaterPWM[i];
+        o++;
+        params[o] = fanRPM[i];
+    }
+
+    broadcastFunction(250, 88, nextBroadcastCounter(), 450, params, 192);
+}
+
 }  // namespace cRIO
 }  // namespace LSST

@@ -29,6 +29,8 @@ namespace LSST {
 namespace cRIO {
 
 ILC::ILC() {
+    _broadcastCounter = 0;
+
     addResponse(
             17,
             [this](uint8_t address) {
@@ -142,6 +144,14 @@ ILC::Exception::Exception(uint8_t address, uint8_t function, uint8_t exception)
         : std::runtime_error(
                   fmt::format("ILC Exception {2} (ILC address {0}, ILC response function {1} (0x{1:02x}))",
                               address, function, exception)) {}
+
+uint8_t ILC::nextBroadcastCounter() {
+    _broadcastCounter++;
+    if (_broadcastCounter > 15) {
+        _broadcastCounter = 0;
+    }
+    return _broadcastCounter;
+}
 
 }  // namespace cRIO
 }  // namespace LSST

@@ -230,12 +230,13 @@ void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t time
     _pushCommanded(address, function);
 }
 
-void ModbusBuffer::broadcastFunction(uint8_t address, uint8_t function, uint32_t delay,
-                                     std::vector<uint8_t> data) {
+void ModbusBuffer::broadcastFunction(uint8_t address, uint8_t function, uint8_t counter, uint32_t delay,
+                                     uint8_t* data, size_t dataLen) {
     write(address);
     write(function);
-    for (auto d : data) {
-        write(d);
+    write(counter);
+    for (size_t i = 0; i < dataLen; i++) {
+        write(data[i]);
     }
     writeCRC();
     writeEndOfFrame();
