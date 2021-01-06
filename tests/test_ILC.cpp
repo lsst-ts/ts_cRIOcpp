@@ -25,7 +25,6 @@
 
 #include <memory>
 #include <cmath>
-#include <iostream>
 
 #include <cRIO/ILC.h>
 

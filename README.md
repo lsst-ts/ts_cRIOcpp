@@ -89,10 +89,10 @@ Code | Hex  | Description
 
 ### Thermal ILC functions
 
-Code | Hex  | Description
- --- | ---  | -----------
-88   | 0x58 | Thermal demand
-89   | 0x59 | Thermal status
+Code | Hex  | Error | Description
+ --- | ---  | ----- | -----------
+88   | 0x58 | 216   | Thermal demand
+89   | 0x59 | 217   | Thermal status
 
 ## FPGA
 
