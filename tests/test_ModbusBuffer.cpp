@@ -174,3 +174,29 @@ TEST_CASE("Calculate function response CRC", "[ModbusBuffer]") {
     REQUIRE(mbuf.read<uint16_t>() == 0x0004);
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }
+
+// wrapper class to test protected variadic template
+class TestBuffer : public ModbusBuffer {
+public:
+    template <typename... dt>
+    void testFunction(uint8_t address, uint8_t function, uint32_t timeout, const dt&... params) {
+        callFunction(address, function, timeout, params...);
+    }
+};
+
+TEST_CASE("Call function with arguments", "[ModbusBuffer]") {
+    TestBuffer mbuf;
+    mbuf.testFunction(123, 17, 23, static_cast<uint8_t>(0xfe), static_cast<uint16_t>(0xffcc),
+                      static_cast<float>(M_PI));
+
+    mbuf.reset();
+
+    REQUIRE(mbuf.read<uint8_t>() == 123);
+    REQUIRE(mbuf.read<uint8_t>() == 17);
+    REQUIRE(mbuf.read<uint8_t>() == 0xfe);
+    REQUIRE(mbuf.read<uint16_t>() == 0xffcc);
+    REQUIRE(mbuf.read<float>() == static_cast<float>(M_PI));
+    REQUIRE_NOTHROW(mbuf.checkCRC());
+    REQUIRE_NOTHROW(mbuf.readEndOfFrame());
+    REQUIRE(mbuf.readWaitForRx() == 23);
+}
