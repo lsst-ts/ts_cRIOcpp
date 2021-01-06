@@ -1,10 +1,10 @@
 /*
  * This file is part of LSST cRIO CPP tests. Tests LimitTrigger.
  *
- * Developed for the Telescope & Site Software Systems.  This product includes
- * software developed by the LSST Project (https://www.lsst.org). See the
- * COPYRIGHT file at the top-level directory of this distribution for details
- * of code ownership.
+ * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
+ * This product includes software developed by the Vera C.Rubin Observatory Project
+ * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
+ * this distribution for details of code ownership.
  *
  * This program is free software: you can redistribute it and/or modify it
  * under the terms of the GNU General Public License as published by the Free
