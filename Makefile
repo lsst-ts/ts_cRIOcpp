@@ -22,7 +22,7 @@ tests: tests/Makefile tests/*.cpp
 run_tests: lib/libcRIOcpp.a tests
 	@${MAKE} -C tests run
 
-junit: tests
+junit: lib/libcRIOcpp.a tests
 	@${MAKE} -C tests junit
 
 doc:
