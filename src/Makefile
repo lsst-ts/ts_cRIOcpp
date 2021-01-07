@@ -4,7 +4,7 @@ all: libcRIOcpp.a
 
 .PHONY: DEPS clean
 
-CPP_SRCS = $(shell find LSST -name '*.cpp')
+CPP_SRCS = $(shell find LSST -name '*.cpp') *.cpp
 
 OBJS = $(patsubst %.cpp,%.cpp.o,$(CPP_SRCS))
 
