@@ -38,6 +38,11 @@ namespace cRIO {
 class FPGA {
 public:
     /**
+     * Finalize FPGA. This shall prevent issues when re-opening the FPGA.
+     */
+    virtual ~FPGA() { finalize(); }
+
+    /**
      * Initialize FPGA.
      *
      * @throw NiError on NI error
