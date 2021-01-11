@@ -96,7 +96,7 @@ TEST_CASE("Broadcast set heater & fan target values", "[ThermalILC]") {
 
     REQUIRE(ilc.read<uint8_t>() == 250);
     REQUIRE(ilc.read<uint8_t>() == 88);
-    REQUIRE(ilc.read<uint8_t>() == 0);
+    REQUIRE(ilc.read<uint8_t>() == 1);
     for (int i = 0; i < NUM_TS_ILC; i++) {
         REQUIRE(ilc.read<uint8_t>() == i);
         REQUIRE(ilc.read<uint8_t>() == i);
