@@ -15,10 +15,16 @@ jobs:
         yum install -y make boost-devel catch-devel
     - name: Checkout
       uses: actions/checkout@v2
-    - name: make run_tests
+    - name: make junit
       run: |
         make
-        make run_tests
+        make junit
+    - name: Publish Unit Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1.6
+      if: always()
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        files: tests/*.xml
 
   ubuntu:
     runs-on: ubuntu-latest
@@ -29,7 +35,13 @@ jobs:
         sudo apt install -y make g++ libboost-dev catch
     - name: Checkout
       uses: actions/checkout@v2
-    - name: make run_tests
+    - name: make junit
       run: |
         make
-        make run_tests
+        make junit
+    - name: Publish Unit Test Results
+      uses: EnricoMi/publish-unit-test-result-action@v1.6
+      if: always()
+      with:
+        github_token: ${{ secrets.GITHUB_TOKEN }}
+        files: tests/*.xml

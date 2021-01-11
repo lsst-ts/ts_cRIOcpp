@@ -29,6 +29,8 @@ using namespace std;
 // masks for FPGA FIFO commands
 const static uint16_t FIFO_TX_FRAMEEND = 0x20DA;
 const static uint16_t FIFO_TX_TIMESTAMP = 0x3000;
+const static uint16_t FIFO_DELAY = 0x4000;
+const static uint16_t FIFO_LONG_DELAY = 0x5000;
 const static uint16_t FIFO_TX_WAIT_RX = 0x6000;
 const static uint16_t FIFO_TX_IRQTRIGGER = 0x7000;
 const static uint16_t FIFO_TX_WAIT_TRIGGER = 0x8000;
@@ -104,10 +106,28 @@ void ModbusBuffer::checkCRC() {
     _resetCRC();
 }
 
+uint32_t ModbusBuffer::readDelay() {
+    uint16_t c = _buffer[_index] & 0xF000;
+    uint32_t ret = 0;
+    switch (c) {
+        case FIFO_DELAY:
+            ret = 0x0FFF & _buffer[_index];
+            break;
+        case FIFO_LONG_DELAY:
+            ret = (0x0FFF & _buffer[_index]) * 1000;
+            break;
+        default:
+            throw std::runtime_error(
+                    fmt::format("Expected delay, finds {:04x} (@ offset {})", _buffer[_index], _index));
+    }
+    _index++;
+    return ret;
+}
+
 void ModbusBuffer::readEndOfFrame() {
     if (_buffer[_index] != FIFO_TX_FRAMEEND) {
         throw std::runtime_error(
-                fmt::format("Expected end of frame, finds {:04x} (@ offset {)", _buffer[_index], _index));
+                fmt::format("Expected end of frame, finds {:04x} (@ offset {})", _buffer[_index], _index));
     }
     _index++;
     _resetCRC();
@@ -150,8 +170,8 @@ void ModbusBuffer::writeCRC() {
 }
 
 void ModbusBuffer::writeDelay(uint32_t delayMicros) {
-    _buffer.push_back(delayMicros > 0x0FFF ? ((0x0FFF & ((delayMicros / 1000) + 1)) | 0x5000)
-                                           : (delayMicros | 0x4000));
+    _buffer.push_back(delayMicros > 0x0FFF ? ((0x0FFF & ((delayMicros / 1000) + 1)) | FIFO_LONG_DELAY)
+                                           : (delayMicros | FIFO_DELAY));
 }
 
 void ModbusBuffer::writeEndOfFrame() { _buffer.push_back(FIFO_TX_FRAMEEND); }
@@ -208,6 +228,19 @@ void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t time
     writeWaitForRx(timeout);
 
     _pushCommanded(address, function);
+}
+
+void ModbusBuffer::broadcastFunction(uint8_t address, uint8_t function, uint8_t counter, uint32_t delay,
+                                     uint8_t* data, size_t dataLen) {
+    write(address);
+    write(function);
+    write(counter);
+    for (size_t i = 0; i < dataLen; i++) {
+        write(data[i]);
+    }
+    writeCRC();
+    writeEndOfFrame();
+    writeDelay(delay);
 }
 
 void ModbusBuffer::checkCommanded(uint8_t address, uint8_t function) {

@@ -1,24 +1,23 @@
 /*
- * This file is part of LSST M1M3 SS test suite. Tests Modbus buffer class.
+ * This file is part of LSST cRIOcpp test suite. Tests Modbus buffer class.
  *
- * Developed for the LSST Data Management System.
- * This product includes software developed by the LSST Project
- * (https://www.lsst.org).
- * See the COPYRIGHT file at the top-level directory of this distribution
- * for details of code ownership.
+ * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
+ * This product includes software developed by the Vera C.Rubin Observatory Project
+ * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
+ * this distribution for details of code ownership.
  *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation, either version 3 of the License, or
- * (at your option) any later version.
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
  *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU General Public License for more details.
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
  *
- * You should have received a copy of the GNU General Public License
- * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #define CATCH_CONFIG_MAIN
@@ -173,4 +172,56 @@ TEST_CASE("Calculate function response CRC", "[ModbusBuffer]") {
     REQUIRE(mbuf.read<uint16_t>() == (0x0040 | 0x0002));
     REQUIRE(mbuf.read<uint16_t>() == 0x0004);
     REQUIRE_NOTHROW(mbuf.checkCRC());
+}
+
+// wrapper class to test protected variadic template
+class TestBuffer : public ModbusBuffer {
+public:
+    template <typename... dt>
+    void testFunction(uint8_t address, uint8_t function, uint32_t timeout, const dt&... params) {
+        callFunction(address, function, timeout, params...);
+    }
+    void testBroadcast(uint8_t address, uint8_t function, uint8_t counter, uint32_t delay, uint8_t* data,
+                       size_t dataLen) {
+        broadcastFunction(address, function, counter, delay, data, dataLen);
+    }
+};
+
+TEST_CASE("Call function with arguments", "[ModbusBuffer]") {
+    TestBuffer mbuf;
+    mbuf.testFunction(123, 17, 23, static_cast<uint8_t>(0xfe), static_cast<uint16_t>(0xffcc),
+                      static_cast<float>(M_PI));
+
+    mbuf.reset();
+
+    REQUIRE(mbuf.read<uint8_t>() == 123);
+    REQUIRE(mbuf.read<uint8_t>() == 17);
+    REQUIRE(mbuf.read<uint8_t>() == 0xfe);
+    REQUIRE(mbuf.read<uint16_t>() == 0xffcc);
+    REQUIRE(mbuf.read<float>() == static_cast<float>(M_PI));
+    REQUIRE_NOTHROW(mbuf.checkCRC());
+    REQUIRE_NOTHROW(mbuf.readEndOfFrame());
+    REQUIRE(mbuf.readWaitForRx() == 23);
+}
+
+TEST_CASE("Test broadcast", "[ModbusBuffer]") {
+    TestBuffer mbuf;
+
+    uint8_t data[22] = {0x01, 0xff, 0xfe, 0xce, 0xdf, 0xac, 0xef, 0x12, 0xAC, 0xee, 0x78,
+                        0xf7, 0x3a, 0x8f, 0xbb, 0xcc, 0xf1, 0xdd, 0x1f, 0xDC, 0xcb, 0xca};
+
+    mbuf.testBroadcast(250, 89, 2, 300, data, 22);
+
+    mbuf.reset();
+
+    REQUIRE(mbuf.read<uint8_t>() == 250);
+    REQUIRE(mbuf.read<uint8_t>() == 89);
+    REQUIRE(mbuf.read<uint8_t>() == 2);
+
+    for (int i = 0; i < 22; i++) {
+        REQUIRE(mbuf.read<uint8_t>() == data[i]);
+    }
+    REQUIRE_NOTHROW(mbuf.checkCRC());
+    REQUIRE_NOTHROW(mbuf.readEndOfFrame());
+    REQUIRE(mbuf.readDelay() == 300);
 }

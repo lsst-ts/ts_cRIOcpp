@@ -156,6 +156,15 @@ public:
     void checkCRC();
 
     /**
+     * Command FPGA to wait a bit for broadcast to be processed.
+     *
+     * @return delay in us (microseconds)
+     *
+     * @throw std::runtime_error if wait for delay command isn't present
+     */
+    uint32_t readDelay();
+
+    /**
      * Check that next command is end of frame
      *
      * @throw std::runtime_error if end of frame isn't next buffer entry
@@ -264,7 +273,7 @@ protected:
     void callFunction(uint8_t address, uint8_t function, uint32_t timeout);
 
     /**
-     * Call Modbus function with single parameter.
+     * Call Modbus function with one or more parameter.
      *
      * @see callFunction(uint8_t, uint8_t, uint32_t)
      *
@@ -272,19 +281,34 @@ protected:
      * @param address ILC address on subnet
      * @param function ILC function to call
      * @param timeout function call timeout (excluding transfer time) in us (microseconds)
-     * @param p1 function parameter
+     * @param params function parameters
      */
-    template <typename dt>
-    void callFunction(uint8_t address, uint8_t function, uint32_t timeout, dt p1) {
+    template <typename... dt>
+    void callFunction(uint8_t address, uint8_t function, uint32_t timeout, const dt&... params) {
         write(address);
         write(function);
-        write<dt>(p1);
+        _functionArguments(params...);
         writeCRC();
         writeEndOfFrame();
         writeWaitForRx(timeout);
 
         _pushCommanded(address, function);
     }
+
+    /**
+     * Call broadcast function.
+     *
+     * @param address broadcast address. Shall be 0, 148, 149 or 250. Not checked if in correct range
+     * @param function function to call
+     * @param counter broadcast counter. ILC provides method to retrieve this
+     * in unicast function to verify the broadcast was received and processed
+     * @param delay delay in us (microseconds) for broadcast processing. Bus will remain silence for this
+     * number of us to allow ILC process the broadcast function
+     * @param data function parameters. Usually ILC's bus ID indexed array of values to pass to the ILCs
+     * @param dataLen number of parameters
+     */
+    void broadcastFunction(uint8_t address, uint8_t function, uint8_t counter, uint32_t delay, uint8_t* data,
+                           size_t dataLen);
 
     /**
      * Checks that received response matches expected response or no more receive commands are expected.
@@ -310,7 +334,7 @@ private:
     void _resetCRC() { _crcCounter = 0xFFFF; }
 
     void _pushCommanded(uint8_t address, uint8_t function);
-  
+
     /**
      * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
      *
@@ -333,6 +357,14 @@ private:
      * @return 16bit for command queue.
      */
     uint16_t _getByteInstruction(uint8_t data);
+
+    void _functionArguments() {}
+
+    template <typename dp1, typename... dt>
+    void _functionArguments(const dp1& p1, const dt&... args) {
+        write<dp1>(p1);
+        _functionArguments(args...);
+    }
 };
 
 template <>
