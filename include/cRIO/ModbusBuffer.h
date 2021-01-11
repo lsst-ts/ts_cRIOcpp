@@ -298,7 +298,7 @@ protected:
     /**
      * Call broadcast function.
      *
-     * @param address broadcast address. Shall be 0i, 148, 149 or 250. Not checked if in correct range
+     * @param address broadcast address. Shall be 0, 148, 149 or 250. Not checked if in correct range
      * @param function function to call
      * @param counter broadcast counter. ILC provides method to retrieve this
      * in unicast function to verify the broadcast was received and processed

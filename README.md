@@ -26,7 +26,15 @@ Response data are passed to ILC subclass in processResponse call. This method
 check if responses matches non-broadcast request functions and addresses stored
 in commanded buffer.
 
+Data are send and received via [Common FPGA Modbus
+module](https://github.com/lsst-ts/Common_FPGA_Modbus). Please see it for
+details how Modbus frames are written as UINT 16 values on command FIFO and how
+data are received from response FIFO.
+
 ### ILC Modbus Functions
+
+ILC Modbus communication is described in LTS-646. Please see it for detailed
+description of ILC functions.
 
 ILCs are commanded using custom Modbus functions, which is assigning the
 following codes (both decimal and hexadecimal code values are shown):
@@ -105,6 +113,7 @@ Offse         | Description
 2-data length | payload bytes
 
 Where payload for Modbus uses highest 7 bits for operation code, next 8 bits
-for data, and last bit as start bit (shall be always 0). See
-[Support System FPGA](https://github.com/lsst-ts/ts_m1m3supportFPGA) for
+for data, and last bit as start bit (shall be always 0). See [Support System
+FPGA](https://github.com/lsst-ts/ts_m1m3supportFPGA) and [Thermal System
+FPGA](https://github.com/lsst-ts/ts_m1m3thermalFPGA) for
 details.

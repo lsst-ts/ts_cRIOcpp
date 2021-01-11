@@ -82,6 +82,30 @@ TEST_CASE("Test setThermalStatus", "[ThermalILC]") {
     REQUIRE(ilc.readWaitForRx() == 500);
 }
 
+TEST_CASE("Broadcast set heater & fan target values", "[ThermalILC]") {
+    uint8_t values[NUM_TS_ILC];
+    for (int i = 0; i < NUM_TS_ILC; i++) {
+        values[i] = i;
+    }
+
+    TestThermalILC ilc;
+
+    ilc.broadcastThermalDemand(values, values);
+
+    ilc.reset();
+
+    REQUIRE(ilc.read<uint8_t>() == 250);
+    REQUIRE(ilc.read<uint8_t>() == 88);
+    REQUIRE(ilc.read<uint8_t>() == 0);
+    for (int i = 0; i < NUM_TS_ILC; i++) {
+        REQUIRE(ilc.read<uint8_t>() == i);
+        REQUIRE(ilc.read<uint8_t>() == i);
+    }
+    REQUIRE_NOTHROW(ilc.checkCRC());
+    REQUIRE_NOTHROW(ilc.readEndOfFrame());
+    REQUIRE(ilc.readDelay() == 450);
+}
+
 TEST_CASE("Test parsing of thermal status response", "[ThermalILC]") {
     TestThermalILC ilc, response;
 

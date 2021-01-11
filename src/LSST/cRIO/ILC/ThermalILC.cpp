@@ -40,15 +40,15 @@ ThermalILC::ThermalILC() {
     addResponse(89, thermalStatus, 217);
 }
 
-void ThermalILC::broadcastThermalDemand(uint8_t heaterPWM[96], uint8_t fanRPM[96]) {
-    uint8_t params[192];
-    for (int i = 0, o = 0; i < 96; i++, o++) {
+void ThermalILC::broadcastThermalDemand(uint8_t heaterPWM[NUM_TS_ILC], uint8_t fanRPM[NUM_TS_ILC]) {
+    uint8_t params[NUM_TS_ILC * 2];
+    for (int i = 0, o = 0; i < NUM_TS_ILC; i++, o++) {
         params[o] = heaterPWM[i];
         o++;
         params[o] = fanRPM[i];
     }
 
-    broadcastFunction(250, 88, nextBroadcastCounter(), 450, params, 192);
+    broadcastFunction(250, 88, nextBroadcastCounter(), 450, params, NUM_TS_ILC * 2);
 }
 
 }  // namespace cRIO
