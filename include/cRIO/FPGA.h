@@ -23,6 +23,9 @@
 #ifndef CRIO_FPGA_H_
 #define CRIO_FPGA_H_
 
+#include <stddef.h>
+#include <stdint.h>
+
 namespace LSST {
 namespace cRIO {
 
@@ -37,11 +40,6 @@ namespace cRIO {
  */
 class FPGA {
 public:
-    /**
-     * Finalize FPGA. This shall prevent issues when re-opening the FPGA.
-     */
-    virtual ~FPGA() { finalize(); }
-
     /**
      * Initialize FPGA.
      *
@@ -69,11 +67,6 @@ public:
      * @throw NiError on NI error
      */
     virtual void finalize() = 0;
-
-    /**
-     * Closes connection to FPGA.
-     */
-    virtual void close() = 0;
 
     /**
      * Writes buffer to command FIFO. Command FIFO is processed in
