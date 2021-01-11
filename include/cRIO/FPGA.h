@@ -38,9 +38,32 @@ namespace cRIO {
 class FPGA {
 public:
     /**
-     * Opens connection to FPGA.
+     * Initialize FPGA.
+     *
+     * @throw NiError on NI error
+     */
+    virtual void initialize() = 0;
+
+    /**
+     * Load & run FPGA code, setup interrupts.
+     *
+     * @throw NiError on NI error
      */
     virtual void open() = 0;
+
+    /**
+     * Close FPGA, stop FPGA code.
+     *
+     * @throw NiError on NI error
+     */
+    virtual void close() = 0;
+
+    /**
+     * Should be called after closing FPGA.
+     *
+     * @throw NiError on NI error
+     */
+    virtual void finalize() = 0;
 
     /**
      * Closes connection to FPGA.
