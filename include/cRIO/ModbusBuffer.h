@@ -239,6 +239,13 @@ public:
     void setBuffer(uint16_t* buffer, size_t length);
 
     /**
+     * Checks that no more replies are expected.
+     *
+     * @throw std::runtime_error if commands to be processed are still expected
+     */
+    void checkCommandedEmpty();
+
+    /**
      * Exception thrown when calculated CRC doesn't match received CRC.
      */
     class CRCError : public std::runtime_error {

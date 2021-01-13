@@ -98,12 +98,18 @@ void FPGA::ilcCommands(uint16_t cmd, ILC &ilc) {
                 if (dataStart) {
                     ilc.processResponse(dataStart, p - dataStart);
                     dataStart = NULL;
+                    reportTime(beginTs, endTs);
+                    beginTs = endTs;
+                    endTs = 0;
+                    endTsShift = 0;
                 }
                 break;
             default:
                 throw std::runtime_error(fmt::format("Invalid reply: {0:04x} ({0})", *p));
         }
     }
+
+    ilc.checkCommandedEmpty();
 
     reportTime(beginTs, endTs);
 }

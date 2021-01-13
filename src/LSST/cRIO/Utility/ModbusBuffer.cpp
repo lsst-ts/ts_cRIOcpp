@@ -21,6 +21,7 @@
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/Timestamp.h>
 #include <string.h>
+#include <sstream>
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
 
@@ -191,6 +192,22 @@ void ModbusBuffer::setBuffer(uint16_t* buffer, size_t length) {
     memcpy(_buffer.data(), buffer, length * sizeof(uint16_t));
 }
 
+void ModbusBuffer::checkCommandedEmpty() {
+    if (_commanded.empty()) {
+        return;
+    }
+    std::ostringstream os;
+    while (!_commanded.empty()) {
+        if (os.str().length() > 0) {
+            os << ",";
+        }
+        auto c = _commanded.front();
+        os << c.first << " " << c.second;
+        _commanded.pop();
+    }
+    throw std::runtime_error("Responses for those requests weren't received: " + os.str());
+}
+
 ModbusBuffer::CRCError::CRCError(uint16_t calculated, uint16_t received)
         : std::runtime_error(fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}", calculated,
                                          received)) {}
@@ -232,12 +249,6 @@ void ModbusBuffer::broadcastFunction(uint8_t address, uint8_t function, uint8_t 
 }
 
 void ModbusBuffer::checkCommanded(uint8_t address, uint8_t function) {
-    if (address == 0) {
-        if (!_commanded.empty()) {
-            throw UnmatchedFunction(address, function);
-        }
-        return;
-    }
     if (_commanded.empty()) {
         throw UnmatchedFunction(address, function);
     }
