@@ -132,8 +132,6 @@ void ILC::processResponse(uint16_t *response, size_t length) {
             }
         }
     }
-
-    checkCommanded(0, 0);
 }
 
 ILC::UnknownResponse::UnknownResponse(uint8_t address, uint8_t function)

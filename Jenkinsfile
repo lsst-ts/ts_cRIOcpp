@@ -30,7 +30,7 @@ pipeline {
             steps {
                 sh """
                     yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-                    yum install -y make boost-devel catch-devel
+                    yum install -y make boost-devel catch-devel readline-devel
                 """
             }
         }

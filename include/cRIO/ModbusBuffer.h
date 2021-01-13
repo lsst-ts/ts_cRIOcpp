@@ -239,6 +239,13 @@ public:
     void setBuffer(uint16_t* buffer, size_t length);
 
     /**
+     * Checks that no more replies are expected.
+     *
+     * @throw std::runtime_error if commands to be processed are still expected
+     */
+    void checkCommandedEmpty();
+
+    /**
      * Exception thrown when calculated CRC doesn't match received CRC.
      */
     class CRCError : public std::runtime_error {
@@ -259,8 +266,6 @@ public:
     };
 
 protected:
-    void processDataCRC(uint8_t data);
-
     /**
      * Add to buffer Modbus function. Assumes subnet, data lengths and triggers are
      * send by FPGA class. If non-broadcast address is passed, stores address
@@ -327,6 +332,8 @@ private:
     uint16_t _crcCounter;
 
     std::queue<std::pair<uint8_t, uint8_t>> _commanded;
+
+    void _processDataCRC(uint8_t data);
 
     /**
      * Reset internal CRC counter.

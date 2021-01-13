@@ -325,8 +325,8 @@ TEST_CASE("Unmatched response", "[ILC]") {
     // missing reply
     constructCommands();
     ilc1.resetServer(121);
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength() - 1),
-                      ModbusBuffer::UnmatchedFunction);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength() - 1));
+    REQUIRE_THROWS(ilc1.checkCommandedEmpty());
 
     // recheck
     constructCommands();
@@ -365,4 +365,60 @@ TEST_CASE("Error response", "[ILC]") {
 
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ILC::Exception);
     REQUIRE(ilc1.responseUniqueID == 0);
+}
+
+TEST_CASE("Multiple calls to processResponse", "[ILC]") {
+    TestILC ilc1;
+    TestILC ilc2;
+
+    ilc1.changeILCMode(17, 3);
+    ilc1.reportServerID(18);
+
+    // construct response in ILC
+    ilc2.write<uint8_t>(17);
+    ilc2.write<uint8_t>(65);
+    ilc2.write<uint16_t>(4);
+    ilc2.writeCRC();
+
+    REQUIRE(ilc1.newMode == 0);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.newMode == 4);
+
+    ilc2.clear();
+    ilc2.write<uint8_t>(18);
+    ilc2.write<uint8_t>(17);
+    ilc2.write<uint8_t>(15);
+
+    // uniqueID
+    ilc2.write<uint8_t>(1);
+    ilc2.write<uint8_t>(2);
+    ilc2.write<uint8_t>(3);
+    ilc2.write<uint8_t>(4);
+    ilc2.write<uint8_t>(5);
+    ilc2.write<uint8_t>(6);
+
+    ilc2.write<uint8_t>(7);
+    ilc2.write<uint8_t>(8);
+    ilc2.write<uint8_t>(9);
+    ilc2.write<uint8_t>(10);
+    ilc2.write<uint8_t>(11);
+    ilc2.write<uint8_t>(12);
+
+    ilc2.write<uint8_t>('A');
+    ilc2.write<uint8_t>('b');
+    ilc2.write<uint8_t>('C');
+    ilc2.writeCRC();
+
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+
+    REQUIRE(ilc1.responseUniqueID == 0x010203040506);
+    REQUIRE(ilc1.responseILCAppType == 7);
+    REQUIRE(ilc1.responseNetworkNodeType == 8);
+    REQUIRE(ilc1.responseILCSelectedOptions == 9);
+    REQUIRE(ilc1.responseNetworkNodeOptions == 10);
+    REQUIRE(ilc1.responseMajorRev == 11);
+    REQUIRE(ilc1.responseMinorRev == 12);
+    REQUIRE(ilc1.responseFirmwareName == "AbC");
+
+    REQUIRE_NOTHROW(ilc1.checkCommandedEmpty());
 }
