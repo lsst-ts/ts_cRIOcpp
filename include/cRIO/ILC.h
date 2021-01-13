@@ -76,11 +76,16 @@ public:
      * function was called in request (using _commanded buffer) and calls
      * method to process data. Repeat until all data are processed.
      *
+     * @note Can be called multiple times. Please call ModbusBuffer::checkCommandedEmpty
+     * after all data are processed.
+     *
      * @param response response includes response code (0x9) and start bit (need to >> 1 && 0xFF to get the
      * Modbus data)
      * @param length data length
      *
      * @throw std::runtime_error subclass on any detected error
+     *
+     * @see ModbusBuffer::checkCommandedEmpty()
      */
     void processResponse(uint16_t* response, size_t length);
 
