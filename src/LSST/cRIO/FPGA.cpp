@@ -86,10 +86,6 @@ void FPGA::ilcCommands(uint16_t cmd, ILC &ilc) {
                     dataStart = p;
                 }
                 break;
-            case 0xA0000:
-                ilc.processResponse(dataStart, p - dataStart);
-                dataStart = NULL;
-                break;
             case 0xB000:
                 if (endTsShift == 64) {
                     throw std::runtime_error("End timestamp received twice!");
@@ -97,6 +93,12 @@ void FPGA::ilcCommands(uint16_t cmd, ILC &ilc) {
 
                 endTs |= static_cast<uint64_t>((*p) & 0x00FF) << endTsShift;
                 endTsShift += 8;
+                // don't break here - data also ends when timestamp is received
+            case 0xA000:
+                if (dataStart) {
+                    ilc.processResponse(dataStart, p - dataStart);
+                    dataStart = NULL;
+                }
                 break;
             default:
                 throw std::runtime_error(fmt::format("Invalid reply: {0:04x} ({0})", *p));
