@@ -253,6 +253,12 @@ void CliApp::saveHistory() {
     }
 }
 
+const bool CliApp::onOff(std::string on) {
+    if (strcasecmp(on.c_str(), "on") == 0 || on == "1") return true;
+    if (strcasecmp(on.c_str(), "off") == 0 || on == "0") return false;
+    throw std::runtime_error("Invalid on/off string:" + on);
+}
+
 /**
  * Verify if passed arguments match argument map.
  *
@@ -285,7 +291,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
     size_t an = 0;
 
-    for (const char *a = args; *a; a++, an++) {
+    for (const char* a = args; *a; a++, an++) {
         if (an >= cmds.size()) {
             if (*a == 's' || *a == 'f' || *a == 'i' || *a == 'b' || *a == 'd' || *a == 'h' || *a == '?') {
                 return an;

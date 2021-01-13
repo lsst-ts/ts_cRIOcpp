@@ -35,15 +35,16 @@ namespace LSST {
 namespace cRIO {
 
 void FPGA::ilcCommands(uint16_t cmd, ILC &ilc) {
-    size_t requestLen = ilc.getLength() + 4;
+    size_t requestLen = ilc.getLength() + 5;
     uint16_t data[requestLen];
     data[0] = cmd;
-    data[1] = ilc.getLength();
-    memcpy(data + 2, ilc.getBuffer(), ilc.getLength());
-    data[requestLen - 1] = 0x7000;
+    data[1] = ilc.getLength() + 2;
+    data[2] = 0x8000;
+    memcpy(data + 3, ilc.getBuffer(), ilc.getLength() * sizeof(uint16_t));
+    data[requestLen - 2] = 0x7000;
     // TODO the "ModbusSoftwareTrigger" constant is FPGA specific
     // some effort would be needed to standartize FPGA commands
-    data[requestLen] = 252;
+    data[requestLen - 1] = 252;
 
     writeCommandFIFO(data, requestLen, 0);
 

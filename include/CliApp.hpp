@@ -191,6 +191,11 @@ public:
      */
     void saveHistory();
 
+    /**
+     * Transforms on/off, 0/1 etc strings into bool.
+     */
+    static const bool onOff(std::string on);
+
     int verbose;
 
 protected:
