@@ -61,7 +61,11 @@ void FPGA::ilcCommands(uint16_t cmd, ILC &ilc) {
 
     readU16ResponseFIFO(&responseLen, 1, 20);
     if (responseLen <= 4) {
-        throw std::runtime_error("FPGA::ilcCommands timeout on response");
+        if (responseLen > 0) {
+            uint16_t buffer[responseLen];
+            readU16ResponseFIFO(buffer, responseLen, 10);
+        }
+        throw std::runtime_error("FPGA::ilcCommands timeout on response: " + std::to_string(responseLen));
     }
 
     uint16_t buffer[responseLen];
