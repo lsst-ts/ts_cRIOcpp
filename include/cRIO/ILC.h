@@ -20,6 +20,9 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef _cRIO_ILC_
+#define _cRIO_ILC_
+
 #include <cRIO/ModbusBuffer.h>
 
 #include <functional>
@@ -236,7 +239,10 @@ private:
     std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
 
     uint8_t _broadcastCounter;
+    unsigned int _timestampShift;
 };
 
 }  // namespace cRIO
 }  // namespace LSST
+
+#endif  // !_cRIO_ILC_

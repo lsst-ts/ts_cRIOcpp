@@ -26,6 +26,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
+#include "ILC.h"
+
 namespace LSST {
 namespace cRIO {
 
@@ -67,6 +69,11 @@ public:
      * @throw NiError on NI error
      */
     virtual void finalize() = 0;
+
+    /**
+     * Send command to ILCs.
+     */
+    void ilcCommands(uint16_t cmd, ILC& ilc);
 
     /**
      * Writes buffer to command FIFO. Command FIFO is processed in
@@ -117,9 +124,40 @@ public:
 
     /**
      *
+     * @param data
+     * @param length
+     * @param timeout
+     *
      * @throw NiError on NI error
      */
     virtual void readU16ResponseFIFO(uint16_t* data, int32_t length, int32_t timeout) = 0;
+
+    /**
+     * Wait for given IRQs.
+     *
+     * @param irqs IRQ mask. Each interrupt corresponds to a bit
+     * @param timeout timeout in milliseconds
+     * @param triggered
+     *
+     * @note the method shall allocate context (for IRQ handling) as needed from the current thread id
+     */
+    virtual void waitOnIrqs(uint32_t irqs, uint32_t timeout, uint32_t* triggered = NULL) = 0;
+
+    /**
+     * Acknowledges IRQs. Clear IRSq on FPGA.
+     *
+     * @param irqs bitmask of IRQs to clear. FPGA has 32 IRQs channels, each
+     * bit represents an interrupt.
+     */
+    virtual void ackIrqs(uint32_t irqs) = 0;
+
+protected:
+    /**
+     * Called when full 64 bit timestamp is received.
+     *
+     * @param timestamp received timestamp
+     */
+    virtual void reportTime(uint64_t begin, uint64_t end) {}
 };
 
 }  // namespace cRIO

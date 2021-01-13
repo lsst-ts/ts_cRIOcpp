@@ -259,8 +259,6 @@ public:
     };
 
 protected:
-    void processDataCRC(uint8_t data);
-
     /**
      * Add to buffer Modbus function. Assumes subnet, data lengths and triggers are
      * send by FPGA class. If non-broadcast address is passed, stores address
@@ -327,6 +325,8 @@ private:
     uint16_t _crcCounter;
 
     std::queue<std::pair<uint8_t, uint8_t>> _commanded;
+
+    void _processDataCRC(uint8_t data);
 
     /**
      * Reset internal CRC counter.

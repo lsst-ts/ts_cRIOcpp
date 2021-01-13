@@ -71,7 +71,7 @@ std::vector<uint8_t> ModbusBuffer::getReadData(int32_t length) {
 void ModbusBuffer::readBuffer(void* buf, size_t len) {
     for (size_t i = 0; i < len; i++) {
         uint8_t d = _readInstructionByte();
-        processDataCRC(d);
+        _processDataCRC(d);
         (reinterpret_cast<uint8_t*>(buf))[i] = d;
     }
 }
@@ -208,18 +208,6 @@ ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func
                                          "{1} (0x{1:02x}) from {0}",
                                          address, function, expectedAddress, expectedFunction)) {}
 
-void ModbusBuffer::processDataCRC(uint8_t data) {
-    _crcCounter = _crcCounter ^ (uint16_t(data));
-    for (int j = 0; j < 8; j++) {
-        if (_crcCounter & 0x0001) {
-            _crcCounter = _crcCounter >> 1;
-            _crcCounter = _crcCounter ^ 0xA001;
-        } else {
-            _crcCounter = _crcCounter >> 1;
-        }
-    }
-}
-
 void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t timeout) {
     write(address);
     write(function);
@@ -260,6 +248,18 @@ void ModbusBuffer::checkCommanded(uint8_t address, uint8_t function) {
     }
 }
 
+void ModbusBuffer::_processDataCRC(uint8_t data) {
+    _crcCounter = _crcCounter ^ (uint16_t(data));
+    for (int j = 0; j < 8; j++) {
+        if (_crcCounter & 0x0001) {
+            _crcCounter = _crcCounter >> 1;
+            _crcCounter = _crcCounter ^ 0xA001;
+        } else {
+            _crcCounter = _crcCounter >> 1;
+        }
+    }
+}
+
 void ModbusBuffer::_pushCommanded(uint8_t address, uint8_t function) {
     if ((address > 0 && address < 248) || (address == 255)) {
         _commanded.push(std::pair<uint8_t, uint8_t>(address, function));
@@ -267,7 +267,7 @@ void ModbusBuffer::_pushCommanded(uint8_t address, uint8_t function) {
 }
 
 uint16_t ModbusBuffer::_getByteInstruction(uint8_t data) {
-    processDataCRC(data);
+    _processDataCRC(data);
     return 0x1200 | ((static_cast<uint16_t>(data)) << 1);
 }
 
