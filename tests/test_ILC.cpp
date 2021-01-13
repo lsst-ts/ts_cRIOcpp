@@ -325,8 +325,8 @@ TEST_CASE("Unmatched response", "[ILC]") {
     // missing reply
     constructCommands();
     ilc1.resetServer(121);
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength() - 1),
-                      ModbusBuffer::UnmatchedFunction);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength() - 1));
+    REQUIRE_THROWS(ilc1.checkCommandedEmpty());
 
     // recheck
     constructCommands();
