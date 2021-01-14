@@ -101,6 +101,7 @@ double ModbusBuffer::readTimestamp() {
 void ModbusBuffer::checkCRC() {
     uint16_t crc;
     uint16_t calCrc = _crcCounter;
+    _recordChanges = false;
     readBuffer(&crc, 2);
     crc = le32toh(crc);
     if (crc != calCrc) {

@@ -234,10 +234,12 @@ TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
     TestBuffer mbuf;
 
     mbuf.testFunction(11, 23, 25, static_cast<uint8_t>(0x1a), static_cast<uint16_t>(0xffcc),
-                      static_cast<int32_t>(-977453), static_cast<float>(M_PI * 211.12),
-                      static_cast<uint32_t>(87346));
+                      static_cast<int32_t>(-977453), static_cast<uint32_t>(0xffaaccdd),
+                      static_cast<float>(M_PI * 211.12), static_cast<uint32_t>(87346));
 
-    auto readAll = [&mbuf]() {
+    std::vector<uint8_t> changed;
+
+    auto readAll = [&mbuf, &changed](int32_t nrp = -977453, uint32_t rp = 87346) {
         mbuf.reset();
 
         REQUIRE(mbuf.read<uint8_t>() == 11);
@@ -248,19 +250,18 @@ TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
         REQUIRE(mbuf.read<uint16_t>() == 0xffcc);
 
         REQUIRE_NOTHROW(mbuf.pauseRecordChanges());
-        REQUIRE(mbuf.read<int32_t>() == -977453);
+        REQUIRE(mbuf.read<int32_t>() == nrp);
         REQUIRE_NOTHROW(mbuf.recordChanges());
 
+        REQUIRE(mbuf.read<uint32_t>() == 0xffaaccdd);
         REQUIRE(mbuf.read<float>() == static_cast<float>(M_PI * 211.12));
-        REQUIRE(mbuf.read<uint32_t>() == 87346);
+        REQUIRE(mbuf.read<uint32_t>() == rp);
         REQUIRE_NOTHROW(mbuf.checkCRC());
         REQUIRE_NOTHROW(mbuf.readEndOfFrame());
         REQUIRE(mbuf.readWaitForRx() == 25);
     };
 
     readAll();
-
-    std::vector<uint8_t> changed;
     REQUIRE(mbuf.checkRecording(changed) == false);
 
     readAll();
@@ -275,5 +276,32 @@ TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
     REQUIRE(mbuf.checkRecording(changed) == false);
 
     readAll();
+    REQUIRE(mbuf.checkRecording(changed) == true);
+
+    mbuf.clear();
+    mbuf.testFunction(11, 23, 25, static_cast<uint8_t>(0x1a), static_cast<uint16_t>(0xffcc),
+                      static_cast<int32_t>(-977453), static_cast<uint32_t>(0xffaaccdd),
+                      static_cast<float>(M_PI * 211.12), static_cast<uint32_t>(87346));
+
+    readAll();
+    REQUIRE(mbuf.checkRecording(changed) == true);
+
+    mbuf.clear();
+    mbuf.testFunction(11, 23, 25, static_cast<uint8_t>(0x1a), static_cast<uint16_t>(0xffcc),
+                      static_cast<int32_t>(2956), static_cast<uint32_t>(0xffaaccdd),
+                      static_cast<float>(M_PI * 211.12), static_cast<uint32_t>(87346));
+
+    readAll(2956);
+    REQUIRE(mbuf.checkRecording(changed) == true);
+
+    mbuf.clear();
+    mbuf.testFunction(11, 23, 25, static_cast<uint8_t>(0x1a), static_cast<uint16_t>(0xffcc),
+                      static_cast<int32_t>(2956), static_cast<uint32_t>(0xffaaccdd),
+                      static_cast<float>(M_PI * 211.12), static_cast<uint32_t>(48342));
+
+    readAll(2956, 48342);
+    REQUIRE(mbuf.checkRecording(changed) == false);
+
+    readAll(2956, 48342);
     REQUIRE(mbuf.checkRecording(changed) == true);
 }

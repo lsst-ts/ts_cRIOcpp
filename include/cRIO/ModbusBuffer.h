@@ -157,7 +157,10 @@ public:
     double readTimestamp();
 
     /**
-     * Check that accumulated data CRC matches readed CRC.
+     * Check that accumulated data CRC matches readed CRC. Also stops recording
+     * of changes, as CRC shall be at the end of buffer.
+     *
+     * @see pauseRecordChanges
      *
      * @throw CRCError if CRC doesn't match
      */
@@ -352,7 +355,7 @@ protected:
      *
      * @param cached values to compare
      *
-     * @return true if chached equal what was read (with recording enabled)
+     * @return true if cached equal what was read (with recording enabled)
      */
     bool checkRecording(std::vector<uint8_t>& cached);
 
