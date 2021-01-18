@@ -73,8 +73,6 @@ public:
 
     uint8_t lastReset;
 
-    bool checkCached(uint8_t address, uint8_t function) { return ILC::checkCached(address, function); };
-
 protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
                          uint8_t ilcSelectedOptions, uint8_t networkNodeOptions, uint8_t majorRev,
