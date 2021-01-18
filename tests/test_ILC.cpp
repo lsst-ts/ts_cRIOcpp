@@ -69,6 +69,8 @@ public:
 
     uint8_t lastReset;
 
+    bool checkCached(uint8_t address, uint8_t function) { return ILC::checkCached(address, function); };
+
 protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
                          uint8_t ilcSelectedOptions, uint8_t networkNodeOptions, uint8_t majorRev,
@@ -421,4 +423,56 @@ TEST_CASE("Multiple calls to processResponse", "[ILC]") {
     REQUIRE(ilc1.responseFirmwareName == "AbC");
 
     REQUIRE_NOTHROW(ilc1.checkCommandedEmpty());
+}
+
+TEST_CASE("Cache management", "[ILC]") {
+    TestILC ilc1, ilc2;
+
+    ilc1.reportServerID(18);
+
+    auto constructResponse = [&ilc2](uint8_t id1) {
+        ilc2.clear();
+        ilc2.write<uint8_t>(18);
+        ilc2.write<uint8_t>(17);
+        ilc2.write<uint8_t>(15);
+
+        // uniqueID
+        ilc2.write<uint8_t>(1);
+        ilc2.write<uint8_t>(2);
+        ilc2.write<uint8_t>(3);
+        ilc2.write<uint8_t>(4);
+        ilc2.write<uint8_t>(5);
+        ilc2.write<uint8_t>(6);
+
+        ilc2.write<uint8_t>(7);
+        ilc2.write<uint8_t>(8);
+        ilc2.write<uint8_t>(9);
+        ilc2.write<uint8_t>(10);
+        ilc2.write<uint8_t>(11);
+        ilc2.write<uint8_t>(12);
+
+        ilc2.write<uint8_t>(id1);
+        ilc2.write<uint8_t>('b');
+        ilc2.write<uint8_t>('C');
+        ilc2.writeCRC();
+    };
+
+    constructResponse('A');
+
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.checkCached(18, 17) == false);
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.checkCached(18, 17) == true);
+
+    constructResponse('a');
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.checkCached(18, 17) == false);
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.checkCached(18, 17) == true);
 }

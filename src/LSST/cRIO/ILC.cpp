@@ -34,6 +34,7 @@ ILC::ILC() {
     addResponse(
             17,
             [this](uint8_t address) {
+                recordChanges();
                 uint8_t fnLen = read<uint8_t>();
                 if (fnLen < 12) {
                     throw std::runtime_error(fmt::format(
@@ -149,6 +150,22 @@ uint8_t ILC::nextBroadcastCounter() {
         _broadcastCounter = 0;
     }
     return _broadcastCounter;
+}
+
+bool ILC::checkCached(uint8_t address, uint8_t function) {
+    try {
+        std::map<uint8_t, std::vector<uint8_t>> &fc = _cachedResponse.at(address);
+        try {
+            return checkRecording(fc[function]);
+        } catch (std::out_of_range) {
+            _cachedResponse[address].emplace(function, std::vector<uint8_t>());
+        }
+    } catch (std::out_of_range) {
+        _cachedResponse.emplace(std::make_pair(
+                address,
+                std::map<uint8_t, std::vector<uint8_t>>({std::make_pair(function, std::vector<uint8_t>())})));
+    }
+    return checkRecording(_cachedResponse[address][function]);
 }
 
 }  // namespace cRIO
