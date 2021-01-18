@@ -33,6 +33,8 @@ using namespace LSST::cRIO;
 class TestILC : public ILC {
 public:
     TestILC() {
+        serverIDCallCounter = 0;
+
         responseUniqueID = 0;
         responseILCAppType = 0;
         responseNetworkNodeType = 0;
@@ -52,6 +54,8 @@ public:
         lastReset = 0;
     }
 
+    unsigned int serverIDCallCounter;
+
     uint64_t responseUniqueID;
 
     uint8_t responseILCAppType, responseNetworkNodeType, responseILCSelectedOptions,
@@ -69,12 +73,11 @@ public:
 
     uint8_t lastReset;
 
-    bool checkCached(uint8_t address, uint8_t function) { return ILC::checkCached(address, function); };
-
 protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
                          uint8_t ilcSelectedOptions, uint8_t networkNodeOptions, uint8_t majorRev,
                          uint8_t minorRev, std::string firmwareName) override {
+        serverIDCallCounter++;
         responseUniqueID = uniqueID;
         responseILCAppType = ilcAppType;
         responseNetworkNodeType = networkNodeType;
@@ -425,7 +428,7 @@ TEST_CASE("Multiple calls to processResponse", "[ILC]") {
     REQUIRE_NOTHROW(ilc1.checkCommandedEmpty());
 }
 
-TEST_CASE("Cache management", "[ILC]") {
+TEST_CASE("Response cache management", "[ILC]") {
     TestILC ilc1, ilc2;
 
     ilc1.reportServerID(18);
@@ -460,19 +463,23 @@ TEST_CASE("Cache management", "[ILC]") {
     constructResponse('A');
 
     REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
-    REQUIRE(ilc1.checkCached(18, 17) == false);
+    REQUIRE(ilc1.serverIDCallCounter == 1);
 
     ilc1.reportServerID(18);
     REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
-    REQUIRE(ilc1.checkCached(18, 17) == true);
+    REQUIRE(ilc1.serverIDCallCounter == 1);
 
     constructResponse('a');
 
     ilc1.reportServerID(18);
     REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
-    REQUIRE(ilc1.checkCached(18, 17) == false);
+    REQUIRE(ilc1.serverIDCallCounter == 2);
 
     ilc1.reportServerID(18);
     REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
-    REQUIRE(ilc1.checkCached(18, 17) == true);
+    REQUIRE(ilc1.serverIDCallCounter == 2);
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 2);
 }

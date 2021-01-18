@@ -247,7 +247,7 @@ protected:
      * found, create entry in cache. Use cache entry for
      * ModbusBuffer::checkRecording call.
      *
-     * Example code hopefully explain how to use the function:
+     * Example code in test_ILC.cpp hopefully explain how to use the function.
      *
      * @param address called ILC address
      * @param function called ILC function code
@@ -258,7 +258,7 @@ protected:
      * @see ModbusBuffer::pauseRecordChanges
      * @see ModbusBuffer::checkRecording
      */
-    bool checkCached(uint8_t address, uint8_t function);
+    bool responseMatchCached(uint8_t address, uint8_t function);
 
 private:
     std::map<uint8_t, std::function<void(uint8_t)>> _actions;

@@ -51,28 +51,36 @@ ILC::ILC() {
                 uint8_t minorRev = read<uint8_t>();
                 std::string fwName = readString(fnLen);
                 checkCRC();
-                processServerID(address, uniqueID, ilcAppType, networkNodeType, ilcSelectedOptions,
-                                networkNodeOptions, majorRev, minorRev, fwName);
+                if (responseMatchCached(address, 17) == false) {
+                    processServerID(address, uniqueID, ilcAppType, networkNodeType, ilcSelectedOptions,
+                                    networkNodeOptions, majorRev, minorRev, fwName);
+                }
             },
             145);
 
     addResponse(
             18,
             [this](uint8_t address) {
+                recordChanges();
                 uint8_t mode = read<uint8_t>();
                 uint16_t status = read<uint16_t>();
                 uint16_t faults = read<uint16_t>();
                 checkCRC();
-                processServerStatus(address, mode, status, faults);
+                if (responseMatchCached(address, 18) == false) {
+                    processServerStatus(address, mode, status, faults);
+                }
             },
             146);
 
     addResponse(
             65,
             [this](uint8_t address) {
+                recordChanges();
                 uint16_t mode = read<uint16_t>();
                 checkCRC();
-                processChangeILCMode(address, mode);
+                if (responseMatchCached(address, 65) == false) {
+                    processChangeILCMode(address, mode);
+                }
             },
             193);
 
@@ -152,7 +160,7 @@ uint8_t ILC::nextBroadcastCounter() {
     return _broadcastCounter;
 }
 
-bool ILC::checkCached(uint8_t address, uint8_t function) {
+bool ILC::responseMatchCached(uint8_t address, uint8_t function) {
     try {
         std::map<uint8_t, std::vector<uint8_t>> &fc = _cachedResponse.at(address);
         try {
