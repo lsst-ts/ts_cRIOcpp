@@ -48,6 +48,8 @@ typedef enum { SS, TS } fpgaType;
  */
 class FPGA {
 public:
+    virtual ~FPGA() {}
+
     /**
      * Construct FPGA. Sets internal variable depending on FPGA type.
      *
