@@ -165,10 +165,10 @@ bool ILC::responseMatchCached(uint8_t address, uint8_t function) {
         std::map<uint8_t, std::vector<uint8_t>> &fc = _cachedResponse.at(address);
         try {
             return checkRecording(fc[function]);
-        } catch (std::out_of_range) {
+        } catch (std::out_of_range &ex1) {
             _cachedResponse[address].emplace(function, std::vector<uint8_t>());
         }
-    } catch (std::out_of_range) {
+    } catch (std::out_of_range &ex2) {
         _cachedResponse.emplace(std::make_pair(
                 address,
                 std::map<uint8_t, std::vector<uint8_t>>({std::make_pair(function, std::vector<uint8_t>())})));
