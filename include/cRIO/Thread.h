@@ -46,6 +46,11 @@ public:
      */
     void stop();
 
+    /**
+     * Join running thread. Waits for thread exits.
+     */
+    void join();
+
 protected:
     /**
      * Mutex protecting keepRunning access, can be used in condition variable.

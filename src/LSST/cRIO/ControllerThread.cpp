@@ -70,9 +70,9 @@ void ControllerThread::_clear() {
         std::lock_guard<std::mutex> lg(runMutex);
         while (!_queue.empty()) {
             Command* command = _queue.front();
+            _queue.pop();
             delete command;
         }
-        std::queue<Command*>().swap(_queue);
     }
 }
 

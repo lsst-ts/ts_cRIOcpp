@@ -33,10 +33,10 @@ namespace cRIO {
  * Parent class for all commands.
  *
  * Follows Command Pattern from Design Patterns. Encapsulates command executed
- * in ContollerThread. Pure virtual methed ::execute() shall be overriden in
+ * in ControllerThread. Pure virtual methed ::execute() shall be overriden in
  * child classes, implementing specific commands.
  *
- * @see ContollerThread
+ * @see ControllerThread
  */
 class Command {
 protected:
