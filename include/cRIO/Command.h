@@ -39,16 +39,8 @@ namespace cRIO {
  * @see ControllerThread
  */
 class Command {
-protected:
-    int32_t commandID;
-
 public:
     virtual ~Command();
-
-    /**
-     * Gets the command ID.
-     */
-    virtual int32_t getCommandID() { return commandID; }
 
     /**
      * Validates the command.

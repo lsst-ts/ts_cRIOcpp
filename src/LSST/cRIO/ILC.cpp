@@ -102,55 +102,59 @@ ILC::ILC() {
             235);
 }
 
-void ILC::addResponse(uint8_t function, std::function<void(uint8_t)> action, uint8_t errorResponse,
+void ILC::addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,
                       std::function<void(uint8_t, uint8_t)> errorAction) {
-    _actions[function] = action;
+    _actions[func] = action;
     _errorActions[errorResponse] =
-            std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>(function, errorAction);
+            std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>(func, errorAction);
 }
 
 void ILC::processResponse(uint16_t *response, size_t length) {
+    preProcess();
+
     setBuffer(response, length);
 
     while (endOfBuffer() == false) {
         uint8_t address = read<uint8_t>();
-        uint8_t function = read<uint8_t>();
+        uint8_t func = read<uint8_t>();
 
         // either function response was received, or error response. For error
         // response, check if the function for which it is used was called.
-        if (_errorActions.find(function) == _errorActions.end()) {
-            checkCommanded(address, function);
+        if (_errorActions.find(func) == _errorActions.end()) {
+            checkCommanded(address, func);
         } else {
-            checkCommanded(address, _errorActions[function].first);
+            checkCommanded(address, _errorActions[func].first);
         }
 
         try {
-            _actions.at(function)(address);
+            _actions.at(func)(address);
         } catch (std::out_of_range &_ex) {
             try {
-                auto errorAction = _errorActions.at(function);
+                auto errorAction = _errorActions.at(func);
                 uint8_t exception = read<uint8_t>();
                 checkCRC();
                 if (errorAction.second) {
                     errorAction.second(address, exception);
                 } else {
-                    throw Exception(address, function, exception);
+                    throw Exception(address, func, exception);
                 }
             } catch (std::out_of_range &_ex2) {
-                throw UnknownResponse(address, function);
+                throw UnknownResponse(address, func);
             }
         }
     }
+
+    postProcess();
 }
 
-ILC::UnknownResponse::UnknownResponse(uint8_t address, uint8_t function)
+ILC::UnknownResponse::UnknownResponse(uint8_t address, uint8_t func)
         : std::runtime_error(fmt::format("Unknown function {1} (0x{1:02x}) in ILC response for address {0}",
-                                         address, function)) {}
+                                         address, func)) {}
 
-ILC::Exception::Exception(uint8_t address, uint8_t function, uint8_t exception)
+ILC::Exception::Exception(uint8_t address, uint8_t func, uint8_t exception)
         : std::runtime_error(
                   fmt::format("ILC Exception {2} (ILC address {0}, ILC response function {1} (0x{1:02x}))",
-                              address, function, exception)) {}
+                              address, func, exception)) {}
 
 uint8_t ILC::nextBroadcastCounter() {
     _broadcastCounter++;
@@ -160,20 +164,20 @@ uint8_t ILC::nextBroadcastCounter() {
     return _broadcastCounter;
 }
 
-bool ILC::responseMatchCached(uint8_t address, uint8_t function) {
+bool ILC::responseMatchCached(uint8_t address, uint8_t func) {
     try {
         std::map<uint8_t, std::vector<uint8_t>> &fc = _cachedResponse.at(address);
         try {
-            return checkRecording(fc[function]);
+            return checkRecording(fc[func]);
         } catch (std::out_of_range &ex1) {
-            _cachedResponse[address].emplace(function, std::vector<uint8_t>());
+            _cachedResponse[address].emplace(func, std::vector<uint8_t>());
         }
     } catch (std::out_of_range &ex2) {
         _cachedResponse.emplace(std::make_pair(
                 address,
-                std::map<uint8_t, std::vector<uint8_t>>({std::make_pair(function, std::vector<uint8_t>())})));
+                std::map<uint8_t, std::vector<uint8_t>>({std::make_pair(func, std::vector<uint8_t>())})));
     }
-    return checkRecording(_cachedResponse[address][function]);
+    return checkRecording(_cachedResponse[address][func]);
 }
 
 }  // namespace cRIO
