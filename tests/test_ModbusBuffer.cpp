@@ -31,6 +31,16 @@
 
 using namespace LSST::cRIO;
 
+TEST_CASE("Construct filled buffer", "[ModbusBuffer]") {
+    uint16_t buf[3] = {0x1202, 0x1204, 0x13fe};
+    ModbusBuffer mbuf(buf, 3);
+
+    REQUIRE(mbuf.read<uint8_t>() == 0x01);
+    REQUIRE(mbuf.read<uint8_t>() == 0x02);
+    REQUIRE(mbuf.read<uint8_t>() == 0xff);
+    REQUIRE_THROWS_AS(mbuf.read<uint8_t>(), ModbusBuffer::EndOfBuffer&);
+}
+
 TEST_CASE("CalculateCRC", "[ModbusBuffer]") {
     ModbusBuffer mbuf;
     // address

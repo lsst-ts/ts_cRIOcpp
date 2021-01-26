@@ -67,6 +67,15 @@ public:
      * Constructs empty ModbusBuffer.
      */
     ModbusBuffer();
+
+    /**
+     * Construct ModbusBuffer from data
+     *
+     * @param buffer data buffer
+     * @param length length of data buffer
+     */
+    ModbusBuffer(uint16_t* buffer, size_t length) { setBuffer(buffer, length); }
+
     virtual ~ModbusBuffer();
 
     /**
