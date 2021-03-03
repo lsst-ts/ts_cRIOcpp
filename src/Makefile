@@ -16,7 +16,8 @@ endif
 
 CPPFLAGS := -I. \
 	-I"../include" \
-	-I"."
+	-I"." \
+	-DVERSION="\"$(VERSION)\""
 
 libcRIOcpp.a: $(OBJS)
 	@echo '[AR ] $@'
