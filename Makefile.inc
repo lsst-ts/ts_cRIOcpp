@@ -24,4 +24,10 @@ LIBS := -ldl -lpthread
 BOOST_CPPFLAGS := -I/usr/include/boost169
 CPP_FLAGS := -lpthread
 
-VERSION := $(shell git describe --tags --dirty)
+GIT := $(shell command -v git 2> /dev/null)
+
+ifndef GIT
+   VERSION := "v0.0.0-None"
+else
+   VERSION := $(shell git describe --tags --dirty)
+endif
