@@ -10,6 +10,8 @@ all: lib/libcRIOcpp.a
 
 lib/libcRIOcpp.a: FORCE
 	$(MAKE) -C src libcRIOcpp.a
+	mkdir -p lib
+	mv src/libcRIOcpp.a lib/
 
 # Other Targets
 clean:

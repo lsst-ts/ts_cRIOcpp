@@ -29,8 +29,8 @@ junit: compile
 clean:
 	@$(foreach df,$(BINARIES) $(DEPS) $(JUNIT_FILES),echo '[RM ] ${df}'; $(RM) ${df};)
 
-../src/libM1M3SS.a: FORCE
-	@$(MAKE) -C ../src libM1M3SS.a SIMULATOR=1
+../lib/libcRIOcpp.a: FORCE
+	@$(MAKE) -C ../ lib/libcRIOcpp.a SIMULATOR=1
 
 %.cpp.o: %.cpp.d
 	@echo '[CPP] $(patsubst %.d,%,$<)'
@@ -40,6 +40,6 @@ clean:
 	@echo '[DPP] $<'
 	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) $(TEST_CPPFLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'
 
-${BINARIES}: %: %.cpp.o ../src/libcRIOcpp.a
+${BINARIES}: %: %.cpp.o ../lib/libcRIOcpp.a
 	@echo '[TPP] $<'
 	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(LIBS) $^ $(CPP_FLAGS)
