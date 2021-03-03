@@ -48,6 +48,13 @@ typedef enum { SS, TS } fpgaType;
  */
 class FPGA {
 public:
+    /**
+     * Construct FPGA. Sets internal variable depending on FPGA type.
+     *
+     * @param type Either SS for Static Support FPGA or TS for Thermal System.
+     */
+    FPGA(fpgaType type);
+
     virtual ~FPGA() {}
 
     /**
