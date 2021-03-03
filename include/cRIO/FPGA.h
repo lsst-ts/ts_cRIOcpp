@@ -125,7 +125,7 @@ public:
      * @see readU8ResponseFIFO
      * @see readU16ResponseFIFO
      */
-    virtual void writeRequestFIFO(uint16_t* data, int32_t length, int32_t timeout) = 0;
+    virtual void writeRequestFIFO(uint16_t* data, size_t length, int32_t timeout) = 0;
 
     /**
      * Write single command into requestFIFO.
@@ -145,7 +145,7 @@ public:
      *
      * @throw NiError on NI error
      */
-    virtual void readU16ResponseFIFO(uint16_t* data, int32_t length, int32_t timeout) = 0;
+    virtual void readU16ResponseFIFO(uint16_t* data, size_t length, int32_t timeout) = 0;
 
     /**
      * Wait for given IRQs.
@@ -159,7 +159,7 @@ public:
     virtual void waitOnIrqs(uint32_t irqs, uint32_t timeout, uint32_t* triggered = NULL) = 0;
 
     /**
-     * Acknowledges IRQs. Clear IRSq on FPGA.
+     * Acknowledges IRQs. Clear IRQs on FPGA.
      *
      * @param irqs bitmask of IRQs to clear. FPGA has 32 IRQs channels, each
      * bit represents an interrupt.
