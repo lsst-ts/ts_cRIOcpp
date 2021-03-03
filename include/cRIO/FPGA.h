@@ -32,6 +32,12 @@ namespace LSST {
 namespace cRIO {
 
 /**
+ * FPGA Type. Currently only SS (Static Support) or TS (Thermal System) are
+ * known and supported.
+ */
+typedef enum { SS, TS } fpgaType;
+
+/**
  * Interface class for cRIO FPGA. Subclasses can talk either to the real HW, or
  * be a software simulator.
  *
@@ -42,6 +48,13 @@ namespace cRIO {
  */
 class FPGA {
 public:
+    /**
+     * Construct FPGA. Sets internal variable depending on FPGA type.
+     *
+     * @param type Either SS for Static Support FPGA or TS for Thermal System.
+     */
+    FPGA(fpgaType type);
+
     virtual ~FPGA() {}
 
     /**
@@ -160,6 +173,10 @@ protected:
      * @param timestamp received timestamp
      */
     virtual void reportTime(uint64_t begin, uint64_t end) {}
+
+private:
+    uint16_t _modbusSoftwareTrigger;
+    uint8_t _modbusIrq;
 };
 
 }  // namespace cRIO
