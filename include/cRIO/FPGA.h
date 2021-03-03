@@ -107,7 +107,7 @@ public:
      */
     virtual void writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) = 0;
 
-    void writeCommandFIFO(uint16_t data, int32_t timeout) { writeCommandFIFO(&data, 1, timeout); }
+    void writeCommandFIFO(uint16_t data, uint32_t timeout) { writeCommandFIFO(&data, 1, timeout); }
 
     /**
      * Performs request for various data stored inside FPGA. This allows access
@@ -125,7 +125,7 @@ public:
      * @see readU8ResponseFIFO
      * @see readU16ResponseFIFO
      */
-    virtual void writeRequestFIFO(uint16_t* data, size_t length, int32_t timeout) = 0;
+    virtual void writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout) = 0;
 
     /**
      * Write single command into requestFIFO.
@@ -135,7 +135,7 @@ public:
      *
      * @throw NiError on NI error
      */
-    void writeRequestFIFO(uint16_t data, int32_t timeout) { writeRequestFIFO(&data, 1, timeout); }
+    void writeRequestFIFO(uint16_t data, uint32_t timeout) { writeRequestFIFO(&data, 1, timeout); }
 
     /**
      *
@@ -145,7 +145,7 @@ public:
      *
      * @throw NiError on NI error
      */
-    virtual void readU16ResponseFIFO(uint16_t* data, size_t length, int32_t timeout) = 0;
+    virtual void readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) = 0;
 
     /**
      * Wait for given IRQs.
