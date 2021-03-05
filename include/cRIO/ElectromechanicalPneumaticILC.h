@@ -34,8 +34,10 @@ class ElectromechanicalPneumaticILC : public ILC {
 public:
     /**
      * Populate responses for known ILC functions.
+     *
+     * @param bus ILC bus number (1..). Defaults to 1.
      */
-    ElectromechanicalPneumaticILC();
+    ElectromechanicalPneumaticILC(uint8_t bus = 1);
 
     /**
      * Unicast ADC Channel Offset and Sensitivity. ILC command code 81 (0x51)

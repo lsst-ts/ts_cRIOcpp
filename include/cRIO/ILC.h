@@ -44,8 +44,15 @@ class ILC : public ModbusBuffer {
 public:
     /**
      * Populate responses for know ILC functions.
+     *
+     * @param bus ILC bus number (1..). Defaults to 1.
      */
-    ILC();
+    ILC(uint8_t bus = 1);
+
+    /**
+     * Returns bus number. 1 based (1-5). 1=A,2=B,..5=E bus.
+     */
+    uint8_t getBus() { return _bus; }
 
     void reportServerID(uint8_t address) { callFunction(address, 17, 835); }
     void reportServerStatus(uint8_t address) { callFunction(address, 18, 270); }
@@ -127,9 +134,9 @@ public:
 protected:
     /**
      */
-    virtual void preProcess() {};
+    virtual void preProcess(){};
 
-    virtual void postProcess() {};
+    virtual void postProcess(){};
 
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for
@@ -267,6 +274,8 @@ protected:
     bool responseMatchCached(uint8_t address, uint8_t func);
 
 private:
+    uint8_t _bus;
+
     std::map<uint8_t, std::function<void(uint8_t)>> _actions;
     std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
 

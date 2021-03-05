@@ -39,8 +39,10 @@ class ThermalILC : public ILC {
 public:
     /**
      * Populate responses for known ILC functions.
+     *
+     * @param bus ILC bus number (1..). Defaults to 1.
      */
-    ThermalILC();
+    ThermalILC(uint8_t bus = 1);
 
     /**
      * Unicast heater PWM and fan RPM. ILC command code 88 (0x58)

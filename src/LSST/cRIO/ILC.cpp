@@ -28,7 +28,8 @@
 namespace LSST {
 namespace cRIO {
 
-ILC::ILC() {
+ILC::ILC(uint8_t bus) {
+    _bus = bus;
     _broadcastCounter = 0;
 
     addResponse(

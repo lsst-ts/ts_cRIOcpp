@@ -25,7 +25,7 @@
 namespace LSST {
 namespace cRIO {
 
-ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC() {
+ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(bus) {
     auto calibrationData = [this](uint8_t address) {
         float mainADCK[4], mainOffset[4], mainSensitivity[4], backupADCK[4], backupOffset[4],
                 backupSensitivity[4];
@@ -45,8 +45,7 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC() {
                                backupSensitivity);
     };
 
-    addResponse(
-            81, [this](uint8_t address) { checkCRC(); }, 235);
+    addResponse(81, [this](uint8_t address) { checkCRC(); }, 235);
 
     addResponse(110, calibrationData, 238);
 }

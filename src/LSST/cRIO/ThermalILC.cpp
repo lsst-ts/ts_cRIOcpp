@@ -25,7 +25,7 @@
 namespace LSST {
 namespace cRIO {
 
-ThermalILC::ThermalILC() {
+ThermalILC::ThermalILC(uint8_t bus) : ILC(bus) {
     auto thermalStatus = [this](uint8_t address) {
         uint8_t status = read<uint8_t>();
         float differentialTemperature = read<float>();
