@@ -38,19 +38,20 @@ FPGA::FPGA(fpgaType type) {
     switch (type) {
         case SS:
             _modbusSoftwareTrigger = 252;
-            _modbusIrq = 0x02;
             break;
         case TS:
             _modbusSoftwareTrigger = 252;
-            _modbusIrq = 0x02;
             break;
     }
 };
 
-void FPGA::ilcCommands(uint16_t cmd, ILC &ilc) {
+void FPGA::ilcCommands(ILC &ilc) {
     size_t requestLen = ilc.getLength() + 5;
     uint16_t data[requestLen];
-    data[0] = cmd;
+
+    uint8_t bus = ilc.getBus();
+
+    data[0] = getTxCommand(bus);
     data[1] = ilc.getLength() + 2;
     data[2] = 0x8000;
     memcpy(data + 3, ilc.getBuffer(), ilc.getLength() * sizeof(uint16_t));
@@ -61,11 +62,13 @@ void FPGA::ilcCommands(uint16_t cmd, ILC &ilc) {
 
     std::this_thread::sleep_for(1ms);
 
-    waitOnIrqs(_modbusIrq, 5000);
-    ackIrqs(_modbusIrq);
+    uint32_t irq = getIrq(bus);
+
+    waitOnIrqs(irq, 5000);
+    ackIrqs(irq);
 
     // get back response
-    writeRequestFIFO(13, 0);
+    writeRequestFIFO(getRxCommand(bus), 0);
 
     uint16_t responseLen;
 

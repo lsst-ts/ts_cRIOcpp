@@ -86,9 +86,44 @@ public:
     virtual void finalize() = 0;
 
     /**
-     * Send command to ILCs.
+     * Returns command used on CommandFIFO to write data to Modbus bus
+     * (transmit FIFO).
+     *
+     * @param bus bus number (1 based)
+     *
+     * @return command number
      */
-    void ilcCommands(uint16_t cmd, ILC& ilc);
+    virtual uint16_t getTxCommand(uint8_t bus) = 0;
+
+    /**
+     * Returns command used on RequestFIFO to read response from Modbus FIFO.
+     *
+     * @param bus bus number (1 based)
+     *
+     * @return command number
+     */
+    virtual uint16_t getRxCommand(uint8_t bus) = 0;
+
+    /**
+     * Returns IRQ associated with given bus.
+     *
+     * @param bus bus number (1 based)
+     *
+     * @return IRQ (bit based)
+     */
+    virtual uint32_t getIrq(uint8_t bus) = 0;
+
+    /**
+     * Send commands from ILC.
+     *
+     * @param ilc ILC class. That contains ModbusBuffer with commands. Its
+     * ILC::getBus() method returns bus used for communication.
+     *
+     * @see ILC
+     * @see ILC::getBus()
+     * @see ILC::processResponse()
+     */
+    void ilcCommands(ILC& ilc);
 
     /**
      * Writes buffer to command FIFO. Command FIFO is processed in
