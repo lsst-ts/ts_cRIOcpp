@@ -45,7 +45,8 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
                                backupSensitivity);
     };
 
-    addResponse(81, [this](uint8_t address) { checkCRC(); }, 235);
+    addResponse(81,
+            [this](uint8_t address) { checkCRC(); }, 235);
 
     addResponse(110, calibrationData, 238);
 }
