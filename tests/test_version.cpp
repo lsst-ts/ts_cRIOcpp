@@ -25,7 +25,12 @@
 
 #include <cRIO/version.h>
 
+#include <iostream>
+
 using namespace LSST::cRIO;
 using Catch::Matchers::StartsWith;
 
-TEST_CASE("Version is reported", "[version]") { REQUIRE_THAT(version(), StartsWith("v")); }
+TEST_CASE("Version is reported", "[version]") {
+    std::cout << "Version: " << version() << std::endl;
+    REQUIRE_THAT(version(), StartsWith("v"));
+}

@@ -24,10 +24,8 @@ LIBS := -ldl -lpthread
 BOOST_CPPFLAGS := -I/usr/include/boost169
 CPP_FLAGS := -lpthread
 
-GIT := $(shell command -v git 2> /dev/null)
-
-ifndef GIT
-   VERSION := "v0.0.0-None"
-else
-   VERSION := $(shell git describe --tags --dirty)
+VERSION := $(shell git describe --tags --dirty)
+ifeq ("$(VERSION)","")
+  $(warning "Cannot retrieve version by git, using v0.0.0-None")
+  VERSION := "v0.0.0-None"
 endif
