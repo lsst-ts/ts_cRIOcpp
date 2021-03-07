@@ -62,6 +62,11 @@ public:
     uint8_t getBus() { return _bus; }
 
     /**
+     * Set whenever all received data will trigger callback calls.
+     */
+    void setAlwaysTrigger(bool newAlwaysTrigger) { _alwaysTrigger = newAlwaysTrigger; }
+
+    /**
      * Calls function 17 (0x11), ask for ILC identity.
      *
      * @param address ILC address
@@ -94,7 +99,7 @@ public:
      */
     void changeILCMode(uint8_t address, uint16_t mode) { callFunction(address, 65, 335, mode); }
 
-    /** 
+    /**
      * Set temporary ILC address. ILC must be address-less (attached to address
      * 255). Can be used only if one ILC on a bus failed to read its address
      * from its network connection and therefore adopts the failure address
@@ -345,6 +350,7 @@ private:
     uint8_t _broadcastCounter;
     unsigned int _timestampShift;
 
+    bool _alwaysTrigger;
     std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t>>> _cachedResponse;
 };
 

@@ -31,6 +31,7 @@ namespace cRIO {
 ILC::ILC(uint8_t bus) {
     _bus = bus;
     _broadcastCounter = 0;
+    _alwaysTrigger = false;
 
     addResponse(
             17,
@@ -169,7 +170,7 @@ bool ILC::responseMatchCached(uint8_t address, uint8_t func) {
     try {
         std::map<uint8_t, std::vector<uint8_t>> &fc = _cachedResponse.at(address);
         try {
-            return checkRecording(fc[func]);
+            return checkRecording(fc[func]) && !_alwaysTrigger;
         } catch (std::out_of_range &ex1) {
             _cachedResponse[address].emplace(func, std::vector<uint8_t>());
         }
@@ -178,7 +179,7 @@ bool ILC::responseMatchCached(uint8_t address, uint8_t func) {
                 address,
                 std::map<uint8_t, std::vector<uint8_t>>({std::make_pair(func, std::vector<uint8_t>())})));
     }
-    return checkRecording(_cachedResponse[address][func]);
+    return checkRecording(_cachedResponse[address][func]) && !_alwaysTrigger;
 }
 
 }  // namespace cRIO
