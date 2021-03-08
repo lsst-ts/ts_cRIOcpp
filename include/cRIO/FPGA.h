@@ -58,15 +58,6 @@ public:
     virtual ~FPGA() {}
 
     /**
-     * Construct FPGA. Sets internal variable depending on FPGA type.
-     *
-     * @param type Either SS for Static Support FPGA or TS for Thermal System.
-     */
-    FPGA(fpgaType type);
-
-    virtual ~FPGA() {}
-
-    /**
      * Initialize FPGA.
      *
      * @throw NiError on NI error
