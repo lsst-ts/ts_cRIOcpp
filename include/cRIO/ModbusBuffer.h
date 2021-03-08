@@ -51,6 +51,14 @@ namespace cRIO {
  * serialization of FPGA's FIFO data. Also this class handles CRC calculation,
  * writes (in output buffers) and checks (for input buffers).
  *
+ * This class also manages change detection. When recordChanges() is called,
+ * all read data are (uint_8, uncoverted) are stored into separated buffer.
+ * checkRecording(std::vector<uint8_t>&) can be called after all data are read
+ * to verify the content is the same. This can be used to prevent events
+ * functions being called when no change is detected (so there aren't multiple
+ * SAL calls with events with same contents; shall not be used for telemetry
+ * data, where even non-changed value shall be propagated)..
+ *
  * Functions throws std::runtime_error (or its subclass) on any error.
  */
 class ModbusBuffer {
@@ -59,6 +67,15 @@ public:
      * Constructs empty ModbusBuffer.
      */
     ModbusBuffer();
+
+    /**
+     * Construct ModbusBuffer from data
+     *
+     * @param buffer data buffer
+     * @param length length of data buffer
+     */
+    ModbusBuffer(uint16_t* buffer, size_t length) { setBuffer(buffer, length); }
+
     virtual ~ModbusBuffer();
 
     /**
@@ -149,7 +166,10 @@ public:
     double readTimestamp();
 
     /**
-     * Check that accumulated data CRC matches readed CRC.
+     * Check that accumulated data CRC matches readed CRC. Also stops recording
+     * of changes, as CRC shall be at the end of buffer.
+     *
+     * @see pauseRecordChanges
      *
      * @throw CRCError if CRC doesn't match
      */
@@ -326,6 +346,28 @@ protected:
      */
     void checkCommanded(uint8_t address, uint8_t function);
 
+    /**
+     * Records changes. Stores all read data into separate buffer. Buffer can
+     * be compared to stored buffer using checkRecording.
+     */
+    void recordChanges() { _recordChanges = true; }
+
+    /**
+     * Temporary stop recording changes.
+     */
+    void pauseRecordChanges() { _recordChanges = false; }
+
+    /**
+     * Check if recorded values match cached (previous) values. If change is
+     * detected, cached parameter is returned with new recorded content.
+     * Recording of changes is stopped.
+     *
+     * @param cached values to compare
+     *
+     * @return true if cached equal what was read (with recording enabled)
+     */
+    bool checkRecording(std::vector<uint8_t>& cached);
+
 private:
     std::vector<uint16_t> _buffer;
     uint32_t _index;
@@ -372,6 +414,9 @@ private:
         write<dp1>(p1);
         _functionArguments(args...);
     }
+
+    bool _recordChanges;
+    std::vector<uint8_t> _records;
 };
 
 template <>

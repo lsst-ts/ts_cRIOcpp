@@ -54,9 +54,10 @@ public:
     void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
 
     /**
-     * Add response callbacks. Both function code and error response code shall be specified.
+     * Add response callbacks. Both function code and error response code shall
+     * be specified.
      *
-     * @param function callback for this function code
+     * @param func callback for this function code
      * @param action action to call when the response is found. Passed address
      * as sole parameter. Should read response (as length of the response data
      * is specified by function) and check CRC (see ModbusBuffer::read and
@@ -67,8 +68,10 @@ public:
      * address and error code. CRC checking is done in processResponse. This
      * method shall not manipulate the buffer (e.g. shall not call
      * ModbusBuffer::read or ModbusBuffer::checkCRC).
+     *
+     * @see checkCached
      */
-    void addResponse(uint8_t function, std::function<void(uint8_t)> action, uint8_t errorResponse,
+    void addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,
                      std::function<void(uint8_t, uint8_t)> errorAction = nullptr);
 
     /**
@@ -101,9 +104,9 @@ public:
          * Constructed with data available during response.
          *
          * @param address ILC address
-         * @param function ILC function. Response for this function is unknown at the moment.
+         * @param func ILC function. Response for this function is unknown at the moment.
          */
-        UnknownResponse(uint8_t address, uint8_t function);
+        UnknownResponse(uint8_t address, uint8_t func);
     };
 
     /**
@@ -115,13 +118,19 @@ public:
          * The class is constructed when an ILC's error response is received.
          *
          * @param address ILC address
-         * @param function ILC (error) function received
+         * @param func ILC (error) function received
          * @param exception exception code
          */
-        Exception(uint8_t address, uint8_t function, uint8_t exception);
+        Exception(uint8_t address, uint8_t func, uint8_t exception);
     };
 
 protected:
+    /**
+     */
+    virtual void preProcess() {};
+
+    virtual void postProcess() {};
+
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for
      * details.
@@ -239,12 +248,32 @@ protected:
      */
     uint8_t nextBroadcastCounter();
 
+    /**
+     * Cache management function. Search for cached response. If none is
+     * found, create entry in cache. Use cache entry for
+     * ModbusBuffer::checkRecording call.
+     *
+     * Example code in test_ILC.cpp hopefully explain how to use the function.
+     *
+     * @param address called ILC address
+     * @param func called ILC function code
+     *
+     * @return true if cached response matches last parsed response
+     *
+     * @see ModbusBuffer::recordChanges
+     * @see ModbusBuffer::pauseRecordChanges
+     * @see ModbusBuffer::checkRecording
+     */
+    bool responseMatchCached(uint8_t address, uint8_t func);
+
 private:
     std::map<uint8_t, std::function<void(uint8_t)>> _actions;
     std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
 
     uint8_t _broadcastCounter;
     unsigned int _timestampShift;
+
+    std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t>>> _cachedResponse;
 };
 
 }  // namespace cRIO

@@ -42,6 +42,8 @@ namespace cRIO {
  */
 class FPGA {
 public:
+    virtual ~FPGA() {}
+
     /**
      * Initialize FPGA.
      *

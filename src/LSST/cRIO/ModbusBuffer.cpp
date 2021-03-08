@@ -48,6 +48,8 @@ ModbusBuffer::~ModbusBuffer() {}
 void ModbusBuffer::reset() {
     _index = 0;
     _resetCRC();
+    _recordChanges = false;
+    _records.clear();
 }
 
 void ModbusBuffer::clear() {
@@ -99,6 +101,7 @@ double ModbusBuffer::readTimestamp() {
 void ModbusBuffer::checkCRC() {
     uint16_t crc;
     uint16_t calCrc = _crcCounter;
+    _recordChanges = false;
     readBuffer(&crc, 2);
     crc = le32toh(crc);
     if (crc != calCrc) {
@@ -259,7 +262,22 @@ void ModbusBuffer::checkCommanded(uint8_t address, uint8_t function) {
     }
 }
 
+bool ModbusBuffer::checkRecording(std::vector<uint8_t>& cached) {
+    _recordChanges = false;
+    if (cached == _records) {
+        _records.clear();
+        return true;
+    }
+    std::swap(cached, _records);
+    _records.clear();
+    return false;
+}
+
 void ModbusBuffer::_processDataCRC(uint8_t data) {
+    if (_recordChanges) {
+        _records.push_back(data);
+    }
+
     _crcCounter = _crcCounter ^ (uint16_t(data));
     for (int j = 0; j < 8; j++) {
         if (_crcCounter & 0x0001) {

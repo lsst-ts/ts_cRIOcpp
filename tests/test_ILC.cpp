@@ -33,6 +33,8 @@ using namespace LSST::cRIO;
 class TestILC : public ILC {
 public:
     TestILC() {
+        serverIDCallCounter = 0;
+
         responseUniqueID = 0;
         responseILCAppType = 0;
         responseNetworkNodeType = 0;
@@ -51,6 +53,8 @@ public:
 
         lastReset = 0;
     }
+
+    unsigned int serverIDCallCounter;
 
     uint64_t responseUniqueID;
 
@@ -73,6 +77,7 @@ protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
                          uint8_t ilcSelectedOptions, uint8_t networkNodeOptions, uint8_t majorRev,
                          uint8_t minorRev, std::string firmwareName) override {
+        serverIDCallCounter++;
         responseUniqueID = uniqueID;
         responseILCAppType = ilcAppType;
         responseNetworkNodeType = networkNodeType;
@@ -180,18 +185,18 @@ TEST_CASE("Parse response", "[ILC]") {
 
     // invalid length
     constructCommands();
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 19), ModbusBuffer::EndOfBuffer);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), 19), ModbusBuffer::EndOfBuffer&);
 
     ilc2.write<uint8_t>(0xff);
 
     constructCommands();
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::EndOfBuffer);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::EndOfBuffer&);
 
     // invalid CRC
     ilc2.getBuffer()[18] = 0x1200 | (0xe8 << 1);
 
     constructCommands();
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::CRCError);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::CRCError&);
 }
 
 TEST_CASE("Change ILC mode response", "[ILC]") {
@@ -302,25 +307,25 @@ TEST_CASE("Unmatched response", "[ILC]") {
     // invalid length
     constructCommands();
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength() - 1),
-                      ModbusBuffer::EndOfBuffer);
+                      ModbusBuffer::EndOfBuffer&);
 
     ilc2.write<uint8_t>(0xff);
 
     constructCommands();
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::EndOfBuffer);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::EndOfBuffer&);
 
     // missing command
     ilc1.clear();
     ilc1.reportServerID(132);
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()),
-                      ModbusBuffer::UnmatchedFunction);
+                      ModbusBuffer::UnmatchedFunction&);
 
     // invalid address
     ilc1.clear();
     ilc1.reportServerID(132);
     ilc1.reportServerStatus(141);
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()),
-                      ModbusBuffer::UnmatchedFunction);
+                      ModbusBuffer::UnmatchedFunction&);
 
     // missing reply
     constructCommands();
@@ -336,12 +341,12 @@ TEST_CASE("Unmatched response", "[ILC]") {
     ilc2.getBuffer()[18] = 0x1200 | (0xe8 << 1);
 
     constructCommands();
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::CRCError);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::CRCError&);
 
     // invalid function
     ilc2.getBuffer()[1] = 0x1200 | (1 << 1);
     REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()),
-                      ModbusBuffer::UnmatchedFunction);
+                      ModbusBuffer::UnmatchedFunction&);
 
     // reset function
     ilc3.write<uint8_t>(17);
@@ -363,7 +368,7 @@ TEST_CASE("Error response", "[ILC]") {
     ilc2.writeBuffer(buf, 3);
     ilc2.writeCRC();
 
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ILC::Exception);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ILC::Exception&);
     REQUIRE(ilc1.responseUniqueID == 0);
 }
 
@@ -421,4 +426,60 @@ TEST_CASE("Multiple calls to processResponse", "[ILC]") {
     REQUIRE(ilc1.responseFirmwareName == "AbC");
 
     REQUIRE_NOTHROW(ilc1.checkCommandedEmpty());
+}
+
+TEST_CASE("Response cache management", "[ILC]") {
+    TestILC ilc1, ilc2;
+
+    ilc1.reportServerID(18);
+
+    auto constructResponse = [&ilc2](uint8_t id1) {
+        ilc2.clear();
+        ilc2.write<uint8_t>(18);
+        ilc2.write<uint8_t>(17);
+        ilc2.write<uint8_t>(15);
+
+        // uniqueID
+        ilc2.write<uint8_t>(1);
+        ilc2.write<uint8_t>(2);
+        ilc2.write<uint8_t>(3);
+        ilc2.write<uint8_t>(4);
+        ilc2.write<uint8_t>(5);
+        ilc2.write<uint8_t>(6);
+
+        ilc2.write<uint8_t>(7);
+        ilc2.write<uint8_t>(8);
+        ilc2.write<uint8_t>(9);
+        ilc2.write<uint8_t>(10);
+        ilc2.write<uint8_t>(11);
+        ilc2.write<uint8_t>(12);
+
+        ilc2.write<uint8_t>(id1);
+        ilc2.write<uint8_t>('b');
+        ilc2.write<uint8_t>('C');
+        ilc2.writeCRC();
+    };
+
+    constructResponse('A');
+
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 1);
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 1);
+
+    constructResponse('a');
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 2);
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 2);
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 2);
 }

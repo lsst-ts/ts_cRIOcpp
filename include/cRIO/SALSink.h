@@ -21,6 +21,11 @@
 #ifndef SALSINK_H_
 #define SALSINK_H_
 
+#include "spdlog/sinks/base_sink.h"
+#include "spdlog/details/null_mutex.h"
+#include <memory>
+#include <mutex>
+
 /**
  * Sink to send all M1M3 spdlog messages to SAL using logMessage event. Macro which creates template class. To
  * use it, just create mySALSink.h with the following content:
@@ -36,9 +41,6 @@
  * @see https://github.com/gabime/spdlog/wiki/4.-Sinks
  */
 #define SALSinkMacro(remoteName)                                                 \
-#include "spdlog/sinks/base_sink.h";                                         \
-#include <SAL_##remoteName.h>;                                               \
-#include <memory>;                                                           \
     template <typename Mutex>                                                    \
     class SALSink : public spdlog::sinks::base_sink<Mutex> {                     \
     public:                                                                      \
@@ -71,8 +73,6 @@
         std::shared_ptr<SAL_##remoteName> _remote;                               \
     };                                                                           \
                                                                                  \
-#include "spdlog/details/null_mutex.h";                                      \
-#include <mutex>;                                                            \
     using SALSink_mt = SALSink<std::mutex>;                                      \
     using SALSink_st = SALSink<spdlog::details::null_mutex>;
 

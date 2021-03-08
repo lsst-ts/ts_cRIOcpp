@@ -31,6 +31,16 @@
 
 using namespace LSST::cRIO;
 
+TEST_CASE("Construct filled buffer", "[ModbusBuffer]") {
+    uint16_t buf[3] = {0x1202, 0x1204, 0x13fe};
+    ModbusBuffer mbuf(buf, 3);
+
+    REQUIRE(mbuf.read<uint8_t>() == 0x01);
+    REQUIRE(mbuf.read<uint8_t>() == 0x02);
+    REQUIRE(mbuf.read<uint8_t>() == 0xff);
+    REQUIRE_THROWS_AS(mbuf.read<uint8_t>(), ModbusBuffer::EndOfBuffer&);
+}
+
 TEST_CASE("CalculateCRC", "[ModbusBuffer]") {
     ModbusBuffer mbuf;
     // address
@@ -174,7 +184,7 @@ TEST_CASE("Calculate function response CRC", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }
 
-// wrapper class to test protected variadic template
+// wrapper class to test protected variadic templates and changes
 class TestBuffer : public ModbusBuffer {
 public:
     template <typename... dt>
@@ -185,6 +195,10 @@ public:
                        size_t dataLen) {
         broadcastFunction(address, function, counter, delay, data, dataLen);
     }
+
+    void recordChanges() { ModbusBuffer::recordChanges(); }
+    void pauseRecordChanges() { ModbusBuffer::pauseRecordChanges(); }
+    bool checkRecording(std::vector<uint8_t>& changed) { return ModbusBuffer::checkRecording(changed); }
 };
 
 TEST_CASE("Call function with arguments", "[ModbusBuffer]") {
@@ -224,4 +238,80 @@ TEST_CASE("Test broadcast", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(mbuf.checkCRC());
     REQUIRE_NOTHROW(mbuf.readEndOfFrame());
     REQUIRE(mbuf.readDelay() == 300);
+}
+
+TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
+    TestBuffer mbuf;
+
+    mbuf.testFunction(11, 23, 25, static_cast<uint8_t>(0x1a), static_cast<uint16_t>(0xffcc),
+                      static_cast<int32_t>(-977453), static_cast<uint32_t>(0xffaaccdd),
+                      static_cast<float>(M_PI * 211.12), static_cast<uint32_t>(87346));
+
+    std::vector<uint8_t> changed;
+
+    auto readAll = [&mbuf, &changed](int32_t nrp = -977453, uint32_t rp = 87346) {
+        mbuf.reset();
+
+        REQUIRE(mbuf.read<uint8_t>() == 11);
+        REQUIRE(mbuf.read<uint8_t>() == 23);
+
+        REQUIRE_NOTHROW(mbuf.recordChanges());
+        REQUIRE(mbuf.read<uint8_t>() == 0x1a);
+        REQUIRE(mbuf.read<uint16_t>() == 0xffcc);
+
+        REQUIRE_NOTHROW(mbuf.pauseRecordChanges());
+        REQUIRE(mbuf.read<int32_t>() == nrp);
+        REQUIRE_NOTHROW(mbuf.recordChanges());
+
+        REQUIRE(mbuf.read<uint32_t>() == 0xffaaccdd);
+        REQUIRE(mbuf.read<float>() == static_cast<float>(M_PI * 211.12));
+        REQUIRE(mbuf.read<uint32_t>() == rp);
+        REQUIRE_NOTHROW(mbuf.checkCRC());
+        REQUIRE_NOTHROW(mbuf.readEndOfFrame());
+        REQUIRE(mbuf.readWaitForRx() == 25);
+    };
+
+    readAll();
+    REQUIRE(mbuf.checkRecording(changed) == false);
+
+    readAll();
+    REQUIRE(mbuf.checkRecording(changed) == true);
+
+    readAll();
+    REQUIRE(mbuf.checkRecording(changed) == true);
+
+    changed[2] += 1;
+
+    readAll();
+    REQUIRE(mbuf.checkRecording(changed) == false);
+
+    readAll();
+    REQUIRE(mbuf.checkRecording(changed) == true);
+
+    mbuf.clear();
+    mbuf.testFunction(11, 23, 25, static_cast<uint8_t>(0x1a), static_cast<uint16_t>(0xffcc),
+                      static_cast<int32_t>(-977453), static_cast<uint32_t>(0xffaaccdd),
+                      static_cast<float>(M_PI * 211.12), static_cast<uint32_t>(87346));
+
+    readAll();
+    REQUIRE(mbuf.checkRecording(changed) == true);
+
+    mbuf.clear();
+    mbuf.testFunction(11, 23, 25, static_cast<uint8_t>(0x1a), static_cast<uint16_t>(0xffcc),
+                      static_cast<int32_t>(2956), static_cast<uint32_t>(0xffaaccdd),
+                      static_cast<float>(M_PI * 211.12), static_cast<uint32_t>(87346));
+
+    readAll(2956);
+    REQUIRE(mbuf.checkRecording(changed) == true);
+
+    mbuf.clear();
+    mbuf.testFunction(11, 23, 25, static_cast<uint8_t>(0x1a), static_cast<uint16_t>(0xffcc),
+                      static_cast<int32_t>(2956), static_cast<uint32_t>(0xffaaccdd),
+                      static_cast<float>(M_PI * 211.12), static_cast<uint32_t>(48342));
+
+    readAll(2956, 48342);
+    REQUIRE(mbuf.checkRecording(changed) == false);
+
+    readAll(2956, 48342);
+    REQUIRE(mbuf.checkRecording(changed) == true);
 }

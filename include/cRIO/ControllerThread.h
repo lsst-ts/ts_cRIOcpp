@@ -45,13 +45,6 @@ public:
     ControllerThread(token);
     ~ControllerThread();
 
-    /**
-     * Return singleton instance.
-     *
-     * @return singleton instance
-     */
-    static ControllerThread& get();
-
     /* Put command into queue.
      *
      * @param command Command to enqueue. ControllerThread takes ownership of
