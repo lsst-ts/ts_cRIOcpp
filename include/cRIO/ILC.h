@@ -110,6 +110,27 @@ public:
     void setTempILCAddress(uint8_t temporaryAddress) { callFunction(255, 72, 250, temporaryAddress); }
 
     /**
+     * Write application statistics.
+     *
+     * @param address
+     * @param dataCRC
+     * @param startAddress
+     * @param dataLength
+     * @param statsCRC
+     */
+    void writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress, uint16_t dataLength, uint16_t statsCRC) { callFunction(address, 100, dataCRC, startAddress, dataLength, statsCRC); }
+
+    /**
+     * Erase ILC application. Used before loading ILC firmware.
+     */
+    void eraseILCApplication(uint8_t address) { callFunction(address, 101, 500000); }
+
+    /**
+     * Write application page.
+     */
+    void writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length, uint8_t* data) { callFunction(address, 102, 500000, std::pair<uint16_t, uint8_t*>(length, data)); }
+
+    /**
      * Reset ILC. Calls function 107 (0x6b).
      *
      * @param address ILC address
@@ -287,6 +308,13 @@ protected:
      * @param faults ILC faults
      */
     virtual void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) = 0;
+
+    /**
+     * Callback to write application stats.
+     *
+     * @param address ILC address
+     */
+    virtual void processWriteApplicationStats(uint8_t address) {}
 
     /**
      * Callback for change ILC mode reply.

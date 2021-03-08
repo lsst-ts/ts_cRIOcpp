@@ -60,48 +60,52 @@ ILC::ILC(uint8_t bus) {
             },
             145);
 
-    addResponse(
-            18,
-            [this](uint8_t address) {
-                recordChanges();
-                uint8_t mode = read<uint8_t>();
-                uint16_t status = read<uint16_t>();
-                uint16_t faults = read<uint16_t>();
-                checkCRC();
-                if (responseMatchCached(address, 18) == false) {
-                    processServerStatus(address, mode, status, faults);
-                }
-            },
-            146);
+    addResponse(18,
+                [this](uint8_t address) {
+                    recordChanges();
+                    uint8_t mode = read<uint8_t>();
+                    uint16_t status = read<uint16_t>();
+                    uint16_t faults = read<uint16_t>();
+                    checkCRC();
+                    if (responseMatchCached(address, 18) == false) {
+                        processServerStatus(address, mode, status, faults);
+                    }
+                },
+                146);
 
-    addResponse(
-            65,
-            [this](uint8_t address) {
-                recordChanges();
-                uint16_t mode = read<uint16_t>();
-                checkCRC();
-                if (responseMatchCached(address, 65) == false) {
-                    processChangeILCMode(address, mode);
-                }
-            },
-            193);
+    addResponse(65,
+                [this](uint8_t address) {
+                    recordChanges();
+                    uint16_t mode = read<uint16_t>();
+                    checkCRC();
+                    if (responseMatchCached(address, 65) == false) {
+                        processChangeILCMode(address, mode);
+                    }
+                },
+                193);
 
-    addResponse(
-            72,
-            [this](uint8_t address) {
-                uint8_t newAddress = read<uint8_t>();
-                checkCRC();
-                processSetTempILCAddress(address, newAddress);
-            },
-            200);
+    addResponse(72,
+                [this](uint8_t address) {
+                    uint8_t newAddress = read<uint8_t>();
+                    checkCRC();
+                    processSetTempILCAddress(address, newAddress);
+                },
+                200);
 
-    addResponse(
-            107,
-            [this](uint8_t address) {
-                checkCRC();
-                processResetServer(address);
-            },
-            235);
+    // TODO confirm error code
+    addResponse(100,
+                [this](uint8_t address) {
+                    checkCRC();
+                    processWriteApplicationStats(address);
+                },
+                228);
+
+    addResponse(107,
+                [this](uint8_t address) {
+                    checkCRC();
+                    processResetServer(address);
+                },
+                235);
 }
 
 void ILC::addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,

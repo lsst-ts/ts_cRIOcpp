@@ -161,6 +161,30 @@ TEST_CASE("WriteSGL", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }
 
+TEST_CASE("Write buffer", "[ModbusBuffer]") {
+    ModbusBuffer mbuf;
+    uint8_t dbuf[11] = {0x12, 0x34, 0x56, 0x78, 0xff, 0xcc, 0xde, 0xa1, 0x61, 0xf1, 0xf2 };
+    mbuf.write(std::pair<uint16_t, uint8_t*>(11, dbuf));
+    mbuf.writeCRC();
+
+    uint16_t* buf = mbuf.getBuffer();
+
+    REQUIRE(buf[0] == 0x1200);
+    REQUIRE(buf[1] == 0x1216);
+
+    for (size_t i = 0; i < 11; i++) {
+      REQUIRE(buf[i + 2] == (0x1200 | static_cast<uint16_t>(dbuf[i]) << 1));
+    }
+
+    mbuf.reset();
+
+    REQUIRE(mbuf.read<uint16_t>() == 11);
+    for (size_t i = 0; i < 11; i++) {
+      REQUIRE(mbuf.read<uint8_t>() == dbuf[i]);
+    }
+    REQUIRE_NOTHROW(mbuf.checkCRC());
+}
+
 TEST_CASE("Calculate function response CRC", "[ModbusBuffer]") {
     ModbusBuffer mbuf;
     mbuf.write<uint8_t>(140);

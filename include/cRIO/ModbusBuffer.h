@@ -206,7 +206,9 @@ public:
      * Write a value to buffer.
      *
      * @tparam dt value data type. Supported are uint8_t, uint16_t, uint32_t,
-     * int8_t, int16_t, int32_t and float.
+     * int8_t, int16_t, int32_t, float and pair<uint16_t, uint8_t*>. The pair
+     * writes buffer length followed by buffer data, other calls writes the
+     * parameter value.
      *
      * @param data value to write to buffer
      */
@@ -499,6 +501,12 @@ template <>
 inline void ModbusBuffer::write(float data) {
     uint32_t* db = reinterpret_cast<uint32_t*>(&data);
     write<uint32_t>(*db);
+}
+
+template <>
+inline void ModbusBuffer::write(std::pair<uint16_t, uint8_t*> data) {
+    write<uint16_t>(data.first);
+    writeBuffer(data.second, data.first);
 }
 
 }  // namespace cRIO
