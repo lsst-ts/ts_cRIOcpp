@@ -18,8 +18,8 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef MODBUSBUFFER_H_
-#define MODBUSBUFFER_H_
+#ifndef CRIO_MODBUSBUFFER_H_
+#define CRIO_MODBUSBUFFER_H_
 
 #include <cRIO/DataTypes.h>
 #include <queue>
@@ -504,4 +504,4 @@ inline void ModbusBuffer::write(float data) {
 }  // namespace cRIO
 }  // namespace LSST
 
-#endif /* MODBUSBUFFER_H_ */
+#endif /* CRIO_MODBUSBUFFER_H_ */

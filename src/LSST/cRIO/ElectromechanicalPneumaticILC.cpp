@@ -1,5 +1,5 @@
 /*
- * Thermal ILC functions.
+ * Electromechanical and Pneumatic ILC functions.
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -20,35 +20,35 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/ThermalILC.h>
+#include <cRIO/ElectromechanicalPneumaticILC.h>
 
 namespace LSST {
 namespace cRIO {
 
-ThermalILC::ThermalILC(uint8_t bus) : ILC(bus) {
-    auto thermalStatus = [this](uint8_t address) {
-        uint8_t status = read<uint8_t>();
-        float differentialTemperature = read<float>();
-        uint8_t fanRPM = read<uint8_t>();
-        float absoluteTemperature = read<float>();
+ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(bus) {
+    auto calibrationData = [this](uint8_t address) {
+        float mainADCK[4], mainOffset[4], mainSensitivity[4], backupADCK[4], backupOffset[4],
+                backupSensitivity[4];
+        auto read4 = [this](float a[4]) {
+            for (int n = 0; n < 4; n++) {
+                a[n] = read<float>();
+            }
+        };
+        read4(mainADCK);
+        read4(mainOffset);
+        read4(mainSensitivity);
+        read4(backupADCK);
+        read4(backupOffset);
+        read4(backupSensitivity);
         checkCRC();
-        processThermalStatus(address, status, differentialTemperature, fanRPM, absoluteTemperature);
+        processCalibrationData(address, mainADCK, mainOffset, mainSensitivity, backupADCK, backupOffset,
+                               backupSensitivity);
     };
 
-    addResponse(88, thermalStatus, 216);
+    addResponse(
+            81, [this](uint8_t address) { checkCRC(); }, 235);
 
-    addResponse(89, thermalStatus, 217);
-}
-
-void ThermalILC::broadcastThermalDemand(uint8_t heaterPWM[NUM_TS_ILC], uint8_t fanRPM[NUM_TS_ILC]) {
-    uint8_t params[NUM_TS_ILC * 2];
-    for (int i = 0, o = 0; i < NUM_TS_ILC; i++, o++) {
-        params[o] = heaterPWM[i];
-        o++;
-        params[o] = fanRPM[i];
-    }
-
-    broadcastFunction(250, 88, nextBroadcastCounter(), 450, params, NUM_TS_ILC * 2);
+    addResponse(110, calibrationData, 238);
 }
 
 }  // namespace cRIO

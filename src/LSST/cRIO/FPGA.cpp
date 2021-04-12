@@ -34,28 +34,41 @@ using namespace std::chrono_literals;
 namespace LSST {
 namespace cRIO {
 
-void FPGA::ilcCommands(uint16_t cmd, ILC &ilc) {
+FPGA::FPGA(fpgaType type) {
+    switch (type) {
+        case SS:
+            _modbusSoftwareTrigger = 252;
+            break;
+        case TS:
+            _modbusSoftwareTrigger = 252;
+            break;
+    }
+};
+
+void FPGA::ilcCommands(ILC &ilc) {
     size_t requestLen = ilc.getLength() + 5;
     uint16_t data[requestLen];
-    data[0] = cmd;
+
+    uint8_t bus = ilc.getBus();
+
+    data[0] = getTxCommand(bus);
     data[1] = ilc.getLength() + 2;
     data[2] = 0x8000;
     memcpy(data + 3, ilc.getBuffer(), ilc.getLength() * sizeof(uint16_t));
     data[requestLen - 2] = 0x7000;
-    // TODO the "ModbusSoftwareTrigger" constant is FPGA specific
-    // some effort would be needed to standartize FPGA commands
-    data[requestLen - 1] = 252;
+    data[requestLen - 1] = _modbusSoftwareTrigger;
 
     writeCommandFIFO(data, requestLen, 0);
 
     std::this_thread::sleep_for(1ms);
 
-    // TODO should specify IRQs
-    waitOnIrqs(0x02, 5000);
-    ackIrqs(0x02);
+    uint32_t irq = getIrq(bus);
+
+    waitOnIrqs(irq, 5000);
+    ackIrqs(irq);
 
     // get back response
-    writeRequestFIFO(13, 0);
+    writeRequestFIFO(getRxCommand(bus), 0);
 
     uint16_t responseLen;
 

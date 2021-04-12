@@ -33,24 +33,87 @@ namespace cRIO {
 
 /**
  * Class filling ModbusBuffer with commands. Should serve single subnet, so
- * allows sending messages with different node addresses.
+ * allows sending messages with different node addresses. Subnet=network=bus is
+ * provided in constructor and accessible via getBus() method.
  *
  * Functions timeouts (for writing on command line as RxWait) is specified in
  * calls to callFunction.
  *
- * Replies received from ILCs shall be processed with ILC::processResponse method.
+ * Replies received from ILCs shall be processed with ILC::processResponse()
+ * method. Virtual processXX methods are called to process received data.
+ * Relations between functions and processing methods are established with
+ * ILC::addResponse().
+ *
+ * When processing data, the class guarantee that every non-broadcast call
+ * generates reply at correct order - see ILC::processResponse() for details.
  */
 class ILC : public ModbusBuffer {
 public:
     /**
      * Populate responses for know ILC functions.
+     *
+     * @param bus ILC bus number (1..). Defaults to 1.
      */
-    ILC();
+    ILC(uint8_t bus = 1);
 
+    /**
+     * Returns bus number. 1 based (1-5). 1=A,2=B,..5=E bus.
+     */
+    uint8_t getBus() { return _bus; }
+
+    /**
+     * Set whenever all received data will trigger callback calls.
+     */
+    void setAlwaysTrigger(bool newAlwaysTrigger) { _alwaysTrigger = newAlwaysTrigger; }
+
+    /**
+     * Calls function 17 (0x11), ask for ILC identity.
+     *
+     * @param address ILC address
+     */
     void reportServerID(uint8_t address) { callFunction(address, 17, 835); }
+
+    /**
+     * Calls function 18 (0x12), ask for ILC status.
+     *
+     * @param address ILC address
+     */
     void reportServerStatus(uint8_t address) { callFunction(address, 18, 270); }
+
+    /**
+     * Change ILC mode. Calls function 65 (0x41). Supported ILC modes are:
+     *
+     * Mode | Supported by | Description
+     * ---- | ------------ | ------------------------------------
+     * 0    | all ILCs     | Standby (No Motions or Acquisitions)
+     * 1.   | no HM        | Disabled mode (Acquire only)
+     * 2.   | all ILCs     | Enabled mode (Acquire and Motion)
+     * 3.   | all ILCs     | Firmware update
+     * 4.   | all ILCs     | Fault
+     *
+     * where all is Electromechanical (Hard-Point), Pneumatic, Thermal and
+     * Hadpoint Monitoring ILC. HM is Hardpoint Monitoring.
+     *
+     * @param address ILC address
+     * @param mode new ILC mode - see above
+     */
     void changeILCMode(uint8_t address, uint16_t mode) { callFunction(address, 65, 335, mode); }
+
+    /**
+     * Set temporary ILC address. ILC must be address-less (attached to address
+     * 255). Can be used only if one ILC on a bus failed to read its address
+     * from its network connection and therefore adopts the failure address
+     * 255.
+     *
+     * @param temporaryAddress new ILC address
+     */
     void setTempILCAddress(uint8_t temporaryAddress) { callFunction(255, 72, 250, temporaryAddress); }
+
+    /**
+     * Reset ILC. Calls function 107 (0x6b).
+     *
+     * @param address ILC address
+     */
     void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
 
     /**
@@ -126,10 +189,16 @@ public:
 
 protected:
     /**
+     * Called before responses are processed (before processXX methods are
+     * called).
      */
-    virtual void preProcess() {};
+    virtual void preProcess(){};
 
-    virtual void postProcess() {};
+    /**
+     * Called after responses are processed (after processXX methods are
+     * called).
+     */
+    virtual void postProcess(){};
 
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for
@@ -227,6 +296,12 @@ protected:
      */
     virtual void processChangeILCMode(uint8_t address, uint16_t mode) = 0;
 
+    /**
+     * Callback for temporary address assignment (function code 72).
+     *
+     * @param address
+     * @param newAddress
+     */
     virtual void processSetTempILCAddress(uint8_t address, uint8_t newAddress) = 0;
 
     /**
@@ -267,12 +342,15 @@ protected:
     bool responseMatchCached(uint8_t address, uint8_t func);
 
 private:
+    uint8_t _bus;
+
     std::map<uint8_t, std::function<void(uint8_t)>> _actions;
     std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
 
     uint8_t _broadcastCounter;
     unsigned int _timestampShift;
 
+    bool _alwaysTrigger;
     std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t>>> _cachedResponse;
 };
 

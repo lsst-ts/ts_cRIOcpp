@@ -433,9 +433,9 @@ TEST_CASE("Response cache management", "[ILC]") {
 
     ilc1.reportServerID(18);
 
-    auto constructResponse = [&ilc2](uint8_t id1) {
+    auto constructResponse = [&ilc2](uint8_t address, uint8_t id1) {
         ilc2.clear();
-        ilc2.write<uint8_t>(18);
+        ilc2.write<uint8_t>(address);
         ilc2.write<uint8_t>(17);
         ilc2.write<uint8_t>(15);
 
@@ -460,7 +460,7 @@ TEST_CASE("Response cache management", "[ILC]") {
         ilc2.writeCRC();
     };
 
-    constructResponse('A');
+    constructResponse(18, 'A');
 
     REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
     REQUIRE(ilc1.serverIDCallCounter == 1);
@@ -469,17 +469,47 @@ TEST_CASE("Response cache management", "[ILC]") {
     REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
     REQUIRE(ilc1.serverIDCallCounter == 1);
 
-    constructResponse('a');
+    constructResponse(11, 'A');
 
-    ilc1.reportServerID(18);
+    ilc1.reportServerID(11);
     REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
     REQUIRE(ilc1.serverIDCallCounter == 2);
 
-    ilc1.reportServerID(18);
+    ilc1.reportServerID(11);
     REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
     REQUIRE(ilc1.serverIDCallCounter == 2);
 
+    constructResponse(18, 'a');
+
     ilc1.reportServerID(18);
     REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
-    REQUIRE(ilc1.serverIDCallCounter == 2);
+    REQUIRE(ilc1.serverIDCallCounter == 3);
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 3);
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 3);
+
+    constructResponse(11, 'a');
+
+    ilc1.reportServerID(11);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 4);
+
+    ilc1.setAlwaysTrigger(true);
+
+    constructResponse(18, 'a');
+
+    ilc1.reportServerID(18);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 5);
+
+    constructResponse(11, 'a');
+
+    ilc1.reportServerID(11);
+    REQUIRE_NOTHROW(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()));
+    REQUIRE(ilc1.serverIDCallCounter == 6);
 }

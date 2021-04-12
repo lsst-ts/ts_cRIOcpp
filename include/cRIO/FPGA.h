@@ -32,6 +32,12 @@ namespace LSST {
 namespace cRIO {
 
 /**
+ * FPGA Type. Currently only SS (Static Support) or TS (Thermal System) are
+ * known and supported.
+ */
+typedef enum { SS, TS } fpgaType;
+
+/**
  * Interface class for cRIO FPGA. Subclasses can talk either to the real HW, or
  * be a software simulator.
  *
@@ -42,6 +48,13 @@ namespace cRIO {
  */
 class FPGA {
 public:
+    /**
+     * Construct FPGA. Sets internal variable depending on FPGA type.
+     *
+     * @param type Either SS for Static Support FPGA or TS for Thermal System.
+     */
+    FPGA(fpgaType type);
+
     virtual ~FPGA() {}
 
     /**
@@ -73,9 +86,44 @@ public:
     virtual void finalize() = 0;
 
     /**
-     * Send command to ILCs.
+     * Returns command used on CommandFIFO to write data to Modbus bus
+     * (transmit FIFO).
+     *
+     * @param bus bus number (1 based)
+     *
+     * @return command number
      */
-    void ilcCommands(uint16_t cmd, ILC& ilc);
+    virtual uint16_t getTxCommand(uint8_t bus) = 0;
+
+    /**
+     * Returns command used on RequestFIFO to read response from Modbus FIFO.
+     *
+     * @param bus bus number (1 based)
+     *
+     * @return command number
+     */
+    virtual uint16_t getRxCommand(uint8_t bus) = 0;
+
+    /**
+     * Returns IRQ associated with given bus.
+     *
+     * @param bus bus number (1 based)
+     *
+     * @return IRQ (bit based)
+     */
+    virtual uint32_t getIrq(uint8_t bus) = 0;
+
+    /**
+     * Send commands from ILC.
+     *
+     * @param ilc ILC class. That contains ModbusBuffer with commands. Its
+     * ILC::getBus() method returns bus used for communication.
+     *
+     * @see ILC
+     * @see ILC::getBus()
+     * @see ILC::processResponse()
+     */
+    void ilcCommands(ILC& ilc);
 
     /**
      * Writes buffer to command FIFO. Command FIFO is processed in
@@ -94,7 +142,7 @@ public:
      */
     virtual void writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) = 0;
 
-    void writeCommandFIFO(uint16_t data, int32_t timeout) { writeCommandFIFO(&data, 1, timeout); }
+    void writeCommandFIFO(uint16_t data, uint32_t timeout) { writeCommandFIFO(&data, 1, timeout); }
 
     /**
      * Performs request for various data stored inside FPGA. This allows access
@@ -112,7 +160,7 @@ public:
      * @see readU8ResponseFIFO
      * @see readU16ResponseFIFO
      */
-    virtual void writeRequestFIFO(uint16_t* data, int32_t length, int32_t timeout) = 0;
+    virtual void writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout) = 0;
 
     /**
      * Write single command into requestFIFO.
@@ -122,7 +170,7 @@ public:
      *
      * @throw NiError on NI error
      */
-    void writeRequestFIFO(uint16_t data, int32_t timeout) { writeRequestFIFO(&data, 1, timeout); }
+    void writeRequestFIFO(uint16_t data, uint32_t timeout) { writeRequestFIFO(&data, 1, timeout); }
 
     /**
      *
@@ -132,7 +180,7 @@ public:
      *
      * @throw NiError on NI error
      */
-    virtual void readU16ResponseFIFO(uint16_t* data, int32_t length, int32_t timeout) = 0;
+    virtual void readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) = 0;
 
     /**
      * Wait for given IRQs.
@@ -146,7 +194,7 @@ public:
     virtual void waitOnIrqs(uint32_t irqs, uint32_t timeout, uint32_t* triggered = NULL) = 0;
 
     /**
-     * Acknowledges IRQs. Clear IRSq on FPGA.
+     * Acknowledges IRQs. Clear IRQs on FPGA.
      *
      * @param irqs bitmask of IRQs to clear. FPGA has 32 IRQs channels, each
      * bit represents an interrupt.
@@ -160,6 +208,10 @@ protected:
      * @param timestamp received timestamp
      */
     virtual void reportTime(uint64_t begin, uint64_t end) {}
+
+private:
+    uint16_t _modbusSoftwareTrigger;
+    uint8_t _modbusIrq;
 };
 
 }  // namespace cRIO
