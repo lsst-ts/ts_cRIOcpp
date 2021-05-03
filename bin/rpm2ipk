@@ -1,0 +1,61 @@
+#!/bin/bash
+
+if [ -z $1 ]; then
+    echo "Please provide package to transform into ipk."
+fi
+
+RPM=$(realpath $1)
+
+IPK=${RPM%.rpm}.ipk
+
+echo "Transforming $RPM into $IPK"
+
+temp_dir=$(mktemp -d -t rpm2ipk-XXXXXXXXX)
+
+template=$(cat << HERE
+Package: %{NAME}
+Version: %{EVR}
+Description: %{DESCRIPTION}
+Section: lsst/tssw
+Priority: optional
+Maintainer: rpm2ipk
+License: %{LICENSE}
+Architecture: %{ARCH}
+Homepage: %{URL}
+HERE
+)
+
+pushd $temp_dir || exit 1
+
+PREFIXES=$(rpm -qp --queryformat '%{PREFIXES}' $RPM)
+
+pckg_script () {
+  TAG=$1
+  FILE=$2
+  script=$(rpm -qp --queryformat "%{$TAG}" $RPM)
+  if [ "$script" != '(none)' ]; then
+    rpm -qp --queryformat "%{$TAG}" $RPM | sed "s#\$RPM_INSTALL_PREFIX#${PREFIXES}#g"  > $FILE
+    chmod a+x $FILE
+  fi
+}
+
+{
+  mkdir control
+  mkdir data
+  cd data
+  rpm2cpio $RPM | cpio -idmv
+  cd ..
+  echo "2.0" > debian-binary
+  rpm -qp --queryformat "$template" $RPM > control/control
+  pckg_script PREIN control/preinst
+  pckg_script PREUN control/prerm
+  pckg_script POSTIN control/postinst
+  pckg_script POSTUN control/postrm
+
+  tar czf data.tar.gz -P --transform "s#^data#.#" --owner=0 --group=0 data
+  tar czf control.tar.gz -P --transform "s#^control#.#" --owner=0 --group=0 control
+  ar r $IPK control.tar.gz data.tar.gz debian-binary
+}
+popd
+
+rm -rf $temp_dir
