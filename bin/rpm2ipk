@@ -34,7 +34,8 @@ pckg_script () {
   FILE=$2
   script=$(rpm -qp --queryformat "%{$TAG}" $RPM)
   if [ "$script" != '(none)' ]; then
-    rpm -qp --queryformat "%{$TAG}" $RPM | sed "s#\$RPM_INSTALL_PREFIX#${PREFIXES}#g"  > $FILE
+    echo "#!"$(rpm -qp --queryformat "%{POSTINPROG}" $RPM) > $FILE
+    rpm -qp --queryformat "%{$TAG}" $RPM | sed "s#\$RPM_INSTALL_PREFIX#${PREFIXES}#g"  >> $FILE
     chmod a+x $FILE
   fi
 }
