@@ -1,0 +1,84 @@
+#!/bin/bash
+#
+# This file is part of LSST M1M3 support system package.
+#
+# Developed for the LSST Data Management System.
+# This product includes software developed by the LSST Project
+# (https://www.lsst.org).
+# See the COPYRIGHT file at the top-level directory of this distribution
+# for details of code ownership.
+#
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+#
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+#
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <https://www.gnu.org/licenses/>.
+
+if [ -z $1 ]; then
+    echo "Please provide package to transform into ipk."
+    exit
+fi
+
+RPM=$(realpath $1)
+
+IPK=${RPM%.rpm}.ipk
+
+echo "Transforming $RPM into $IPK"
+
+temp_dir=$(mktemp -d -t rpm2ipk-XXXXXXXXX)
+
+template=$(cat << HERE
+Package: %{NAME}
+Version: %{EVR}
+Description: %{DESCRIPTION}
+Section: lsst/tssw
+Priority: optional
+Maintainer: rpm2ipk
+License: %{LICENSE}
+Architecture: %{ARCH}
+Homepage: %{URL}
+HERE
+)
+
+pushd $temp_dir || exit 1
+
+PREFIXES=$(rpm -qp --queryformat '%{PREFIXES}' $RPM)
+
+pckg_script () {
+  TAG=$1
+  FILE=$2
+  script=$(rpm -qp --queryformat "%{$TAG}" $RPM)
+  if [ "$script" != '(none)' ]; then
+    echo "#!"$(rpm -qp --queryformat "%{${TAG}PROG}" $RPM) > $FILE
+    rpm -qp --queryformat "%{$TAG}" $RPM | sed "s#\$RPM_INSTALL_PREFIX#${PREFIXES}#g"  >> $FILE
+    chmod a+x $FILE
+  fi
+}
+
+{
+  mkdir control
+  mkdir data
+  cd data
+  rpm2cpio $RPM | cpio -idmv
+  cd ..
+  echo "2.0" > debian-binary
+  rpm -qp --queryformat "$template" $RPM > control/control
+  pckg_script PREIN control/preinst
+  pckg_script PREUN control/prerm
+  pckg_script POSTIN control/postinst
+  pckg_script POSTUN control/postrm
+
+  tar czf data.tar.gz -P --transform "s#^data#.#" --owner=0 --group=0 data
+  tar czf control.tar.gz -P --transform "s#^control#.#" --owner=0 --group=0 control
+  ar r $IPK control.tar.gz data.tar.gz debian-binary
+}
+popd
+
+rm -rf $temp_dir
