@@ -1,26 +1,28 @@
-/* 
+/*
  * This file is part of the LSST-TS distribution (https://github.com/lsst-ts).
  * Copyright © 2020 Petr Kubánek, Vera C. Rubin Observatory
- * 
- * This program is free software: you can redistribute it and/or modify  
- * it under the terms of the GNU General Public License as published by  
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
  * the Free Software Foundation, version 3.
  *
- * This program is distributed in the hope that it will be useful, but 
- * WITHOUT ANY WARRANTY; without even the implied warranty of 
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU 
+ * This program is distributed in the hope that it will be useful, but
+ * WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the GNU
  * General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License 
+ * You should have received a copy of the GNU General Public License
  * along with this program. If not, see <http://www.gnu.org/licenses/>.
  */
 
-#pragma once
+#ifndef __CliApp_h
+#define __CliApp_h
 
 #include <functional>
 #include <fstream>
 #include <string>
 #include <vector>
+#include <list>
 
 typedef std::vector<std::string> command_vec;
 
@@ -36,6 +38,15 @@ typedef std::vector<std::string> command_vec;
  * Ii - mandatory|optional integer argument
  */
 struct command_t {
+    command_t(const char* _command, std::function<int(command_vec)> _action, const char* _args, int _flags,
+              const char* _help_args, const char* _help) {
+        command = _command;
+        action = _action;
+        args = _args;
+        flags = _flags;
+        help_args = _help_args;
+        help = _help;
+    }
     const char* command;  // "*" indicates any command (no other command matched)
     std::function<int(command_vec)> action;
     const char* args;
@@ -116,13 +127,16 @@ public:
      * @param _description a short description of the application
      */
     CliApp(const char* _description)
-            : verbose(0), progName(NULL), description(_description), commands(NULL), history_fn(NULL) {}
+            : verbose(0), progName(NULL), description(_description), history_fn(NULL) {}
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
      * steps in their own destructor.
      */
     virtual ~CliApp();
+
+    void addArgument(const char* _command, std::function<int(command_vec)> _action, const char* _args,
+                     int _flags, const char* _help_args, const char* _help);
 
     /**
      * Initialize the class, parses arguments. Argument parsing stops after the
@@ -132,7 +146,6 @@ public:
      *
      * to pass negative numbers.
      *
-     * @param cmds command structure. Must ends with NULL enties,
      * @param pargs getopt style description of possible command line arguments
      * @param argc argument count (from main method)
      * @param argv argument values (from main method)
@@ -141,7 +154,7 @@ public:
      *
      * @see command_t
      */
-    command_vec init(const command_t* cmds, const char* pargs, int argc, char* const argv[]);
+    command_vec init(const char* pargs, int argc, char* const argv[]);
 
     /**
      * Prints application help.
@@ -230,7 +243,7 @@ protected:
      *
      * @return 0 on success, -1 on error
      */
-    virtual int processCommand(const command_t* cmd, const command_vec& args);
+    virtual int processCommand(const command_t& cmd, const command_vec& args);
 
     /**
      * Process unmatched commands.
@@ -244,7 +257,7 @@ protected:
 
 private:
     const char* description;
-    const command_t* commands;
+    std::list<command_t> commands;
     char* history_fn;
 
     /**
@@ -256,3 +269,5 @@ private:
     void readStreamCommands(std::istream& ins);
     void printCommandHelp(const command_t* cmd);
 };
+
+#endif  //!
