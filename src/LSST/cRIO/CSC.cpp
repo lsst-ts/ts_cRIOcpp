@@ -21,7 +21,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/Application.h>
+#include <cRIO/CSC.h>
 
 #include <spdlog/async.h>
 #include <spdlog/sinks/daily_file_sink.h>
@@ -32,9 +32,9 @@
 namespace LSST {
 namespace cRIO {
 
-Application::Application(const char* _description) : CliApp(_description) {
-    debugLevel = 0;
-    debugLevelSAL = 0;
+CSC::CSC(std::string name, const char* description) : CliApp(description), _name(std::move(name)) {
+    _debugLevel = 0;
+    _debugLevelSAL = 0;
 
     enabledSinks = 0;
 
@@ -42,10 +42,10 @@ Application::Application(const char* _description) : CliApp(_description) {
     addArgument('h', "prints this help");
 }
 
-void Application::processArg(int opt, const char* optarg) {
+void CSC::processArg(int opt, const char* optarg) {
     switch (opt) {
         case 'd':
-            debugLevel++;
+            _debugLevel++;
             break;
         case 'h':
             printAppHelp();
@@ -57,33 +57,32 @@ void Application::processArg(int opt, const char* optarg) {
     }
 }
 
-void Application::setSinks() {
-    auto logger = std::make_shared<spdlog::async_logger>("M1M3support", sinks.begin(), sinks.end(),
-                                                         spdlog::thread_pool(),
-                                                         spdlog::async_overflow_policy::block);
+void CSC::setSinks() {
+    auto logger = std::make_shared<spdlog::async_logger>(
+            _name, _sinks.begin(), _sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
     spdlog::set_default_logger(logger);
     spdlog::set_level(getSpdLogLogLevel());
 }
 
-spdlog::level::level_enum Application::getSpdLogLogLevel() {
-    return debugLevel == 0 ? spdlog::level::info
-                           : (debugLevel == 1 ? spdlog::level::debug : spdlog::level::trace);
+spdlog::level::level_enum CSC::getSpdLogLogLevel() {
+    return _debugLevel == 0 ? spdlog::level::info
+                            : (_debugLevel == 1 ? spdlog::level::debug : spdlog::level::trace);
 }
 
-void Application::startLog() {
+void CSC::startLog() {
     spdlog::init_thread_pool(8192, 1);
-    if (enabledSinks & 0x01) {
+    if (enabledSinks & Sinks::STDOUT) {
         auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        sinks.push_back(stdout_sink);
+        _sinks.push_back(stdout_sink);
     }
-    if (enabledSinks & 0x02) {
-        auto daily_sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>("M1M3support", 0, 0);
-        sinks.push_back(daily_sink);
+    if (enabledSinks & Sinks::DAILY) {
+        auto daily_sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(_name, 0, 0);
+        _sinks.push_back(daily_sink);
     }
-    if (enabledSinks & 0x04) {
-        auto syslog_sink = std::make_shared<spdlog::sinks::syslog_sink_mt>("M1M3support", LOG_PID | LOG_CONS,
-                                                                           LOG_USER, false);
-        sinks.push_back(syslog_sink);
+    if (enabledSinks & Sinks::SYSLOG) {
+        auto syslog_sink =
+                std::make_shared<spdlog::sinks::syslog_sink_mt>(_name, LOG_PID | LOG_CONS, LOG_USER, false);
+        _sinks.push_back(syslog_sink);
     }
 
     setSinks();

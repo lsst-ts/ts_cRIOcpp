@@ -21,20 +21,24 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __cRIO_Application_H
-#define __cRIO_Application_H
+#ifndef __cRIO_CSC_H
+#define __cRIO_CSC_H
 
 #include <CliApp.h>
 #include <spdlog/spdlog.h>
+#include <string>
 
 namespace LSST {
 namespace cRIO {
 
-class Application : public CliApp {
+class CSC : public CliApp {
 public:
-    Application(const char* _description);
+    CSC(std::string name, const char* description);
 
     void run();
+
+    typedef enum { STDOUT = 0x01, DAILY = 0x02, SYSLOG = 0x04, SAL = 0x10 } Sinks;
+    int enabledSinks;
 
 protected:
     virtual void printUsage();
@@ -42,13 +46,13 @@ protected:
 
     virtual void setSinks();
 
-    int enabledSinks;
-
 private:
-    int debugLevel;
-    int debugLevelSAL;
+    std::string _name;
 
-    std::vector<spdlog::sink_ptr> sinks;
+    int _debugLevel;
+    int _debugLevelSAL;
+
+    std::vector<spdlog::sink_ptr> _sinks;
 
     spdlog::level::level_enum getSpdLogLogLevel();
     void startLog();
@@ -57,4 +61,4 @@ private:
 }  // namespace cRIO
 }  // namespace LSST
 
-#endif  // !__cRIO_Application_H
+#endif  // !__cRIO_CSC_H

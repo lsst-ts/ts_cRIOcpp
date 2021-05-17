@@ -43,7 +43,7 @@ FPGA::FPGA(fpgaType type) {
             _modbusSoftwareTrigger = 252;
             break;
     }
-};
+}
 
 void FPGA::ilcCommands(ILC &ilc) {
     size_t requestLen = ilc.getLength() + 5;
