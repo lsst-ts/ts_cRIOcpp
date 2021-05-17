@@ -26,6 +26,17 @@
 
 typedef std::vector<std::string> command_vec;
 
+struct Argument {
+    Argument(char _arg, const char* _help, char _modifer) {
+        arg = _arg;
+        help = _help;
+        modifier = _modifer;
+    }
+    char arg;
+    const char* help;
+    char modifier;
+};
+
 /**
  * Stores commands and actions for processing.
  *
@@ -37,9 +48,9 @@ typedef std::vector<std::string> command_vec;
  * Ff - mandatory|optional float (double) argument
  * Ii - mandatory|optional integer argument
  */
-struct command_t {
-    command_t(const char* _command, std::function<int(command_vec)> _action, const char* _args, int _flags,
-              const char* _help_args, const char* _help) {
+struct Command {
+    Command(const char* _command, std::function<int(command_vec)> _action, const char* _args, int _flags,
+            const char* _help_args, const char* _help) {
         command = _command;
         action = _action;
         args = _args;
@@ -100,7 +111,7 @@ void AClass::processArg(int opt, const char * optarg)
 
 AClass cli("description");
 
-command_t commands[] =
+Command commands[] =
 {
   {
     "help", [ = ](command_vec cmds) { return cli.helpCommands(cmds); }, "s", 0, "[ALL|command]",
@@ -135,8 +146,18 @@ public:
      */
     virtual ~CliApp();
 
-    void addArgument(const char* _command, std::function<int(command_vec)> _action, const char* _args,
-                     int _flags, const char* _help_args, const char* _help);
+    /**
+     * Add argument. Should be called before call to processArgs.
+     *
+     * @param arg command line argument
+     * @param help help string
+     * @param modifer optarg modifier - : for required parameter, ? for
+     * optional parameter
+     */
+    void addArgument(const char arg, const char* help, const char modifer = 0);
+
+    void addCommand(const char* command, std::function<int(command_vec)> action, const char* args, int flags,
+                    const char* help_args, const char* help);
 
     /**
      * Initialize the class, parses arguments. Argument parsing stops after the
@@ -146,15 +167,14 @@ public:
      *
      * to pass negative numbers.
      *
-     * @param pargs getopt style description of possible command line arguments
      * @param argc argument count (from main method)
      * @param argv argument values (from main method)
      *
      * @return vector with command passed on the command line (after arguments)
      *
-     * @see command_t
+     * @see Command
      */
-    command_vec init(const char* pargs, int argc, char* const argv[]);
+    command_vec processArgs(int argc, char* const argv[]);
 
     /**
      * Prints application help.
@@ -243,7 +263,7 @@ protected:
      *
      * @return 0 on success, -1 on error
      */
-    virtual int processCommand(const command_t& cmd, const command_vec& args);
+    virtual int processCommand(const Command& cmd, const command_vec& args);
 
     /**
      * Process unmatched commands.
@@ -257,17 +277,18 @@ protected:
 
 private:
     const char* description;
-    std::list<command_t> commands;
+    std::list<Argument> arguments;
+    std::list<Command> commands;
     char* history_fn;
 
     /**
      * Find matched command. If multiple commands are matched, returns all possible
      * commands.
      */
-    const command_t* findCommand(std::string cmd, command_vec& matchedCmds);
+    const Command* findCommand(std::string cmd, command_vec& matchedCmds);
     void unknowCommand(std::string cmd, const command_vec matchedCmds);
     void readStreamCommands(std::istream& ins);
-    void printCommandHelp(const command_t* cmd);
+    void printCommandHelp(const Command* cmd);
 };
 
 #endif  //!

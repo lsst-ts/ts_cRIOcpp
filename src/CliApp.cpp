@@ -43,13 +43,16 @@ CliApp::~CliApp() {
     }
 }
 
-void CliApp::addArgument(const char* _command, std::function<int(command_vec)> _action, const char* _args,
-                         int _flags, const char* _help_args, const char* _help) {
-    command_t command(_command, _action, _args, _flags, _help_args, _help);
-    commands.push_back(command);
+void CliApp::addArgument(const char arg, const char* help, const char modifier) {
+    arguments.push_back(Argument(arg, help, modifier));
 }
 
-command_vec CliApp::init(const char* pargs, int argc, char* const argv[]) {
+void CliApp::addCommand(const char* command, std::function<int(command_vec)> action, const char* args,
+                        int flags, const char* help_args, const char* help) {
+    commands.push_back(Command(command, action, args, flags, help_args, help));
+}
+
+command_vec CliApp::processArgs(int argc, char* const argv[]) {
     command_vec argcommand;
 
     progName = basename(argv[0]);
@@ -59,6 +62,17 @@ command_vec CliApp::init(const char* pargs, int argc, char* const argv[]) {
     // processing of command part
 
     int commandStart = argc;
+
+    char pargs[2 * arguments.size() + 1];
+    char* p = pargs;
+    for (auto arg : arguments) {
+        *p = arg.arg;
+        p++;
+        if (arg.modifier != 0) {
+            *p = arg.modifier;
+            p++;
+        }
+    }
 
     for (int i = 1; i < argc; i++) {
         if (argv[i][0] != '-') {
@@ -94,7 +108,7 @@ void CliApp::printAppHelp() {
 
 void CliApp::printHelp(const char* cmd) {
     command_vec possible;
-    const command_t* c = findCommand(cmd, possible);
+    const Command* c = findCommand(cmd, possible);
 
     if (c == NULL) {
         unknowCommand(cmd, possible);
@@ -238,7 +252,7 @@ int CliApp::processCmdVector(command_vec cmds) {
 
     command_vec matchedCmds;
 
-    const command_t* c = findCommand(cmd, matchedCmds);
+    const Command* c = findCommand(cmd, matchedCmds);
 
     if (c == NULL) {
         if (matchedCmds.empty()) {
@@ -372,7 +386,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
     return an;
 }
 
-int CliApp::processCommand(const command_t& cmd, const command_vec& args) {
+int CliApp::processCommand(const Command& cmd, const command_vec& args) {
     try {
         if (verifyArguments(args, cmd.args) >= 0) {
             return cmd.action(args);
@@ -403,8 +417,8 @@ void CliApp::printCommands() {
     }
 }
 
-const command_t* CliApp::findCommand(std::string cmd, command_vec& matchedCmds) {
-    const command_t* ret = NULL;
+const Command* CliApp::findCommand(std::string cmd, command_vec& matchedCmds) {
+    const Command* ret = NULL;
 
     for (auto tc : commands) {
         if (strncmp(cmd.c_str(), tc.command, cmd.length()) == 0) {
@@ -453,7 +467,7 @@ void CliApp::readStreamCommands(std::istream& ins) {
     }
 }
 
-void CliApp::printCommandHelp(const command_t* cmd) {
+void CliApp::printCommandHelp(const Command* cmd) {
     std::cout << std::endl << " * " << strupper(cmd->command) << std::endl << std::endl;
 
     if (cmd->help_args) {
