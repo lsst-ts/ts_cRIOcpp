@@ -60,10 +60,10 @@ struct Command {
  * The class shall be value initialized. See the following example code.
  *
  * @code
-#include <tcs/utility/CliApp.hpp>
+#include <cRIO/CliApp.hpp>
 #include <iostream>
 
-AClass : public lbto::CliApp
+AClass : public cRIO::CliApp
 {
 public:
   AClass(const char * description) : CliApp(description), interactive(false) {}
@@ -81,37 +81,32 @@ void AClass::printUsage()
 
 void AClass::processArg(int opt, const char * optarg)
 {
-  switch (opt)
-    {
-      case 'h':
-        printAppHelp();
-        break;
-      case 'i':
-        interactive = true;
-        break;
-      default:
-        std::cerr << "Unknow command: " << dynamic_cast<char>(opt) << std::endl;
-        exit(EXIT_FAILURE);
+    switch (opt) {
+        case 'h':
+            printAppHelp();
+            break;
+        case 'i':
+            interactive = true;
+            break;
+        default:
+            std::cerr << "Unknow command: " << dynamic_cast<char>(opt) << std::endl;
+            exit(EXIT_FAILURE);
     }
 }
 
 AClass cli("description");
 
-Command commands[] =
-{
-  {
-    "help", [ = ](command_vec cmds) { return cli.helpCommands(cmds); }, "s", 0, "[ALL|command]",
-    "Prints all command or command help."
-  },
-  { NULL, NULL, NULL, 0, NULL, NULL }
-};
-
 int main(int argc, char * argv[])
 {
-  cli.init(commands, "hi", argc, argv);
-  if (cli.interactive)
-    return goInteractive();
-  return 0;
+    cli.addCommand(
+        "help",
+        [ = ](command_vec cmds) { return cli.helpCommands(cmds); },
+        "s", 0, "[ALL|command]", "Prints all command or command help.",
+    );
+    cli.init(argc, argv);
+    if (cli.interactive)
+        return goInteractive();
+    return 0;
 }
  * @endcode
  */
@@ -201,6 +196,8 @@ protected:
      * List available commands on standard output. Use it inside printUsage().
      */
     void printCommands();
+
+    int verbose;
 
 private:
     std::list<Command> _commands;

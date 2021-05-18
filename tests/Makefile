@@ -4,7 +4,8 @@ all: compile
 
 .PHONY: FORCE compile run junit clean
 
-TEST_SRCS := $(shell ls test_*.cpp 2>/dev/null)
+TEST_REQ_READLINE := test_CliApp
+TEST_SRCS := $(shell ls test_*.cpp 2>/dev/null | grep -v test_CliApp)
 BINARIES := $(patsubst %.cpp,%,$(TEST_SRCS))
 DEPS := $(patsubst %.cpp,%.cpp.d,$(TEST_SRCS))
 JUNIT_FILES := $(shell ls *.xml 2>/dev/null)
@@ -18,7 +19,7 @@ TEST_CPPFLAGS := -I"/usr/include" \
 	-I"../include" \
 	$(pkg-config --cflags catch2 2>/dev/null)
 
-compile: $(BINARIES)
+compile: $(BINARIES) $(TEST_REQ_READLINE)
 
 run: compile
 	@$(foreach b,$(BINARIES),echo '[RUN] ${b}'; ./${b};)
@@ -39,6 +40,10 @@ clean:
 %.cpp.d: %.cpp
 	@echo '[DPP] $<'
 	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) $(TEST_CPPFLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'
+
+$(TEST_REQ_READLINE): %: %.cpp.o ../lib/libcRIOcpp.a
+	@echo '[TPR] $<'
+	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(LIBS) -lreadline $^ $(CPP_FLAGS)
 
 ${BINARIES}: %: %.cpp.o ../lib/libcRIOcpp.a
 	@echo '[TPP] $<'

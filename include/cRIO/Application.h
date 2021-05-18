@@ -110,7 +110,7 @@ public:
      *
      * @param _description a short description of the application
      */
-    Application(const char* description = NULL) : verbose(0), _description(description) {}
+    Application(const char* description = NULL) : _description(description) {}
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
@@ -159,8 +159,6 @@ public:
 
     std::string getName() { return _name; }
     void setName(std::string name) { _name = name; }
-
-    int verbose;
 
 protected:
     /**
