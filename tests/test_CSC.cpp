@@ -68,9 +68,9 @@ TEST_CASE("Daemonize", "[Daemonize]") {
     strcpy(pid_template, "/tmp/test.pid-XXXXXX");
     char* pid_file = mktemp(pid_template);
 
-    char* argv[argc] = {"test", "-p", pid_file, "TEST"};
+    const char* const argv[argc] = {"test", "-p", pid_file, "TEST"};
 
-    command_vec cmds = TestCSC::instance().processArgs(argc, argv);
+    command_vec cmds = TestCSC::instance().processArgs(argc, (char**)argv);
     REQUIRE(cmds.size() == 1);
     REQUIRE(cmds[0] == "TEST");
 

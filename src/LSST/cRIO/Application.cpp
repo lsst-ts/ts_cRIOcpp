@@ -46,7 +46,7 @@ void Application::addArgument(const char arg, const char* help, const char modif
 command_vec Application::processArgs(int argc, char* const argv[]) {
     command_vec argcommand;
 
-    progName = basename(argv[0]);
+    setName(basename(argv[0]));
 
     // parse as options only string before commands
     // as commands can include negative number (-1..), don't allow getopt
@@ -93,7 +93,7 @@ command_vec Application::processArgs(int argc, char* const argv[]) {
 }
 
 void Application::printAppHelp() {
-    cout << progName << " " << _description << endl << endl;
+    cout << getName() << " " << _description << endl << endl;
     printUsage();
 }
 

@@ -110,7 +110,7 @@ public:
      *
      * @param _description a short description of the application
      */
-    Application(const char* description = NULL) : verbose(0), progName(NULL), _description(description) {}
+    Application(const char* description = NULL) : verbose(0), _description(description) {}
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
@@ -157,6 +157,9 @@ public:
      */
     virtual void printAppHelp();
 
+    std::string getName() { return _name; }
+    void setName(std::string name) { _name = name; }
+
     int verbose;
 
 protected:
@@ -181,11 +184,10 @@ protected:
      */
     virtual void processArg(int opt, char* optarg) = 0;
 
-    const char* progName;
-
 private:
     const char* _description;
     std::list<Argument> _arguments;
+    std::string _name;
 };
 
 }  // namespace cRIO

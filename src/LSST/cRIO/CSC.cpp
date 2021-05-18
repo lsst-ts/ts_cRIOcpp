@@ -41,7 +41,7 @@ CSC::CSC(token) : Application() {
     _debugLevelSAL = 0;
     _keep_running = true;
 
-    enabledSinks = 0;
+    enabledSinks = Sinks::SAL;
 
     addArgument('d', "increases debugging (can be specified multiple times, default is info");
     addArgument('f', "runs on foreground, don't log to file");
@@ -80,7 +80,7 @@ void CSC::processArg(int opt, char* optarg) {
             exit(EXIT_SUCCESS);
         case 'p':
             _daemon.pidfile = optarg;
-            enabledSinks |= Sinks::SYSLOG | Sinks::SAL;
+            enabledSinks |= Sinks::SYSLOG;
             break;
         case 'u': {
             char* sep = strchr(optarg, ':');
