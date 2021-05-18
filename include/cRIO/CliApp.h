@@ -18,24 +18,10 @@
 #ifndef __CliApp_h
 #define __CliApp_h
 
-#include <functional>
-#include <fstream>
-#include <string>
-#include <vector>
-#include <list>
+#include <cRIO/Application.h>
 
-typedef std::vector<std::string> command_vec;
-
-struct Argument {
-    Argument(char _arg, const char* _help, char _modifer) {
-        arg = _arg;
-        help = _help;
-        modifier = _modifer;
-    }
-    char arg;
-    const char* help;
-    char modifier;
-};
+namespace LSST {
+namespace cRIO {
 
 /**
  * Stores commands and actions for processing.
@@ -129,15 +115,14 @@ int main(int argc, char * argv[])
 }
  * @endcode
  */
-class CliApp {
+class CliApp : public Application {
 public:
     /**
      * Construct CliApp.
      *
      * @param _description a short description of the application
      */
-    CliApp(const char* description = NULL)
-            : verbose(0), progName(NULL), _description(description), _history_fn(NULL) {}
+    CliApp(const char* description) : Application(description), _history_fn(NULL) {}
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
@@ -145,47 +130,8 @@ public:
      */
     virtual ~CliApp();
 
-    /**
-     * Sets CLI description. Description is printed in help text.
-     *
-     * @param description new description
-     */
-    void setDescription(const char* description) { _description = description; }
-
-    /**
-     * Add argument. Should be called before call to processArgs.
-     *
-     * @param arg command line argument
-     * @param help help string
-     * @param modifer optarg modifier - : for required parameter, ? for
-     * optional parameter
-     */
-    void addArgument(const char arg, const char* help, const char modifer = 0);
-
     void addCommand(const char* command, std::function<int(command_vec)> action, const char* args, int flags,
                     const char* help_args, const char* help);
-
-    /**
-     * Initialize the class, parses arguments. Argument parsing stops after the
-     * first non-argument. This allows for calls as:
-     *
-     * app -v -c config.txt command -1.0 -3.141592
-     *
-     * to pass negative numbers.
-     *
-     * @param argc argument count (from main method)
-     * @param argv argument values (from main method)
-     *
-     * @return vector with command passed on the command line (after arguments)
-     *
-     * @see Command
-     */
-    command_vec processArgs(int argc, char* const argv[]);
-
-    /**
-     * Prints application help.
-     */
-    virtual void printAppHelp();
 
     /**
      * Print help for a command.
@@ -235,32 +181,7 @@ public:
      */
     static const bool onOff(std::string on);
 
-    int verbose;
-
 protected:
-    /**
-     * Prints application usage.
-     */
-    virtual void printUsage() = 0;
-
-    /**
-     * Prints preamble for commands help. Can include tips which commands to
-     * use,..
-     */
-    virtual void printGenericHelp(){};
-
-    /**
-     * Process option from command line parsing.
-     *
-     * @param opt option
-     * @param optarg option argument, can be null
-     *
-     * @return -1 on error, 0 on success (shall continue)
-     */
-    virtual void processArg(int opt, char* optarg) = 0;
-
-    const char* progName;
-
     /**
      * Can be overwritten to perform any pre/post command processing.
      *
@@ -282,8 +203,6 @@ protected:
     void printCommands();
 
 private:
-    const char* _description;
-    std::list<Argument> _arguments;
     std::list<Command> _commands;
     char* _history_fn;
 
@@ -296,5 +215,8 @@ private:
     void readStreamCommands(std::istream& ins);
     void printCommandHelp(const Command* cmd);
 };
+
+}  // namespace cRIO
+}  // namespace LSST
 
 #endif  //!

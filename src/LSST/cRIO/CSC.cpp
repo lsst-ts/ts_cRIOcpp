@@ -36,7 +36,7 @@
 namespace LSST {
 namespace cRIO {
 
-CSC::CSC(token) : CliApp() {
+CSC::CSC(token) : Application() {
     _debugLevel = 0;
     _debugLevelSAL = 0;
     _keep_running = true;
@@ -49,6 +49,8 @@ CSC::CSC(token) : CliApp() {
     addArgument('p', "PID file, started as daemon on background", ':');
     addArgument('u', "<user>:<group> run under user & group", ':');
 }
+
+CSC::~CSC() {}
 
 void CSC::run() {
     // create threads

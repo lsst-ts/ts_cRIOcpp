@@ -21,7 +21,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "CliApp.h"
+#include "cRIO/CliApp.h"
 
 #include <algorithm>
 #include <readline/readline.h>
@@ -31,6 +31,9 @@
 #include <unistd.h>
 #include <cmath>
 #include <csignal>
+
+namespace LSST {
+namespace cRIO {
 
 using namespace std;
 
@@ -43,67 +46,9 @@ CliApp::~CliApp() {
     }
 }
 
-void CliApp::addArgument(const char arg, const char* help, const char modifier) {
-    _arguments.push_back(Argument(arg, help, modifier));
-}
-
 void CliApp::addCommand(const char* command, std::function<int(command_vec)> action, const char* args,
                         int flags, const char* help_args, const char* help) {
     _commands.push_back(Command(command, action, args, flags, help_args, help));
-}
-
-command_vec CliApp::processArgs(int argc, char* const argv[]) {
-    command_vec argcommand;
-
-    progName = basename(argv[0]);
-
-    // parse as options only string before commands
-    // as commands can include negative number (-1..), don't allow getopt
-    // processing of command part
-
-    int commandStart = argc;
-
-    char pargs[2 * _arguments.size() + 1];
-    char* p = pargs;
-    for (auto arg : _arguments) {
-        *p = arg.arg;
-        p++;
-        if (arg.modifier != 0) {
-            *p = arg.modifier;
-            p++;
-        }
-    }
-
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] != '-') {
-            commandStart = i;
-
-            for (; i < argc; i++) {
-                argcommand.push_back(argv[i]);
-            }
-
-            break;
-        }
-
-        const char* a = strchr(pargs, argv[i][1]);
-
-        if (a && a[1] == ':' && ((strlen(argv[i]) == 2) || (argv[i][1] == '-'))) {
-            i++;
-        }
-    }
-
-    int opt = -1;
-
-    while ((opt = getopt(commandStart, argv, pargs)) != -1) {
-        processArg(opt, optarg);
-    }
-
-    return argcommand;
-}
-
-void CliApp::printAppHelp() {
-    cout << progName << " " << _description << endl << endl;
-    printUsage();
 }
 
 void CliApp::printHelp(const char* cmd) {
@@ -332,7 +277,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
     size_t an = 0;
 
-    for (const char *a = args; *a; a++, an++) {
+    for (const char* a = args; *a; a++, an++) {
         if (an >= cmds.size()) {
             if (*a == 's' || *a == 'f' || *a == 'i' || *a == 'b' || *a == 'd' || *a == 'h' || *a == '?') {
                 return an;
@@ -476,3 +421,6 @@ void CliApp::printCommandHelp(const Command* cmd) {
 
     std::cout << cmd->help << std::endl << std::endl;
 }
+
+}  // namespace cRIO
+}  // namespace LSST

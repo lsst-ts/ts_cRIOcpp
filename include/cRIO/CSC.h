@@ -24,7 +24,7 @@
 #ifndef __cRIO_CSC_H
 #define __cRIO_CSC_H
 
-#include <CliApp.h>
+#include <cRIO/Application.h>
 #include <cRIO/Singleton.h>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -36,9 +36,11 @@ namespace cRIO {
  * Application class for Commandable SAL Component (CSC). Allows running
  * application as daemon, handles generic SAL commands.
  */
-class CSC final : public CliApp, public Singleton<CSC> {
+class CSC : public Application, public Singleton<CSC> {
 public:
     CSC(token);
+
+    virtual ~CSC();
 
     void setName(std::string name, const char* description);
 
@@ -51,7 +53,6 @@ public:
     int enabledSinks;
 
 protected:
-    virtual void printUsage();
     virtual void processArg(int opt, char* optarg);
 
     virtual void setSinks();
