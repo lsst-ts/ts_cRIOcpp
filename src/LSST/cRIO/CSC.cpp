@@ -32,14 +32,26 @@
 namespace LSST {
 namespace cRIO {
 
-CSC::CSC(std::string name, const char* description) : CliApp(description), _name(std::move(name)) {
+CSC::CSC(token) : CliApp() {
     _debugLevel = 0;
     _debugLevelSAL = 0;
+    _keep_running = true;
 
     enabledSinks = 0;
 
     addArgument('d', "increases debugging (can be specified multiple times, default is info");
     addArgument('h', "prints this help");
+}
+
+void CSC::run() {
+    // create threads
+
+
+    // run threads
+    while (_keep_running == true) {
+
+    }
+
 }
 
 void CSC::processArg(int opt, const char* optarg) {

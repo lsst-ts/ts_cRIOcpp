@@ -25,16 +25,26 @@
 #define __cRIO_CSC_H
 
 #include <CliApp.h>
+#include <cRIO/Singleton.h>
 #include <spdlog/spdlog.h>
 #include <string>
 
 namespace LSST {
 namespace cRIO {
 
-class CSC : public CliApp {
+/**
+ * Application class for Commandable SAL Component (CSC). Allows running
+ * application as daemon, handles generic SAL commands.
+ */
+class CSC final : public CliApp, public Singleton<CSC> {
 public:
-    CSC(std::string name, const char* description);
+    CSC(token);
+    
+    void setName(std::string name, const char* description);
 
+    /**
+     * Runs CSC. Starts all threads, waits for exitControl command.
+     */
     void run();
 
     typedef enum { STDOUT = 0x01, DAILY = 0x02, SYSLOG = 0x04, SAL = 0x10 } Sinks;
@@ -51,6 +61,7 @@ private:
 
     int _debugLevel;
     int _debugLevelSAL;
+    bool _keep_running;
 
     std::vector<spdlog::sink_ptr> _sinks;
 

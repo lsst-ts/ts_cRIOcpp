@@ -134,17 +134,23 @@ public:
     /**
      * Construct CliApp.
      *
-     * @param name application name
      * @param _description a short description of the application
      */
-    CliApp(const char* _description)
-            : verbose(0), progName(NULL), description(_description), history_fn(NULL) {}
+    CliApp(const char* description = NULL)
+            : verbose(0), progName(NULL), _description(description), _history_fn(NULL) {}
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
      * steps in their own destructor.
      */
     virtual ~CliApp();
+
+    /**
+     * Sets CLI description. Description is printed in help text.
+     *
+     * @param description new description
+     */
+    void setDescription (const char* description) { _description = description; }
 
     /**
      * Add argument. Should be called before call to processArgs.
@@ -276,10 +282,10 @@ protected:
     void printCommands();
 
 private:
-    const char* description;
-    std::list<Argument> arguments;
-    std::list<Command> commands;
-    char* history_fn;
+    const char* _description;
+    std::list<Argument> _arguments;
+    std::list<Command> _commands;
+    char* _history_fn;
 
     /**
      * Find matched command. If multiple commands are matched, returns all possible

@@ -35,21 +35,21 @@
 using namespace std;
 
 CliApp::~CliApp() {
-    if (history_fn != NULL) {
+    if (_history_fn != NULL) {
         saveHistory();
 
-        free(history_fn);
-        history_fn = NULL;
+        free(_history_fn);
+        _history_fn = NULL;
     }
 }
 
 void CliApp::addArgument(const char arg, const char* help, const char modifier) {
-    arguments.push_back(Argument(arg, help, modifier));
+    _arguments.push_back(Argument(arg, help, modifier));
 }
 
 void CliApp::addCommand(const char* command, std::function<int(command_vec)> action, const char* args,
                         int flags, const char* help_args, const char* help) {
-    commands.push_back(Command(command, action, args, flags, help_args, help));
+    _commands.push_back(Command(command, action, args, flags, help_args, help));
 }
 
 command_vec CliApp::processArgs(int argc, char* const argv[]) {
@@ -63,9 +63,9 @@ command_vec CliApp::processArgs(int argc, char* const argv[]) {
 
     int commandStart = argc;
 
-    char pargs[2 * arguments.size() + 1];
+    char pargs[2 * _arguments.size() + 1];
     char* p = pargs;
-    for (auto arg : arguments) {
+    for (auto arg : _arguments) {
         *p = arg.arg;
         p++;
         if (arg.modifier != 0) {
@@ -102,7 +102,7 @@ command_vec CliApp::processArgs(int argc, char* const argv[]) {
 }
 
 void CliApp::printAppHelp() {
-    cout << progName << " " << description << endl << endl;
+    cout << progName << " " << _description << endl << endl;
     printUsage();
 }
 
@@ -128,7 +128,7 @@ int CliApp::helpCommands(command_vec cmds) {
 
     for (auto cm : cmds) {
         if (cm == "all") {
-            for (auto c : commands) {
+            for (auto c : _commands) {
                 printCommandHelp(&c);
             }
 
@@ -142,18 +142,18 @@ int CliApp::helpCommands(command_vec cmds) {
 }
 
 void CliApp::goInteractive(const char* prompt) {
-    asprintf(&history_fn, "%s/.%s_history", getenv("HOME"), progName);
+    asprintf(&_history_fn, "%s/.%s_history", getenv("HOME"), progName);
 
     using_history();
-    int rr = read_history(history_fn);
+    int rr = read_history(_history_fn);
 
     if (rr != ENOENT) {
         if (rr != 0) {
-            std::cerr << "Error reading history " << history_fn << ":" << strerror(rr) << std::endl;
+            std::cerr << "Error reading history " << _history_fn << ":" << strerror(rr) << std::endl;
         }
 
         else if (verbose) {
-            std::cout << "Read history from " << history_fn << std::endl;
+            std::cout << "Read history from " << _history_fn << std::endl;
         }
     }
 
@@ -277,19 +277,19 @@ int CliApp::processCmdVector(command_vec cmds) {
 }
 
 void CliApp::saveHistory() {
-    if (history_fn != NULL) {
-        int wr = write_history(history_fn);
+    if (_history_fn != NULL) {
+        int wr = write_history(_history_fn);
 
         switch (wr) {
             case 0:
                 if (verbose) {
-                    std::cout << "History saved to " << history_fn << std::endl;
+                    std::cout << "History saved to " << _history_fn << std::endl;
                 }
 
                 break;
 
             default:
-                std::cerr << "Unable to save history to " << history_fn << ":" << strerror(wr) << std::endl;
+                std::cerr << "Unable to save history to " << _history_fn << ":" << strerror(wr) << std::endl;
         }
     }
 }
@@ -412,7 +412,7 @@ int CliApp::processUnmached(command_vec cmds) {
 }
 
 void CliApp::printCommands() {
-    for (auto command : commands) {
+    for (auto command : _commands) {
         std::cout << " " << command.command << std::endl;
     }
 }
@@ -420,7 +420,7 @@ void CliApp::printCommands() {
 const Command* CliApp::findCommand(std::string cmd, command_vec& matchedCmds) {
     const Command* ret = NULL;
 
-    for (auto tc : commands) {
+    for (auto tc : _commands) {
         if (strncmp(cmd.c_str(), tc.command, cmd.length()) == 0) {
             matchedCmds.push_back(tc.command);
             ret = &tc;
