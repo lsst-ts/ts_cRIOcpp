@@ -150,7 +150,7 @@ public:
      *
      * @param description new description
      */
-    void setDescription (const char* description) { _description = description; }
+    void setDescription(const char* description) { _description = description; }
 
     /**
      * Add argument. Should be called before call to processArgs.
@@ -257,7 +257,7 @@ protected:
      *
      * @return -1 on error, 0 on success (shall continue)
      */
-    virtual void processArg(int opt, const char* optarg) = 0;
+    virtual void processArg(int opt, char* optarg) = 0;
 
     const char* progName;
 

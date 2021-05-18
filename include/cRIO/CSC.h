@@ -39,7 +39,7 @@ namespace cRIO {
 class CSC final : public CliApp, public Singleton<CSC> {
 public:
     CSC(token);
-    
+
     void setName(std::string name, const char* description);
 
     /**
@@ -52,7 +52,7 @@ public:
 
 protected:
     virtual void printUsage();
-    virtual void processArg(int opt, const char* optarg);
+    virtual void processArg(int opt, char* optarg);
 
     virtual void setSinks();
 
@@ -63,10 +63,26 @@ private:
     int _debugLevelSAL;
     bool _keep_running;
 
+    struct DaemonOptions {
+        DaemonOptions() {
+            pidfile = NULL;
+            timeout = 30;
+        }
+        const char* pidfile;
+        std::string user;
+        std::string group;
+        int timeout;
+    };
+
+    DaemonOptions _daemon;
+
+    const char* _pidfile;
+
     std::vector<spdlog::sink_ptr> _sinks;
 
     spdlog::level::level_enum getSpdLogLogLevel();
-    void startLog();
+    void _startLog();
+    int _daemonize();
 };
 
 }  // namespace cRIO

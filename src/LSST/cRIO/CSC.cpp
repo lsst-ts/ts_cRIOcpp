@@ -27,7 +27,11 @@
 #include <spdlog/sinks/daily_file_sink.h>
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/syslog_sink.h>
+
 #include <iostream>
+#include <grp.h>
+#include <pwd.h>
+#include <signal.h>
 
 namespace LSST {
 namespace cRIO {
@@ -40,28 +44,49 @@ CSC::CSC(token) : CliApp() {
     enabledSinks = 0;
 
     addArgument('d', "increases debugging (can be specified multiple times, default is info");
+    addArgument('f', "runs on foreground, don't log to file");
     addArgument('h', "prints this help");
+    addArgument('p', "PID file, started as daemon on background", ':');
+    addArgument('u', "<user>:<group> run under user & group", ':');
 }
 
 void CSC::run() {
     // create threads
 
-
-    // run threads
-    while (_keep_running == true) {
-
+    int ret_d = _daemonize();
+    if (ret_d == -1) {
+        // run threads
+        while (_keep_running == true) {
+        }
     }
-
 }
 
-void CSC::processArg(int opt, const char* optarg) {
+void CSC::processArg(int opt, char* optarg) {
     switch (opt) {
         case 'd':
             _debugLevel++;
             break;
+        case 'f':
+            enabledSinks |= Sinks::STDOUT;
+            break;
         case 'h':
             printAppHelp();
             exit(EXIT_SUCCESS);
+        case 'p':
+            _daemon.pidfile = optarg;
+            enabledSinks |= Sinks::SYSLOG | Sinks::SAL;
+            break;
+        case 'u': {
+            char* sep = strchr(optarg, ':');
+            if (sep) {
+                *sep = '\0';
+                _daemon.user = optarg;
+                _daemon.group = sep + 1;
+            } else {
+                _daemon.user = _daemon.group = optarg;
+            }
+            break;
+        }
         default:
             std::cerr << "Unknow option " << opt << std::endl;
             printAppHelp();
@@ -81,7 +106,7 @@ spdlog::level::level_enum CSC::getSpdLogLogLevel() {
                             : (_debugLevel == 1 ? spdlog::level::debug : spdlog::level::trace);
 }
 
-void CSC::startLog() {
+void CSC::_startLog() {
     spdlog::init_thread_pool(8192, 1);
     if (enabledSinks & Sinks::STDOUT) {
         auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
@@ -98,6 +123,91 @@ void CSC::startLog() {
     }
 
     setSinks();
+}
+
+int CSC::_daemonize() {
+    // daemon is expected to sends to stdout either OK if started, or error message otherwise
+    // if no response is received within _daemon.timeout seconds, startup isn't confirmed
+    int startPipe[2] = {-1, -1};
+
+    if (_daemon.pidfile) {
+        struct passwd* runAs = NULL;
+        struct group* runGroup = NULL;
+        if (_daemon.user.length() > 0) {
+            runAs = getpwnam(_daemon.user.c_str());
+            if (runAs == NULL) {
+                std::cerr << "Error: Cannot find user " << _daemon.user << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            runGroup = getgrnam(_daemon.group.c_str());
+            if (runGroup == NULL) {
+                std::cerr << "Error: Cannot find group " << _daemon.group << std::endl;
+                exit(EXIT_FAILURE);
+            }
+        }
+
+        if (pipe(startPipe) == -1) {
+            std::cerr << "Error: Cannot create pipe for child/start process: " << strerror(errno)
+                      << std::endl;
+            exit(EXIT_FAILURE);
+        }
+
+        pid_t child = fork();
+        if (child < 0) {
+            std::cerr << "Error: Cannot fork:" << strerror(errno) << std::endl;
+            exit(EXIT_FAILURE);
+        }
+        if (child > 0) {
+            close(startPipe[1]);
+            std::ofstream pidf(_daemon.pidfile, std::ofstream::out);
+            pidf << child;
+            pidf.close();
+            if (pidf.fail()) {
+                std::cerr << "Error: Cannot write to PID file " << _daemon.pidfile << ": " << strerror(errno)
+                          << std::endl;
+                exit(EXIT_FAILURE);
+            }
+            if (runAs != NULL) {
+                if (chown(_daemon.pidfile, runAs->pw_uid, runGroup->gr_gid)) {
+                    std::cerr << "Error: Cannot change owner of " << _daemon.pidfile << ":" << strerror(errno)
+                              << std::endl;
+                    exit(EXIT_FAILURE);
+                }
+            }
+            char retbuf[2000];
+            memset(retbuf, 0, sizeof(retbuf));
+            signal(SIGALRM, [](int) {
+                std::cerr << "Error: Start timeouted, see syslog for details." << std::endl;
+                exit(EXIT_FAILURE);
+            });
+            alarm(_daemon.timeout);
+            read(startPipe[0], retbuf, 2000);
+            if (strcmp(retbuf, "OK") == 0) {
+                return EXIT_SUCCESS;
+            }
+            std::cerr << retbuf << std::endl;
+            return EXIT_FAILURE;
+        }
+        close(startPipe[0]);
+        _startLog();
+        if (runAs != NULL) {
+            setuid(runAs->pw_uid);
+            setgid(runGroup->gr_gid);
+            SPDLOG_DEBUG("Running as {}:{}", _daemon.user, _daemon.group);
+        }
+        if (!(enabledSinks & 0x01)) {
+            close(0);
+            close(1);
+            close(2);
+            int nf = open("/dev/null", O_RDWR);
+            dup(nf);
+            dup(nf);
+            dup(nf);
+        }
+    } else {
+        _startLog();
+    }
+    return -1;
 }
 
 }  // namespace cRIO
