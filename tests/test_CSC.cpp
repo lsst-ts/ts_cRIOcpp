@@ -23,18 +23,65 @@
 #define CATCH_CONFIG_MAIN
 #include <catch/catch.hpp>
 
-#include <memory>
-#include <cmath>
+#include <cstdlib>
+#include <signal.h>
+#include <string>
+#include <sys/types.h>
+#include <unistd.h>
 
 #include <cRIO/CSC.h>
 
 using namespace LSST::cRIO;
 
+class TestCSC : public CSC {
+public:
+    int _keepRunning;
+
+protected:
+    virtual void init();
+    virtual int runLoop();
+};
+
+void _handler(int sig) {
+    if (sig == SIGUSR1) {
+        dynamic_cast<TestCSC*>(&TestCSC::instance())->_keepRunning = 0;
+    }
+};
+
+void TestCSC::init() {
+    _keepRunning = 1;
+    signal(SIGUSR1, _handler);
+    printf("OK\n");
+}
+
+int TestCSC::runLoop() {
+    sleep(1);
+    return _keepRunning;
+}
+
 TEST_CASE("Daemonize", "[Daemonize]") {
     int argc = 4;
-    char* const argv[argc] = {"test", "-p", "/tmp/test.pid", "TEST"};
+    char pid_template[200];
+    strcpy(pid_template, "/tmp/test.pid-XXXXXX");
+    char* pid_file = mktemp(pid_template);
 
-    command_vec cmds = CSC::instance().processArgs(argc, argv);
-    // REQUIRE(cmds.size() == 1);
+    char* argv[argc] = {"test", "-p", pid_file, "TEST"};
+
+    command_vec cmds = TestCSC::instance().processArgs(argc, argv);
+    REQUIRE(cmds.size() == 1);
     REQUIRE(cmds[0] == "TEST");
+
+    TestCSC::instance().run();
+
+    // open PID, kill what's in
+    int pf = open(pid_file, O_RDONLY);
+    REQUIRE(pf >= 0);
+    char pid_buf[20];
+    REQUIRE(read(pf, pid_buf, 20) > 0);
+    REQUIRE(close(pf) == 0);
+
+    int child_pid = std::stoi(pid_buf);
+    REQUIRE(child_pid > 0);
+    REQUIRE(kill(child_pid, SIGUSR1) == 0);
+    REQUIRE(unlink(pid_file) == 0);
 }

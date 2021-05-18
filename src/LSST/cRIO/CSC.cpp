@@ -53,12 +53,16 @@ CSC::CSC(token) : Application() {
 CSC::~CSC() {}
 
 void CSC::run() {
-    // create threads
-
     int ret_d = _daemonize();
+
     if (ret_d == -1) {
+        // create threads
+        init();
+
         // run threads
         while (_keep_running == true) {
+            int rl = runLoop();
+            if (rl == 0) break;
         }
     }
 }
@@ -206,6 +210,7 @@ int CSC::_daemonize() {
             dup(nf);
             dup(nf);
         }
+        return EXIT_SUCCESS;
     } else {
         _startLog();
     }

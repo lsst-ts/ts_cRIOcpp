@@ -57,6 +57,15 @@ protected:
 
     virtual void setSinks();
 
+    virtual void init() {}
+
+    /**
+     * One control loop run.
+     *
+     * @return 0 if loop shall stop, otherwise loop will continue to run.
+     */
+    virtual int runLoop() { return 1; }
+
 private:
     std::string _name;
 
