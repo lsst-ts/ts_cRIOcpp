@@ -60,27 +60,26 @@ struct Command {
  * The class shall be value initialized. See the following example code.
  *
  * @code
-#include <cRIO/CliApp.hpp>
+#include <cRIO/CliApp.h>
 #include <iostream>
 
-AClass : public cRIO::CliApp
-{
+using namespace LSST::cRIO;
+
+class AClass : public CliApp {
 public:
-  AClass(const char * description) : CliApp(description), interactive(false) {}
-  bool interactive;
+    AClass(const char* description) : CliApp(description), interactive(false) {}
+    bool interactive;
 
 protected:
-  void printUsage() override;
-  void processArg(int opt, const char * optarg) override;
+    void printUsage() override;
+    void processArg(int opt, char* optarg) override;
 };
 
-void AClass::printUsage()
-{
-  std::cout << "A simple app. Accept -h for help. Pass -i to start interactive mode." << std::endl;
+void AClass::printUsage() {
+    std::cout << "A simple app. Accept -h for help. Pass -i to start interactive mode." << std::endl;
 }
 
-void AClass::processArg(int opt, const char * optarg)
-{
+void AClass::processArg(int opt, char* optarg) {
     switch (opt) {
         case 'h':
             printAppHelp();
@@ -89,23 +88,20 @@ void AClass::processArg(int opt, const char * optarg)
             interactive = true;
             break;
         default:
-            std::cerr << "Unknow command: " << dynamic_cast<char>(opt) << std::endl;
+            std::cerr << "Unknow command: " << static_cast<char>(opt) << std::endl;
             exit(EXIT_FAILURE);
     }
 }
 
-AClass cli("description");
+int main(int argc, char* const[] argc) {
+    AClass cli("description");
 
-int main(int argc, char * argv[])
-{
-    cli.addCommand(
-        "help",
-        [ = ](command_vec cmds) { return cli.helpCommands(cmds); },
-        "s", 0, "[ALL|command]", "Prints all command or command help.",
-    );
-    cli.init(argc, argv);
-    if (cli.interactive)
-        return goInteractive();
+    cli.addCommand("help", [&cli](command_vec cmds) { return cli.helpCommands(cmds); }, "s", 0,
+                   "[ALL|command]", "Prints all command or command help.");
+
+    command_vec cmds = cli.processArgs(argc, argv);
+    cli.processCmdVector(cmds);
+    if (cli.interactive) return cli.goInteractive();
     return 0;
 }
  * @endcode

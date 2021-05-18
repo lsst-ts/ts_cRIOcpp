@@ -7,6 +7,7 @@ all: compile
 TEST_REQ_READLINE := test_CliApp
 TEST_SRCS := $(shell ls test_*.cpp 2>/dev/null | grep -v test_CliApp)
 BINARIES := $(patsubst %.cpp,%,$(TEST_SRCS))
+ALL_BINARIES := $(BINARIES) $(TEST_REQ_READLINE)
 DEPS := $(patsubst %.cpp,%.cpp.d,$(TEST_SRCS))
 JUNIT_FILES := $(shell ls *.xml 2>/dev/null)
 
@@ -22,13 +23,13 @@ TEST_CPPFLAGS := -I"/usr/include" \
 compile: $(BINARIES) $(TEST_REQ_READLINE)
 
 run: compile
-	@$(foreach b,$(BINARIES),echo '[RUN] ${b}'; ./${b};)
+	@$(foreach b,$(ALL_BINARIES),echo '[RUN] ${b}'; ./${b};)
 
 junit: compile
-	@$(foreach b,$(BINARIES),echo '[JUT] ${b}'; ./${b} -r junit -o ${b}.xml;)
+	@$(foreach b,$(ALL_BINARIES),echo '[JUT] ${b}'; ./${b} -r junit -o ${b}.xml;)
 
 clean:
-	@$(foreach df,$(BINARIES) $(DEPS) $(JUNIT_FILES),echo '[RM ] ${df}'; $(RM) ${df};)
+	@$(foreach df,$(ALL_BINARIES) $(DEPS) $(JUNIT_FILES),echo '[RM ] ${df}'; $(RM) ${df};)
 
 ../lib/libcRIOcpp.a: FORCE
 	@$(MAKE) -C ../ lib/libcRIOcpp.a SIMULATOR=1
