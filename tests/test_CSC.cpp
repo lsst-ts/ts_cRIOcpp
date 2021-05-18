@@ -27,6 +27,7 @@
 #include <signal.h>
 #include <string>
 #include <sys/types.h>
+#include <sys/wait.h>
 #include <unistd.h>
 
 #include <cRIO/CSC.h>
@@ -48,6 +49,8 @@ void _handler(int sig) {
     }
 };
 
+using namespace std::chrono_literals;
+
 void TestCSC::init() {
     _keepRunning = 1;
     signal(SIGUSR1, _handler);
@@ -55,7 +58,7 @@ void TestCSC::init() {
 }
 
 int TestCSC::runLoop() {
-    sleep(1);
+    std::this_thread::sleep_for(10ms);
     return _keepRunning;
 }
 
@@ -84,4 +87,8 @@ TEST_CASE("Daemonize", "[Daemonize]") {
     REQUIRE(child_pid > 0);
     REQUIRE(kill(child_pid, SIGUSR1) == 0);
     REQUIRE(unlink(pid_file) == 0);
+
+    REQUIRE(waitpid(child_pid, NULL, 0) == child_pid);
+    REQUIRE(kill(child_pid, SIGUSR1) == -1);
+    REQUIRE(errno == ESRCH);
 }
