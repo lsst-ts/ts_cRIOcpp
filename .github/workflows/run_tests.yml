@@ -18,7 +18,7 @@ jobs:
     - name: make junit
       run: |
         make
-        make junit
+        make junit || true
     - name: Publish Unit Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1.6
       if: always()
@@ -38,7 +38,7 @@ jobs:
     - name: make junit
       run: |
         make
-        make junit
+        make junit || true
     - name: Publish Unit Test Results
       uses: EnricoMi/publish-unit-test-result-action@v1.6
       if: always()

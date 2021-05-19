@@ -56,7 +56,7 @@ pipeline {
             steps {
                 sh """
                     make
-                    make junit
+                    make junit || true
                 """
 
                 junit 'tests/*.xml'

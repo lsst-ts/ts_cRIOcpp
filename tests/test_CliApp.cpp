@@ -46,7 +46,7 @@ void AClass::processArg(int opt, char* optarg) {
             interactive = true;
             break;
         default:
-            std::cerr << "Unknow command: " << static_cast<char>(opt) << std::endl;
+            std::cerr << "Unknown argument: " << static_cast<char>(opt) << std::endl;
             exit(EXIT_FAILURE);
     }
 }
@@ -60,13 +60,15 @@ int testCmd(command_vec cmds) {
 
 TEST_CASE("Test CliApp", "CliApp") {
     AClass cli("description");
-    cli.addCommand("testcmd", &testCmd, "s", 0, "[ALL|command]", "Prints all command or command help.");
+    cli.addCommand("testcmd", testCmd, "s", 0, "[ALL|command]", "Prints all command or command help.");
 
-    int argc = 2;
-    const char* const argv[argc] = {"test", "testcmd"};
+    int argc = 3;
+    const char* const argv[argc] = {"test", "testcmd", "tt"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
+    REQUIRE(cmds.size() == 2);
     REQUIRE(cmds[0] == "testcmd");
+    REQUIRE(cmds[1] == "tt");
 
     REQUIRE(test_count == 0);
     cli.processCmdVector(cmds);

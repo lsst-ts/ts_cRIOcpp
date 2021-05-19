@@ -35,7 +35,15 @@
 namespace LSST {
 namespace cRIO {
 
-using namespace std;
+Command::Command(const char* _command, std::function<int(command_vec)> _action, const char* _args, int _flags,
+                 const char* _help_args, const char* _help) {
+    command = _command;
+    action = _action;
+    args = _args;
+    flags = _flags;
+    help_args = _help_args;
+    help = _help;
+}
 
 CliApp::~CliApp() {
     if (_history_fn != NULL) {
@@ -137,18 +145,18 @@ static inline std::string strupper(const std::string s) {
     return ret;
 }
 
-vector<string> tokenize(const string& input, const string& delim = std::string(" ")) {
-    vector<string> vecTokens;
+std::vector<std::string> tokenize(const std::string& input, const std::string& delim = std::string(" ")) {
+    std::vector<std::string> vecTokens;
 
     // Do we have a delimited list?
     if (input.size() > 0) {
-        string::size_type nStart = 0;
-        string::size_type nStop = 0;
-        string::size_type nDelimSize = delim.size();
-        string szItem;
+        std::string::size_type nStart = 0;
+        std::string::size_type nStop = 0;
+        std::string::size_type nDelimSize = delim.size();
+        std::string szItem;
 
         // Repeat until we cannot find another delimitor.
-        while ((nStop = input.find(delim, nStart)) != string::npos) {
+        while ((nStop = input.find(delim, nStart)) != std::string::npos) {
             // Pull out the token.
             szItem = input.substr(nStart, nStop - nStart);
             vecTokens.push_back(szItem);
@@ -156,7 +164,7 @@ vector<string> tokenize(const string& input, const string& delim = std::string("
             nStart = nStop + nDelimSize;
         }
         // Are there any chars left after the last delim?
-        if (nStop == string::npos && nStart < input.size()) {
+        if (nStop == std::string::npos && nStart < input.size()) {
             // There are chars after the last delim - this is the last token.
             szItem = input.substr(nStart, input.size() - nStart);
             vecTokens.push_back(szItem);
@@ -197,7 +205,7 @@ int CliApp::processCmdVector(command_vec cmds) {
 
     command_vec matchedCmds;
 
-    const Command* c = findCommand(cmd, matchedCmds);
+    Command* c = findCommand(cmd, matchedCmds);
 
     if (c == NULL) {
         if (matchedCmds.empty()) {
@@ -218,7 +226,7 @@ int CliApp::processCmdVector(command_vec cmds) {
     }
 
     cmds.erase(cmds.begin());
-    return processCommand(*c, cmds);
+    return processCommand(c, cmds);
 }
 
 void CliApp::saveHistory() {
@@ -294,7 +302,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
             case 'F':
             case 'f':
                 if (!verifyFloat(cmds[an].c_str())) {
-                    std::cerr << "Expecting double number, received " << cmds[an].c_str() << std::endl;
+                    std::cerr << "Expecting double number, received " << cmds[an] << std::endl;
                     return -1;
                 }
 
@@ -303,7 +311,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
             case 'I':
             case 'i':
                 if (!verifyInteger(cmds[an].c_str())) {
-                    std::cerr << "Expecting integer number, received " << cmds[an].c_str() << std::endl;
+                    std::cerr << "Expecting integer number, received " << cmds[an] << std::endl;
                     return -1;
                 }
 
@@ -312,7 +320,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
             case 'B':
             case 'b':
                 if (!verifyBool(cmds[an].c_str())) {
-                    std::cerr << "Expecting boolean (true/false), received " << cmds[an].c_str() << std::endl;
+                    std::cerr << "Expecting boolean (true/false), received " << cmds[an] << std::endl;
                     return -1;
                 }
 
@@ -331,21 +339,21 @@ int verifyArguments(const command_vec& cmds, const char* args) {
     return an;
 }
 
-int CliApp::processCommand(const Command& cmd, const command_vec& args) {
+int CliApp::processCommand(Command* cmd, const command_vec& args) {
     try {
-        if (verifyArguments(args, cmd.args) >= 0) {
-            return cmd.action(args);
+        if (verifyArguments(args, cmd->args) >= 0) {
+            return cmd->action(args);
         }
     }
 
     catch (std::exception& err) {
-        cerr << "Processing " << cmd.command;
+        std::cerr << "Processing " << cmd->command;
 
         for (auto ar : args) {
-            cerr << " " << ar;
+            std::cerr << " " << ar;
         }
 
-        cerr << ": " << err.what() << endl;
+        std::cerr << ": " << err.what() << std::endl;
     }
 
     return -1;
@@ -362,13 +370,13 @@ void CliApp::printCommands() {
     }
 }
 
-const Command* CliApp::findCommand(std::string cmd, command_vec& matchedCmds) {
-    const Command* ret = NULL;
+Command* CliApp::findCommand(std::string cmd, command_vec& matchedCmds) {
+    Command* ret = NULL;
 
-    for (auto tc : _commands) {
-        if (strncmp(cmd.c_str(), tc.command, cmd.length()) == 0) {
-            matchedCmds.push_back(tc.command);
-            ret = &tc;
+    for (std::list<Command>::iterator tc = _commands.begin(); tc != _commands.end(); tc++) {
+        if (strncmp(cmd.c_str(), tc->command, cmd.length()) == 0) {
+            matchedCmds.push_back(tc->command);
+            ret = &(*tc);
         }
     }
 

@@ -36,14 +36,7 @@ namespace cRIO {
  */
 struct Command {
     Command(const char* _command, std::function<int(command_vec)> _action, const char* _args, int _flags,
-            const char* _help_args, const char* _help) {
-        command = _command;
-        action = _action;
-        args = _args;
-        flags = _flags;
-        help_args = _help_args;
-        help = _help;
-    }
+            const char* _help_args, const char* _help);
     const char* command;  // "*" indicates any command (no other command matched)
     std::function<int(command_vec)> action;
     const char* args;
@@ -181,7 +174,7 @@ protected:
      *
      * @return 0 on success, -1 on error
      */
-    virtual int processCommand(const Command& cmd, const command_vec& args);
+    virtual int processCommand(Command* cmd, const command_vec& args);
 
     /**
      * Process unmatched commands.
@@ -203,7 +196,7 @@ private:
      * Find matched command. If multiple commands are matched, returns all possible
      * commands.
      */
-    const Command* findCommand(std::string cmd, command_vec& matchedCmds);
+    Command* findCommand(std::string cmd, command_vec& matchedCmds);
     void unknowCommand(std::string cmd, const command_vec matchedCmds);
     void readStreamCommands(std::istream& ins);
     void printCommandHelp(const Command* cmd);
