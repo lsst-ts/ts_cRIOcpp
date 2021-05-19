@@ -54,7 +54,7 @@ using namespace std::chrono_literals;
 void TestCSC::init() {
     _keepRunning = 1;
     signal(SIGUSR1, _handler);
-    printf("OK\n");
+    printf("OK");
 }
 
 int TestCSC::runLoop() {

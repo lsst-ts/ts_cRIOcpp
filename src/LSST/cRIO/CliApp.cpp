@@ -277,7 +277,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
     size_t an = 0;
 
-    for (const char *a = args; *a; a++, an++) {
+    for (const char* a = args; *a; a++, an++) {
         if (an >= cmds.size()) {
             if (*a == 's' || *a == 'f' || *a == 'i' || *a == 'b' || *a == 'd' || *a == 'h' || *a == '?') {
                 return an;

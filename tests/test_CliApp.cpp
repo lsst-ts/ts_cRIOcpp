@@ -30,14 +30,8 @@ using namespace LSST::cRIO;
 
 class AClass : public CliApp {
 public:
-    AClass(const char* description) : CliApp(description), interactive(false), test_reached(false) {}
+    AClass(const char* description) : CliApp(description), interactive(false) {}
     bool interactive;
-    bool test_reached;
-
-    int testCmd(command_vec cmds) {
-        test_reached = true;
-        return 42;
-    }
 
 protected:
     void processArg(int opt, char* optarg) override;
@@ -57,10 +51,16 @@ void AClass::processArg(int opt, char* optarg) {
     }
 }
 
+int test_count = 0;
+
+int testCmd(command_vec cmds) {
+    test_count++;
+    return 42;
+}
+
 TEST_CASE("Test CliApp", "CliApp") {
     AClass cli("description");
-    cli.addCommand("testcmd", [&cli](command_vec cmds) int { return cli.testCmd(cmds); }, "s", 0,
-                   "[ALL|command]", "Prints all command or command help.");
+    cli.addCommand("testcmd", &testCmd, "s", 0, "[ALL|command]", "Prints all command or command help.");
 
     int argc = 2;
     const char* const argv[argc] = {"test", "testcmd"};
@@ -68,7 +68,7 @@ TEST_CASE("Test CliApp", "CliApp") {
     command_vec cmds = cli.processArgs(argc, (char**)argv);
     REQUIRE(cmds[0] == "testcmd");
 
-    REQUIRE(cli.test_reached == false);
+    REQUIRE(test_count == 0);
     cli.processCmdVector(cmds);
-    REQUIRE(cli.test_reached == true);
+    REQUIRE(test_count == 1);
 }
