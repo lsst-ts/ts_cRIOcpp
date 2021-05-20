@@ -94,6 +94,11 @@ command_vec Application::processArgs(int argc, char* const argv[]) {
     return argcommand;
 }
 
+void Application::setDebugLevel(int newLevel) {
+    _debugLevel = newLevel;
+    spdlog::set_level(getSpdLogLogLevel());
+}
+
 void Application::setSinks() {
     auto logger = std::make_shared<spdlog::async_logger>(
             _name, _sinks.begin(), _sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);

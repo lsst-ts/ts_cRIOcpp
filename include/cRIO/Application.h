@@ -165,6 +165,9 @@ public:
     typedef enum { STDOUT = 0x01, DAILY = 0x02, SYSLOG = 0x04, SAL = 0x10 } Sinks;
     int enabledSinks;
 
+    int getDebugLevel() { return _debugLevel; }
+    void setDebugLevel(int newLevel);
+
 protected:
     /**
      * Prints application usage.
