@@ -50,7 +50,10 @@ struct Command {
  * functions for parsing command line arguments, using readline and history in
  * the interactive prompt, and providing help for commands.
  *
- * The class shall be value initialized. See the following example code.
+ * Use Application::addArgument to add arguments and CliApp::addCommand to add
+ * commands.
+ *
+ * See the following example code for usage.
  *
  * @code
 #include <cRIO/CliApp.h>
@@ -70,6 +73,7 @@ protected:
 
 void AClass::printUsage() {
     std::cout << "A simple app. Accept -h for help. Pass -i to start interactive mode." << std::endl;
+    CliApp::printUsage();
 }
 
 void AClass::processArg(int opt, char* optarg) {
@@ -89,7 +93,10 @@ void AClass::processArg(int opt, char* optarg) {
 int main(int argc, char* const[] argc) {
     AClass cli("description");
 
-    cli.addCommand("help", [&cli](command_vec cmds) { return cli.helpCommands(cmds); }, "s", 0,
+    cli.addArgument('h', "print help");
+    cli.addArgument('i', "starts interactive mode");
+
+    cli.addCommand("help", std::bind(&AClass::helpCommands, &cli, std::placeholders::_1), "s", 0,
                    "[ALL|command]", "Prints all command or command help.");
 
     command_vec cmds = cli.processArgs(argc, argv);

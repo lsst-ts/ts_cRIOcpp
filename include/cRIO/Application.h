@@ -18,8 +18,6 @@
 #ifndef __Application_h
 #define __Application_h
 
-#include <functional>
-#include <fstream>
 #include <string>
 #include <vector>
 #include <list>
@@ -50,58 +48,46 @@ struct Argument {
  * The class shall be value initialized. See the following example code.
  *
  * @code
-#include <tcs/utility/CliApp.hpp>
+#include <cRIO/Application.hpp>
 #include <iostream>
 
-AClass : public lbto::CliApp
-{
+AClass : public cRIO::Application {
 public:
-  AClass(const char * description) : CliApp(description), interactive(false) {}
-  bool interactive;
+    AClass(const char * description) : Application(description), counter(0) {}
+    float counter;
 
 protected:
-  void printUsage() override;
-  void processArg(int opt, const char * optarg) override;
+    void printUsage() override;
+    void processArg(int opt, char * optarg) override;
 };
 
-void AClass::printUsage()
-{
-  std::cout << "A simple app. Accept -h for help. Pass -i to start interactive mode." << std::endl;
+void AClass::printUsage() {
+    std::cout << "A simple app. Accept -h for help. Pass -i to start interactive mode." << std::endl;
+    Application::printUsage();
 }
 
-void AClass::processArg(int opt, const char * optarg)
-{
-  switch (opt)
+void AClass::processArg(int opt, char * optarg) {
+    switch (opt)
     {
-      case 'h':
-        printAppHelp();
-        break;
-      case 'i':
-        interactive = true;
-        break;
-      default:
-        std::cerr << "Unknow command: " << dynamic_cast<char>(opt) << std::endl;
-        exit(EXIT_FAILURE);
+        case 'a':
+            counter += std::stof(optarg);
+            break;
+        case 'h':
+            printAppHelp();
+            break;
+        default:
+            std::cerr << "Unknow command: " << dynamic_cast<char>(opt) << std::endl;
+            exit(EXIT_FAILURE);
     }
 }
 
 AClass cli("description");
 
-Command commands[] =
-{
-  {
-    "help", [ = ](command_vec cmds) { return cli.helpCommands(cmds); }, "s", 0, "[ALL|command]",
-    "Prints all command or command help."
-  },
-  { NULL, NULL, NULL, 0, NULL, NULL }
-};
-
 int main(int argc, char * argv[])
 {
-  cli.init(commands, "hi", argc, argv);
-  if (cli.interactive)
-    return goInteractive();
-  return 0;
+    cli.processArgs(argc, argv);
+    std::cout << "Counter is " << cli.counter << std::endl;
+    return 0;
 }
  * @endcode
  */

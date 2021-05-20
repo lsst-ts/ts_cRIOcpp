@@ -27,6 +27,7 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <iostream>
+#include <fstream>
 #include <libgen.h>
 #include <unistd.h>
 #include <cmath>

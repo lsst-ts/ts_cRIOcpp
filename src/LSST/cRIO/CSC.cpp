@@ -29,6 +29,7 @@
 #include <spdlog/sinks/syslog_sink.h>
 
 #include <iostream>
+#include <fstream>
 #include <grp.h>
 #include <pwd.h>
 #include <signal.h>
