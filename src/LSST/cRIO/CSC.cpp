@@ -28,6 +28,7 @@
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/sinks/syslog_sink.h>
 
+#include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <grp.h>
@@ -40,13 +41,16 @@ namespace cRIO {
 CSC::CSC(token) : Application() {
     _debugLevelSAL = 0;
     _keep_running = true;
+    _configRoot = getenv("PWD");
 
     enabledSinks = Sinks::SAL;
 
+    addArgument('c', "<configuration path> use given configuration directory", ':');
     addArgument('d', "increases debugging (can be specified multiple times, default is info");
     addArgument('f', "runs on foreground, don't log to file");
     addArgument('h', "prints this help");
     addArgument('p', "PID file, started as daemon on background", ':');
+    addArgument('s', "increases SAL debugging (can be specified multiple times, default is 0)");
     addArgument('u', "<user>:<group> run under user & group", ':');
 }
 
@@ -69,6 +73,9 @@ void CSC::run() {
 
 void CSC::processArg(int opt, char* optarg) {
     switch (opt) {
+        case 'c':
+            _configRoot = optarg;
+            break;
         case 'd':
             incDebugLevel();
             break;
@@ -81,6 +88,9 @@ void CSC::processArg(int opt, char* optarg) {
         case 'p':
             _daemon.pidfile = optarg;
             enabledSinks |= Sinks::SYSLOG;
+            break;
+        case 's':
+            _debugLevelSAL++;
             break;
         case 'u': {
             char* sep = strchr(optarg, ':');

@@ -49,6 +49,8 @@ public:
      */
     void run();
 
+    const char* _configRoot;
+
 protected:
     virtual void processArg(int opt, char* optarg);
 
