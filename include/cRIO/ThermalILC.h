@@ -35,7 +35,7 @@ constexpr int NUM_TS_ILC = 96;
  *
  * Replies received from ILCs shall be processed with ILC::processResponse method.
  */
-class ThermalILC : public ILC {
+class ThermalILC : public virtual ILC {
 public:
     /**
      * Populate responses for known ILC functions.
