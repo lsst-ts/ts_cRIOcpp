@@ -37,7 +37,6 @@ namespace LSST {
 namespace cRIO {
 
 CSC::CSC(token) : Application() {
-    _debugLevel = 0;
     _debugLevelSAL = 0;
     _keep_running = true;
 
@@ -70,7 +69,7 @@ void CSC::run() {
 void CSC::processArg(int opt, char* optarg) {
     switch (opt) {
         case 'd':
-            _debugLevel++;
+            incDebugLevel();
             break;
         case 'f':
             enabledSinks |= Sinks::STDOUT;
@@ -100,32 +99,16 @@ void CSC::processArg(int opt, char* optarg) {
     }
 }
 
-void CSC::setSinks() {
-    auto logger = std::make_shared<spdlog::async_logger>(
-            _name, _sinks.begin(), _sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
-    spdlog::set_default_logger(logger);
-    spdlog::set_level(getSpdLogLogLevel());
-}
-
-spdlog::level::level_enum CSC::getSpdLogLogLevel() {
-    return _debugLevel == 0 ? spdlog::level::info
-                            : (_debugLevel == 1 ? spdlog::level::debug : spdlog::level::trace);
-}
-
 void CSC::_startLog() {
     spdlog::init_thread_pool(8192, 1);
     if (enabledSinks & Sinks::STDOUT) {
-        auto stdout_sink = std::make_shared<spdlog::sinks::stdout_color_sink_mt>();
-        _sinks.push_back(stdout_sink);
+        addSink(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
     }
     if (enabledSinks & Sinks::DAILY) {
-        auto daily_sink = std::make_shared<spdlog::sinks::daily_file_sink_mt>(_name, 0, 0);
-        _sinks.push_back(daily_sink);
+        addSink(std::make_shared<spdlog::sinks::daily_file_sink_mt>(_name, 0, 0));
     }
     if (enabledSinks & Sinks::SYSLOG) {
-        auto syslog_sink =
-                std::make_shared<spdlog::sinks::syslog_sink_mt>(_name, LOG_PID | LOG_CONS, LOG_USER, false);
-        _sinks.push_back(syslog_sink);
+        addSink(std::make_shared<spdlog::sinks::syslog_sink_mt>(_name, LOG_PID | LOG_CONS, LOG_USER, false));
     }
 
     setSinks();

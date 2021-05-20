@@ -24,6 +24,8 @@
 #include <vector>
 #include <list>
 
+#include <spdlog/spdlog.h>
+
 namespace LSST {
 namespace cRIO {
 
@@ -110,7 +112,7 @@ public:
      *
      * @param _description a short description of the application
      */
-    Application(const char* description = NULL) : _description(description) {}
+    Application(const char* description = NULL) : _description(description), _debugLevel(0) {}
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
@@ -160,6 +162,9 @@ public:
     std::string getName() { return _name; }
     void setName(std::string name) { _name = name; }
 
+    typedef enum { STDOUT = 0x01, DAILY = 0x02, SYSLOG = 0x04, SAL = 0x10 } Sinks;
+    int enabledSinks;
+
 protected:
     /**
      * Prints application usage.
@@ -182,10 +187,19 @@ protected:
      */
     virtual void processArg(int opt, char* optarg) = 0;
 
+    void addSink(spdlog::sink_ptr sink) { _sinks.push_back(sink); }
+    virtual void setSinks();
+
+    spdlog::level::level_enum getSpdLogLogLevel();
+    void incDebugLevel() { _debugLevel++; }
+
 private:
     const char* _description;
     std::list<Argument> _arguments;
     std::string _name;
+    std::vector<spdlog::sink_ptr> _sinks;
+
+    int _debugLevel;
 };
 
 }  // namespace cRIO

@@ -49,13 +49,8 @@ public:
      */
     void run();
 
-    typedef enum { STDOUT = 0x01, DAILY = 0x02, SYSLOG = 0x04, SAL = 0x10 } Sinks;
-    int enabledSinks;
-
 protected:
     virtual void processArg(int opt, char* optarg);
-
-    virtual void setSinks();
 
     virtual void init() {}
 
@@ -69,7 +64,6 @@ protected:
 private:
     std::string _name;
 
-    int _debugLevel;
     int _debugLevelSAL;
     bool _keep_running;
 
@@ -88,9 +82,6 @@ private:
 
     const char* _pidfile;
 
-    std::vector<spdlog::sink_ptr> _sinks;
-
-    spdlog::level::level_enum getSpdLogLogLevel();
     void _startLog();
     int _daemonize();
 };

@@ -32,6 +32,8 @@
 #include <cmath>
 #include <csignal>
 
+#include <spdlog/async.h>
+
 namespace LSST {
 namespace cRIO {
 
@@ -90,6 +92,18 @@ command_vec Application::processArgs(int argc, char* const argv[]) {
     }
 
     return argcommand;
+}
+
+void Application::setSinks() {
+    auto logger = std::make_shared<spdlog::async_logger>(
+            _name, _sinks.begin(), _sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);
+    spdlog::set_default_logger(logger);
+    spdlog::set_level(getSpdLogLogLevel());
+}
+
+spdlog::level::level_enum Application::getSpdLogLogLevel() {
+    return _debugLevel == 0 ? spdlog::level::info
+                            : (_debugLevel == 1 ? spdlog::level::debug : spdlog::level::trace);
 }
 
 void Application::printAppHelp() {
