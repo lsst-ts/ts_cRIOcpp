@@ -29,7 +29,7 @@ junit: compile
 	@$(foreach b,$(ALL_BINARIES),echo '[JUT] ${b}'; ./${b} -r junit -o ${b}.xml;)
 
 clean:
-	@$(foreach df,$(ALL_BINARIES) $(DEPS) $(JUNIT_FILES),echo '[RM ] ${df}'; $(RM) ${df};)
+	@$(foreach df,$(ALL_BINARIES) $(patsubst %,%.cpp.o,$(ALL_BINARIES)) $(DEPS) $(JUNIT_FILES),echo '[RM ] ${df}'; $(RM) ${df};)
 
 ../lib/libcRIOcpp.a: FORCE
 	@$(MAKE) -C ../ lib/libcRIOcpp.a SIMULATOR=1
