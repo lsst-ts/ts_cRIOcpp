@@ -66,7 +66,7 @@ protected:
      *
      * @return 0 if loop shall stop, otherwise loop will continue to run.
      */
-    virtual int runLoop() { return 1; }
+    virtual int runLoop() = 0;
 
     void daemonOK();
     void daemonFailed(const char* msg);
