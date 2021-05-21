@@ -61,6 +61,8 @@ protected:
 
     virtual void init() {}
 
+    virtual void done() {}
+
     /**
      * One control loop run.
      *
@@ -81,10 +83,12 @@ private:
         DaemonOptions() {
             pidfile = NULL;
             timeout = 30;
+            fork = false;
         }
         const char* pidfile;
         std::string user;
         std::string group;
+        bool fork;
         int timeout;
     };
 

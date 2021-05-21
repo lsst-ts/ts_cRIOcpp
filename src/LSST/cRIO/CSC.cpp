@@ -76,9 +76,11 @@ int CSC::run(FPGA* fpga) {
         if (rl == 0) break;
     }
 
+    done();
+
     fpga->close();
     fpga->finalize();
-    if (_daemon.pidfile[1] >= 0) {
+    if (_daemon.fork) {
         exit(EXIT_SUCCESS);
     }
     return EXIT_SUCCESS;
@@ -127,6 +129,7 @@ void CSC::daemonOK() {
     if (_startPipe[1] >= 0) {
         write(_startPipe[1], "OK", 2);
         close(_startPipe[1]);
+        _startPipe[1] = -1;
     }
 }
 
@@ -134,6 +137,7 @@ void CSC::daemonFailed(const char* msg) {
     if (_startPipe[1] >= 0) {
         write(_startPipe[1], msg, strlen(msg));
         close(_startPipe[1]);
+        _startPipe[1] = -1;
     } else {
         SPDLOG_CRITICAL("Cannot start daemon: {}", msg);
     }
@@ -216,7 +220,10 @@ int CSC::_daemonize() {
             std::cerr << retbuf << std::endl;
             return EXIT_FAILURE;
         }
+
+        _daemon.fork = true;
         close(_startPipe[0]);
+        _startPipe[0] = -1;
         _startLog();
         if (runAs != NULL) {
             setuid(runAs->pw_uid);

@@ -58,6 +58,7 @@ public:
 
 protected:
     void init() override;
+    void done() override;
     int runLoop() override;
 };
 
@@ -78,9 +79,19 @@ void TestCSC::init() {
     daemonOK();
 }
 
+void TestCSC::done() { kill(getppid(), SIGUSR2); }
+
 int TestCSC::runLoop() {
     std::this_thread::sleep_for(10ms);
     return _keepRunning;
+}
+
+bool _child_shutdown = false;
+
+void _childHandler(int sig) {
+    if (sig == SIGUSR2) {
+        _child_shutdown = true;
+    }
 }
 
 TEST_CASE("Daemonize", "[Daemonize]") {
@@ -110,10 +121,14 @@ TEST_CASE("Daemonize", "[Daemonize]") {
 
     int child_pid = std::stoi(pid_buf);
     REQUIRE(child_pid > 0);
+
+    REQUIRE(signal(SIGUSR2, &_childHandler) != SIG_ERR);
+    REQUIRE(_child_shutdown == false);
     REQUIRE(kill(child_pid, SIGUSR1) == 0);
     REQUIRE(unlink(pid_file) == 0);
 
     REQUIRE(waitpid(child_pid, NULL, 0) == child_pid);
+    REQUIRE(_child_shutdown == true);
     REQUIRE(kill(child_pid, SIGUSR1) == -1);
     REQUIRE(errno == ESRCH);
 }
