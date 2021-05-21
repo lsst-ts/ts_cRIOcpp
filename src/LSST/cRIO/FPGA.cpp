@@ -21,6 +21,7 @@
  */
 
 #include <cRIO/FPGA.h>
+#include <cRIO/ModbusBuffer.h>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
@@ -53,9 +54,9 @@ void FPGA::ilcCommands(ILC &ilc) {
 
     data[0] = getTxCommand(bus);
     data[1] = ilc.getLength() + 2;
-    data[2] = 0x8000;
+    data[2] = FIFO::TX_WAIT_TRIGGER;
     memcpy(data + 3, ilc.getBuffer(), ilc.getLength() * sizeof(uint16_t));
-    data[requestLen - 2] = 0x7000;
+    data[requestLen - 2] = FIFO::TX_IRQTRIGGER;
     data[requestLen - 1] = _modbusSoftwareTrigger;
 
     writeCommandFIFO(data, requestLen, 0);
@@ -98,12 +99,12 @@ void FPGA::ilcCommands(ILC &ilc) {
     for (uint16_t *p = buffer + 4; p < buffer + responseLen; p++) {
         switch (*p & 0xF000) {
             // data..
-            case 0x9000:
+            case FIFO::TX_WAIT_TRIGGER:
                 if (dataStart == NULL) {
                     dataStart = p;
                 }
                 break;
-            case 0xB000:
+            case FIFO::RX_TIMESTAMP:
                 if (endTsShift == 64) {
                     throw std::runtime_error("End timestamp received twice!");
                 }
@@ -111,7 +112,7 @@ void FPGA::ilcCommands(ILC &ilc) {
                 endTs |= static_cast<uint64_t>((*p) & 0x00FF) << endTsShift;
                 endTsShift += 8;
                 // don't break here - data also ends when timestamp is received
-            case 0xA000:
+            case FIFO::RX_ENDFRAME:
                 if (dataStart) {
                     ilc.processResponse(dataStart, p - dataStart);
                     dataStart = NULL;

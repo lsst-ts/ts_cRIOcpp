@@ -33,6 +33,22 @@
 namespace LSST {
 namespace cRIO {
 
+namespace FIFO {
+// masks for FPGA FIFO commands
+const static uint16_t WRITE = 0x1000;
+const static uint16_t TX_FRAMEEND = 0x20DA;
+const static uint16_t TX_TIMESTAMP = 0x3000;
+const static uint16_t DELAY = 0x4000;
+const static uint16_t LONG_DELAY = 0x5000;
+const static uint16_t TX_WAIT_RX = 0x6000;
+const static uint16_t TX_IRQTRIGGER = 0x7000;
+const static uint16_t TX_WAIT_TRIGGER = 0x8000;
+const static uint16_t TX_WAIT_LONG_RX = 0x9000;
+const static uint16_t RX_ENDFRAME = 0xA000;
+const static uint16_t RX_TIMESTAMP = 0xB000;
+const static uint16_t CMD_MASK = 0xF000;
+}  // namespace FIFO
+
 /**
  * Utility class for Modbus buffer management. Provides function to write and
  * read cRIO FIFO (FPGA) Modbus buffers. Modbus serial bus is serviced inside
@@ -126,6 +142,21 @@ public:
      * @param len how many bytes shall be read
      */
     void readBuffer(void* buf, size_t len);
+
+    /**
+     * Peak current value in buffer. Do not increase the index.
+     */
+    uint16_t peek() { return _buffer[_index]; }
+
+    /**
+     * Ignore current word, move to next.
+     */
+    void next() {
+        if (endOfBuffer()) {
+            throw EndOfBuffer();
+        }
+        _index++;
+    }
 
     /**
      * Template to read next data from message. Data length is specified with

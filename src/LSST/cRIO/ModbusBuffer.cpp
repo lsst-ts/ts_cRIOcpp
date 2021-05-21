@@ -27,17 +27,6 @@
 
 using namespace std;
 
-// masks for FPGA FIFO commands
-const static uint16_t FIFO_TX_FRAMEEND = 0x20DA;
-const static uint16_t FIFO_TX_TIMESTAMP = 0x3000;
-const static uint16_t FIFO_DELAY = 0x4000;
-const static uint16_t FIFO_LONG_DELAY = 0x5000;
-const static uint16_t FIFO_TX_WAIT_RX = 0x6000;
-const static uint16_t FIFO_TX_IRQTRIGGER = 0x7000;
-const static uint16_t FIFO_TX_WAIT_TRIGGER = 0x8000;
-const static uint16_t FIFO_TX_WAIT_LONG_RX = 0x9000;
-const static uint16_t FIFO_RX_ENDFRAME = 0xA000;
-
 namespace LSST {
 namespace cRIO {
 
@@ -61,7 +50,7 @@ void ModbusBuffer::clear() {
 
 bool ModbusBuffer::endOfBuffer() { return _index >= _buffer.size(); }
 
-bool ModbusBuffer::endOfFrame() { return _buffer[_index] == FIFO_RX_ENDFRAME; }
+bool ModbusBuffer::endOfFrame() { return _buffer[_index] == FIFO::RX_ENDFRAME; }
 
 std::vector<uint8_t> ModbusBuffer::getReadData(int32_t length) {
     std::vector<uint8_t> data;
@@ -114,10 +103,10 @@ uint32_t ModbusBuffer::readDelay() {
     uint16_t c = _buffer[_index] & 0xF000;
     uint32_t ret = 0;
     switch (c) {
-        case FIFO_DELAY:
+        case FIFO::DELAY:
             ret = 0x0FFF & _buffer[_index];
             break;
-        case FIFO_LONG_DELAY:
+        case FIFO::LONG_DELAY:
             ret = (0x0FFF & _buffer[_index]) * 1000;
             break;
         default:
@@ -129,7 +118,7 @@ uint32_t ModbusBuffer::readDelay() {
 }
 
 void ModbusBuffer::readEndOfFrame() {
-    if (_buffer[_index] != FIFO_TX_FRAMEEND) {
+    if (_buffer[_index] != FIFO::TX_FRAMEEND) {
         throw std::runtime_error(
                 fmt::format("Expected end of frame, finds {:04x} (@ offset {})", _buffer[_index], _index));
     }
@@ -141,10 +130,10 @@ uint32_t ModbusBuffer::readWaitForRx() {
     uint16_t c = _buffer[_index] & 0xF000;
     uint32_t ret = 0;
     switch (c) {
-        case FIFO_TX_WAIT_RX:
+        case FIFO::TX_WAIT_RX:
             ret = 0x0FFF & _buffer[_index];
             break;
-        case FIFO_TX_WAIT_LONG_RX:
+        case FIFO::TX_WAIT_LONG_RX:
             ret = (0x0FFF & _buffer[_index]) * 1000;
             break;
         default:
@@ -174,16 +163,16 @@ void ModbusBuffer::writeCRC() {
 }
 
 void ModbusBuffer::writeDelay(uint32_t delayMicros) {
-    _buffer.push_back(delayMicros > 0x0FFF ? ((0x0FFF & ((delayMicros / 1000) + 1)) | FIFO_LONG_DELAY)
-                                           : (delayMicros | FIFO_DELAY));
+    _buffer.push_back(delayMicros > 0x0FFF ? ((0x0FFF & ((delayMicros / 1000) + 1)) | FIFO::LONG_DELAY)
+                                           : (delayMicros | FIFO::DELAY));
 }
 
-void ModbusBuffer::writeEndOfFrame() { _buffer.push_back(FIFO_TX_FRAMEEND); }
+void ModbusBuffer::writeEndOfFrame() { _buffer.push_back(FIFO::TX_FRAMEEND); }
 
 void ModbusBuffer::writeWaitForRx(uint32_t timeoutMicros) {
     _buffer.push_back(timeoutMicros > 0x0FFF
-                              ? ((0x0FFF & ((timeoutMicros / 1000) + 1)) | FIFO_TX_WAIT_LONG_RX)
-                              : (timeoutMicros | FIFO_TX_WAIT_RX));
+                              ? ((0x0FFF & ((timeoutMicros / 1000) + 1)) | FIFO::TX_WAIT_LONG_RX)
+                              : (timeoutMicros | FIFO::TX_WAIT_RX));
 }
 
 void ModbusBuffer::setBuffer(uint16_t* buffer, size_t length) {
