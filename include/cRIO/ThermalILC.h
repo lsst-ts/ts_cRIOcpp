@@ -20,6 +20,9 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#ifndef _cRIO_ThermalILC_h
+#define _cRIO_ThermalILC_h
+
 #include <cRIO/ILC.h>
 
 namespace LSST {
@@ -86,3 +89,5 @@ protected:
 
 }  // namespace cRIO
 }  // namespace LSST
+
+#endif  //! _cRIO_ThermalILC_h
