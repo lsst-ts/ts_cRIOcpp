@@ -100,7 +100,10 @@ void Application::setDebugLevel(int newLevel) {
     spdlog::set_level(getSpdLogLogLevel());
 }
 
-void Application::addSink(spdlog::sink_ptr sink) { _sinks.push_back(sink); }
+void Application::addSink(spdlog::sink_ptr sink) {
+    _sinks.push_back(sink);
+    setSinks();
+}
 
 void Application::removeSink() {
     _sinks.pop_back();

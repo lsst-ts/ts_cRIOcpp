@@ -154,19 +154,6 @@ public:
     int getDebugLevel() { return _debugLevel; }
     void setDebugLevel(int newLevel);
 
-    /**
-     * Add sink to spdlogs sinks. Set default logger to accept this newly added
-     * sink.
-     *
-     * @param sink
-     */
-    void addSink(spdlog::sink_ptr sink);
-
-    /**
-     * Removes sink from spdlog sinks.
-     */
-    void removeSink();
-
 protected:
     /**
      * Prints application usage.
@@ -188,6 +175,19 @@ protected:
      * @return -1 on error, 0 on success (shall continue)
      */
     virtual void processArg(int opt, char* optarg) = 0;
+
+    /**
+     * Add sink to spdlogs sinks. Set default logger to accept this newly added
+     * sink.
+     *
+     * @param sink
+     */
+    void addSink(spdlog::sink_ptr sink);
+
+    /**
+     * Removes sink from spdlog sinks.
+     */
+    void removeSink();
 
     virtual void setSinks();
 
