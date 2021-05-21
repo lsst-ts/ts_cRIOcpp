@@ -54,21 +54,27 @@ public:
 
 class TestCSC : public CSC {
 public:
-    int _keepRunning;
+    TestCSC(std::string name, const char* description, bool call_done)
+            : CSC(name, description), _call_done(call_done) {}
 
 protected:
     void init() override;
     void done() override;
     int runLoop() override;
+
+private:
+    bool _call_done;
 };
+
+int _keepRunning = 1;
 
 using namespace std::chrono_literals;
 
-TestCSC csc;
+TestCSC csc("testcsc", "Test CSC object 1", true);
 
 void _handler(int sig) {
     if (sig == SIGUSR1) {
-        csc._keepRunning = 0;
+        _keepRunning = 0;
     }
 }
 
@@ -79,7 +85,11 @@ void TestCSC::init() {
     daemonOK();
 }
 
-void TestCSC::done() { kill(getppid(), SIGUSR2); }
+void TestCSC::done() {
+    if (_call_done) {
+        kill(getppid(), SIGUSR2);
+    }
+}
 
 int TestCSC::runLoop() {
     std::this_thread::sleep_for(10ms);
@@ -94,7 +104,9 @@ void _childHandler(int sig) {
     }
 }
 
-TEST_CASE("Daemonize", "[Daemonize]") {
+TEST_CASE("Daemonize", "[CSC]") {
+    optind = 1;
+
     int argc = 4;
     char pid_template[200];
     strcpy(pid_template, "/tmp/test.pid-XXXXXX");
@@ -131,4 +143,29 @@ TEST_CASE("Daemonize", "[Daemonize]") {
     REQUIRE(_child_shutdown == true);
     REQUIRE(kill(child_pid, SIGUSR1) == -1);
     REQUIRE(errno == ESRCH);
+}
+
+void alarm_handler(int sig_t) { kill(getpid(), SIGUSR1); }
+
+TEST_CASE("Run CSC", "[CSC]") {
+    optind = 1;
+
+    TestCSC csc2("testcsc2", "Test CSC object 2", false);
+    int argc = 2;
+    const char* const argv[argc] = {"test2", "-f"};
+    command_vec cmds = csc2.processArgs(argc, (char**)argv);
+    REQUIRE(cmds.size() == 0);
+
+    TestFPGA* fpga = new TestFPGA();
+
+    _child_shutdown = false;
+    REQUIRE(_child_shutdown == false);
+
+    REQUIRE(signal(SIGALRM, &alarm_handler) != SIG_ERR);
+    alarm(3);
+
+    csc2.run(fpga);
+
+    delete fpga;
+    REQUIRE(_child_shutdown == false);
 }

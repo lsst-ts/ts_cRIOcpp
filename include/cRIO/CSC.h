@@ -39,10 +39,8 @@ namespace cRIO {
  */
 class CSC : public Application {
 public:
-    CSC();
+    CSC(std::string name, const char* description);
     virtual ~CSC();
-
-    void setName(std::string name, const char* description);
 
     /**
      * Runs CSC. Starts all threads, loads FPGA bitfile, run FPGA, waits for

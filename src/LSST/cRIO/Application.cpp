@@ -57,6 +57,7 @@ command_vec Application::processArgs(int argc, char* const argv[]) {
     int commandStart = argc;
 
     char pargs[2 * _arguments.size() + 1];
+    memset(pargs, '\0', sizeof(pargs));
     char* p = pargs;
     for (auto arg : _arguments) {
         *p = arg.arg;
