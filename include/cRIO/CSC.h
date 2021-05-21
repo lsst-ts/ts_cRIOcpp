@@ -25,6 +25,7 @@
 #define __cRIO_CSC_H
 
 #include <cRIO/Application.h>
+#include <cRIO/FPGA.h>
 #include <cRIO/Singleton.h>
 #include <spdlog/spdlog.h>
 #include <string>
@@ -36,18 +37,22 @@ namespace cRIO {
  * Application class for Commandable SAL Component (CSC). Allows running
  * application as daemon, handles generic SAL commands.
  */
-class CSC : public Application, public Singleton<CSC> {
+class CSC : public Application {
 public:
-    CSC(token);
-
+    CSC();
     virtual ~CSC();
 
     void setName(std::string name, const char* description);
 
     /**
-     * Runs CSC. Starts all threads, waits for exitControl command.
+     * Runs CSC. Starts all threads, loads FPGA bitfile, run FPGA, waits for
+     * exitControl command.
+     *
+     * @param fpga FPGA to open, initialize and run
      */
-    void run();
+    int run(FPGA* fpga);
+
+    int getDebugLevelSAL() { return _debugLevelSAL; }
 
     const char* _configRoot;
 
@@ -62,6 +67,9 @@ protected:
      * @return 0 if loop shall stop, otherwise loop will continue to run.
      */
     virtual int runLoop() { return 1; }
+
+    void daemonOK();
+    void daemonFailed(const char* msg);
 
 private:
     std::string _name;
@@ -82,10 +90,10 @@ private:
 
     DaemonOptions _daemon;
 
-    const char* _pidfile;
-
     void _startLog();
     int _daemonize();
+
+    int _startPipe[2];
 };
 
 }  // namespace cRIO

@@ -176,7 +176,8 @@ protected:
      */
     virtual void processArg(int opt, char* optarg) = 0;
 
-    void addSink(spdlog::sink_ptr sink) { _sinks.push_back(sink); }
+    void addSink(spdlog::sink_ptr sink);
+    void removeSink();
     virtual void setSinks();
 
     spdlog::level::level_enum getSpdLogLogLevel();

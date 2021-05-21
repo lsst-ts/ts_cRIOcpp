@@ -31,30 +31,51 @@
 #include <unistd.h>
 
 #include <cRIO/CSC.h>
+#include <cRIO/FPGA.h>
 
 using namespace LSST::cRIO;
+
+class TestFPGA : public FPGA {
+public:
+    TestFPGA() : FPGA(fpgaType::SS) {}
+    void initialize() override {}
+    void open() override {}
+    void close() override {}
+    void finalize() override {}
+    uint16_t getTxCommand(uint8_t) override { return 0; }
+    uint16_t getRxCommand(uint8_t) override { return 0; }
+    uint32_t getIrq(uint8_t) override { return 0; }
+    void writeCommandFIFO(uint16_t*, size_t, uint32_t) override {}
+    void writeRequestFIFO(uint16_t*, size_t, uint32_t) override {}
+    void readU16ResponseFIFO(uint16_t*, size_t, uint32_t) override {}
+    void waitOnIrqs(uint32_t, uint32_t, uint32_t*) override {}
+    void ackIrqs(uint32_t) override {}
+};
 
 class TestCSC : public CSC {
 public:
     int _keepRunning;
 
 protected:
-    virtual void init();
-    virtual int runLoop();
-};
-
-void _handler(int sig) {
-    if (sig == SIGUSR1) {
-        dynamic_cast<TestCSC*>(&TestCSC::instance())->_keepRunning = 0;
-    }
+    void init() override;
+    int runLoop() override;
 };
 
 using namespace std::chrono_literals;
 
+TestCSC csc;
+
+void _handler(int sig) {
+    if (sig == SIGUSR1) {
+        csc._keepRunning = 0;
+    }
+}
+
 void TestCSC::init() {
     _keepRunning = 1;
-    signal(SIGUSR1, _handler);
-    printf("OK");
+    std::this_thread::sleep_for(2s);
+    signal(SIGUSR1, &_handler);
+    daemonOK();
 }
 
 int TestCSC::runLoop() {
@@ -70,11 +91,15 @@ TEST_CASE("Daemonize", "[Daemonize]") {
 
     const char* const argv[argc] = {"test", "-p", pid_file, "TEST"};
 
-    command_vec cmds = TestCSC::instance().processArgs(argc, (char**)argv);
+    command_vec cmds = csc.processArgs(argc, (char**)argv);
     REQUIRE(cmds.size() == 1);
     REQUIRE(cmds[0] == "TEST");
 
-    TestCSC::instance().run();
+    TestFPGA* fpga = new TestFPGA();
+
+    csc.run(fpga);
+
+    delete fpga;
 
     // open PID, kill what's in
     int pf = open(pid_file, O_RDONLY);

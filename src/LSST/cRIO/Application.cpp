@@ -99,6 +99,13 @@ void Application::setDebugLevel(int newLevel) {
     spdlog::set_level(getSpdLogLogLevel());
 }
 
+void Application::addSink(spdlog::sink_ptr sink) { _sinks.push_back(sink); }
+
+void Application::removeSink() {
+    _sinks.pop_back();
+    setSinks();
+}
+
 void Application::setSinks() {
     auto logger = std::make_shared<spdlog::async_logger>(
             _name, _sinks.begin(), _sinks.end(), spdlog::thread_pool(), spdlog::async_overflow_policy::block);

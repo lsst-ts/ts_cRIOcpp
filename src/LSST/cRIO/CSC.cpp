@@ -35,13 +35,13 @@
 #include <pwd.h>
 #include <signal.h>
 
-namespace LSST {
-namespace cRIO {
+using namespace LSST::cRIO;
 
-CSC::CSC(token) : Application() {
+CSC::CSC() : Application() {
     _debugLevelSAL = 0;
     _keep_running = true;
     _configRoot = getenv("PWD");
+    _startPipe[0] = _startPipe[1] = -1;
 
     enabledSinks = Sinks::SAL;
 
@@ -56,19 +56,32 @@ CSC::CSC(token) : Application() {
 
 CSC::~CSC() {}
 
-void CSC::run() {
+int CSC::run(FPGA* fpga) {
     int ret_d = _daemonize();
 
-    if (ret_d == -1) {
-        // create threads
-        init();
-
-        // run threads
-        while (_keep_running == true) {
-            int rl = runLoop();
-            if (rl == 0) break;
-        }
+    if (ret_d != -1) {
+        return ret_d;
     }
+
+    // initialize FPGA
+    fpga->initialize();
+    fpga->open();
+
+    // create threads
+    init();
+
+    // run threads
+    while (_keep_running == true) {
+        int rl = runLoop();
+        if (rl == 0) break;
+    }
+
+    fpga->close();
+    fpga->finalize();
+    if (_daemon.pidfile[1] >= 0) {
+        exit(EXIT_SUCCESS);
+    }
+    return EXIT_SUCCESS;
 }
 
 void CSC::processArg(int opt, char* optarg) {
@@ -110,6 +123,22 @@ void CSC::processArg(int opt, char* optarg) {
     }
 }
 
+void CSC::daemonOK() {
+    if (_startPipe[1] >= 0) {
+        write(_startPipe[1], "OK", 2);
+        close(_startPipe[1]);
+    }
+}
+
+void CSC::daemonFailed(const char* msg) {
+    if (_startPipe[1] >= 0) {
+        write(_startPipe[1], msg, strlen(msg));
+        close(_startPipe[1]);
+    } else {
+        SPDLOG_CRITICAL("Cannot start daemon: {}", msg);
+    }
+}
+
 void CSC::_startLog() {
     spdlog::init_thread_pool(8192, 1);
     if (enabledSinks & Sinks::STDOUT) {
@@ -128,7 +157,6 @@ void CSC::_startLog() {
 int CSC::_daemonize() {
     // daemon is expected to sends to stdout either OK if started, or error message otherwise
     // if no response is received within _daemon.timeout seconds, startup isn't confirmed
-    int startPipe[2] = {-1, -1};
 
     if (_daemon.pidfile) {
         struct passwd* runAs = NULL;
@@ -146,7 +174,7 @@ int CSC::_daemonize() {
             }
         }
 
-        if (pipe(startPipe) == -1) {
+        if (pipe(_startPipe) == -1) {
             std::cerr << "Error: Cannot create pipe for child/start process: " << strerror(errno)
                       << std::endl;
             exit(EXIT_FAILURE);
@@ -158,7 +186,7 @@ int CSC::_daemonize() {
             exit(EXIT_FAILURE);
         }
         if (child > 0) {
-            close(startPipe[1]);
+            close(_startPipe[1]);
             std::ofstream pidf(_daemon.pidfile, std::ofstream::out);
             pidf << child;
             pidf.close();
@@ -181,14 +209,14 @@ int CSC::_daemonize() {
                 exit(EXIT_FAILURE);
             });
             alarm(_daemon.timeout);
-            read(startPipe[0], retbuf, 2000);
+            read(_startPipe[0], retbuf, 2000);
             if (strcmp(retbuf, "OK") == 0) {
                 return EXIT_SUCCESS;
             }
             std::cerr << retbuf << std::endl;
             return EXIT_FAILURE;
         }
-        close(startPipe[0]);
+        close(_startPipe[0]);
         _startLog();
         if (runAs != NULL) {
             setuid(runAs->pw_uid);
@@ -204,12 +232,8 @@ int CSC::_daemonize() {
             dup(nf);
             dup(nf);
         }
-        return EXIT_SUCCESS;
     } else {
         _startLog();
     }
     return -1;
 }
-
-}  // namespace cRIO
-}  // namespace LSST
