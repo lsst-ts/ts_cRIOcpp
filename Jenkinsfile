@@ -41,16 +41,26 @@ pipeline {
             }
         }
 
+        stage('make clean') {
+            when {
+                expression { params.clean == true }
+            }
+            steps {
+                sh """
+                    make clean
+                """
+            }
+        }
+
         stage('Test') {
             steps {
                 sh """
                     make
-                    make junit
+                    make junit || true
                 """
 
                 junit 'tests/*.xml'
             }
         }
-
     }
 }

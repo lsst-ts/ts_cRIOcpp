@@ -33,6 +33,25 @@
 namespace LSST {
 namespace cRIO {
 
+namespace FIFO {
+// masks for FPGA FIFO commands
+const static uint16_t WRITE = 0x1000;
+const static uint16_t TX_FRAMEEND = 0x20DA;
+const static uint16_t TX_TIMESTAMP = 0x3000;
+const static uint16_t DELAY = 0x4000;
+const static uint16_t LONG_DELAY = 0x5000;
+const static uint16_t TX_WAIT_RX = 0x6000;
+const static uint16_t TX_IRQTRIGGER = 0x7000;
+const static uint16_t TX_WAIT_TRIGGER = 0x8000;
+const static uint16_t TX_WAIT_LONG_RX = 0x9000;
+const static uint16_t RX_ENDFRAME = 0xA000;
+const static uint16_t RX_TIMESTAMP = 0xB000;
+const static uint16_t CMD_MASK = 0xF000;
+
+const static uint16_t TX_MASK = 0x1200;
+const static uint16_t RX_MASK = 0x9200;
+}  // namespace FIFO
+
 /**
  * Utility class for Modbus buffer management. Provides function to write and
  * read cRIO FIFO (FPGA) Modbus buffers. Modbus serial bus is serviced inside
@@ -45,6 +64,15 @@ namespace cRIO {
  * needs to be written as:
  *
  * (0x1200 | (d << 1))
+ * (TX_MASK | (d << 1))
+ *
+ * and response from FPGA ResponseFIFOs is coming with 0x9200 prefix, so:
+ *
+ * (0x9200 | (d << 1))
+ * (RX_MASK | (d << 1))
+ *
+ * Please see ModbusBuffer::simulateReponse() for details of how to change
+ * prefix.
  *
  * This class doesn't handle subnet. Doesn't handle FPGA FIFO read/writes -
  * that's responsibility of FPGA. ModbusBuffer handles only serialization & de
@@ -106,6 +134,13 @@ public:
      */
     void clear();
 
+    /**
+     * Sets simulate mode.
+     *
+     * @param simulate true if buffer shall product simulated replies
+     */
+    void simulateResponse(bool simulate);
+
     bool endOfBuffer();
     bool endOfFrame();
 
@@ -126,6 +161,21 @@ public:
      * @param len how many bytes shall be read
      */
     void readBuffer(void* buf, size_t len);
+
+    /**
+     * Peak current value in buffer. Do not increase the index.
+     */
+    uint16_t peek() { return _buffer[_index]; }
+
+    /**
+     * Ignore current word, move to next.
+     */
+    void next() {
+        if (endOfBuffer()) {
+            throw EndOfBuffer();
+        }
+        _index++;
+    }
 
     /**
      * Template to read next data from message. Data length is specified with
@@ -250,6 +300,11 @@ public:
      */
     void writeWaitForRx(uint32_t timeoutMicros);
 
+    void writeRxEndFrame();
+
+    void writeFPGATimestamp(uint64_t timestamp);
+    void writeRxTimestamp(uint64_t timestamp);
+
     /**
      * Sets current read buffer
      *
@@ -372,6 +427,7 @@ private:
     std::vector<uint16_t> _buffer;
     uint32_t _index;
     uint16_t _crcCounter;
+    uint16_t _data_prefix;
 
     std::queue<std::pair<uint8_t, uint8_t>> _commanded;
 

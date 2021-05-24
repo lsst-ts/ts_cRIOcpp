@@ -161,6 +161,58 @@ TEST_CASE("WriteSGL", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }
 
+TEST_CASE("Simulate response", "[ModbusBuffer]") {
+    ModbusBuffer mbuf;
+    mbuf.simulateResponse(true);
+
+    mbuf.write<float>(0.123);
+    mbuf.write(-6758.1234f);
+    mbuf.writeCRC();
+
+    uint16_t* buf = mbuf.getBuffer();
+
+    REQUIRE(buf[0] == 0x927a);
+    REQUIRE(buf[1] == 0x93f6);
+    REQUIRE(buf[2] == 0x93ce);
+    REQUIRE(buf[3] == 0x92da);
+
+    REQUIRE(buf[4] == 0x938a);
+    REQUIRE(buf[5] == 0x93a6);
+    REQUIRE(buf[6] == 0x9260);
+    REQUIRE(buf[7] == 0x93fa);
+
+    mbuf.reset();
+
+    REQUIRE(mbuf.read<float>() == 0.123f);
+    REQUIRE(mbuf.read<float>() == -6758.1234f);
+    REQUIRE_NOTHROW(mbuf.checkCRC());
+
+    mbuf.simulateResponse(false);
+    mbuf.clear();
+
+    mbuf.write<float>(0.123);
+    mbuf.write(-6758.1234f);
+    mbuf.writeCRC();
+
+    buf = mbuf.getBuffer();
+
+    REQUIRE(buf[0] == 0x127a);
+    REQUIRE(buf[1] == 0x13f6);
+    REQUIRE(buf[2] == 0x13ce);
+    REQUIRE(buf[3] == 0x12da);
+
+    REQUIRE(buf[4] == 0x138a);
+    REQUIRE(buf[5] == 0x13a6);
+    REQUIRE(buf[6] == 0x1260);
+    REQUIRE(buf[7] == 0x13fa);
+
+    mbuf.reset();
+
+    REQUIRE(mbuf.read<float>() == 0.123f);
+    REQUIRE(mbuf.read<float>() == -6758.1234f);
+    REQUIRE_NOTHROW(mbuf.checkCRC());
+}
+
 TEST_CASE("Calculate function response CRC", "[ModbusBuffer]") {
     ModbusBuffer mbuf;
     mbuf.write<uint8_t>(140);

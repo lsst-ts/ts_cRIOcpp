@@ -40,7 +40,7 @@ namespace cRIO {
  * should occur in an application. Runs in a single thread - provides guarantee
  * that only a single command is being executed at any moment.
  */
-class ControllerThread : public Thread, public Singleton<ControllerThread> {
+class ControllerThread final : public Thread, public Singleton<ControllerThread> {
 public:
     ControllerThread(token);
     ~ControllerThread();

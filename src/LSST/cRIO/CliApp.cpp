@@ -1,73 +1,68 @@
-#include "CliApp.hpp"
+/*
+ * This file is part of LSST M1M3 support system package.
+ *
+ * Developed for the LSST Data Management System.
+ * This product includes software developed by the LSST Project
+ * (https://www.lsst.org).
+ * See the COPYRIGHT file at the top-level directory of this distribution
+ * for details of code ownership.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program.  If not, see <https://www.gnu.org/licenses/>.
+ */
+
+#include "cRIO/CliApp.h"
 
 #include <algorithm>
 #include <readline/readline.h>
 #include <readline/history.h>
 #include <iostream>
+#include <fstream>
 #include <libgen.h>
 #include <unistd.h>
 #include <cmath>
 #include <csignal>
 
-using namespace std;
+namespace LSST {
+namespace cRIO {
+
+Command::Command(const char* _command, std::function<int(command_vec)> _action, const char* _args, int _flags,
+                 const char* _help_args, const char* _help) {
+    command = _command;
+    action = _action;
+    args = _args;
+    flags = _flags;
+    help_args = _help_args;
+    help = _help;
+}
 
 CliApp::~CliApp() {
-    if (history_fn != NULL) {
+    if (_history_fn != NULL) {
         saveHistory();
 
-        free(history_fn);
-        history_fn = NULL;
+        free(_history_fn);
+        _history_fn = NULL;
     }
 }
 
-command_vec CliApp::init(const command_t* cmds, const char* pargs, int argc, char* const argv[]) {
-    commands = cmds;
-
-    command_vec argcommand;
-
-    progName = basename(argv[0]);
-
-    // parse as options only string before commands
-    // as commands can include negative number (-1..), don't allow getopt
-    // processing of command part
-
-    int commandStart = argc;
-
-    for (int i = 1; i < argc; i++) {
-        if (argv[i][0] != '-') {
-            commandStart = i;
-
-            for (; i < argc; i++) {
-                argcommand.push_back(argv[i]);
-            }
-
-            break;
-        }
-
-        const char* a = strchr(pargs, argv[i][1]);
-
-        if (a && a[1] == ':' && ((strlen(argv[i]) == 2) || (argv[i][1] == '-'))) {
-            i++;
-        }
-    }
-
-    int opt = -1;
-
-    while ((opt = getopt(commandStart, argv, pargs)) != -1) {
-        processArg(opt, optarg);
-    }
-
-    return argcommand;
-}
-
-void CliApp::printAppHelp() {
-    cout << progName << " " << description << endl << endl;
-    printUsage();
+void CliApp::addCommand(const char* command, std::function<int(command_vec)> action, const char* args,
+                        int flags, const char* help_args, const char* help) {
+    _commands.push_back(Command(command, action, args, flags, help_args, help));
 }
 
 void CliApp::printHelp(const char* cmd) {
     command_vec possible;
-    const command_t* c = findCommand(cmd, possible);
+    const Command* c = findCommand(cmd, possible);
 
     if (c == NULL) {
         unknowCommand(cmd, possible);
@@ -87,8 +82,8 @@ int CliApp::helpCommands(command_vec cmds) {
 
     for (auto cm : cmds) {
         if (cm == "all") {
-            for (const command_t* c = commands; c->command != NULL; c++) {
-                printCommandHelp(c);
+            for (auto c : _commands) {
+                printCommandHelp(&c);
             }
 
             return 0;
@@ -101,18 +96,18 @@ int CliApp::helpCommands(command_vec cmds) {
 }
 
 void CliApp::goInteractive(const char* prompt) {
-    asprintf(&history_fn, "%s/.%s_history", getenv("HOME"), progName);
+    asprintf(&_history_fn, "%s/.%s_history", getenv("HOME"), getName().c_str());
 
     using_history();
-    int rr = read_history(history_fn);
+    int rr = read_history(_history_fn);
 
     if (rr != ENOENT) {
         if (rr != 0) {
-            std::cerr << "Error reading history " << history_fn << ":" << strerror(rr) << std::endl;
+            std::cerr << "Error reading history " << _history_fn << ":" << strerror(rr) << std::endl;
         }
 
         else if (verbose) {
-            std::cout << "Read history from " << history_fn << std::endl;
+            std::cout << "Read history from " << _history_fn << std::endl;
         }
     }
 
@@ -151,18 +146,18 @@ static inline std::string strupper(const std::string s) {
     return ret;
 }
 
-vector<string> tokenize(const string& input, const string& delim = std::string(" ")) {
-    vector<string> vecTokens;
+std::vector<std::string> tokenize(const std::string& input, const std::string& delim = std::string(" ")) {
+    std::vector<std::string> vecTokens;
 
     // Do we have a delimited list?
     if (input.size() > 0) {
-        string::size_type nStart = 0;
-        string::size_type nStop = 0;
-        string::size_type nDelimSize = delim.size();
-        string szItem;
+        std::string::size_type nStart = 0;
+        std::string::size_type nStop = 0;
+        std::string::size_type nDelimSize = delim.size();
+        std::string szItem;
 
         // Repeat until we cannot find another delimitor.
-        while ((nStop = input.find(delim, nStart)) != string::npos) {
+        while ((nStop = input.find(delim, nStart)) != std::string::npos) {
             // Pull out the token.
             szItem = input.substr(nStart, nStop - nStart);
             vecTokens.push_back(szItem);
@@ -170,7 +165,7 @@ vector<string> tokenize(const string& input, const string& delim = std::string("
             nStart = nStop + nDelimSize;
         }
         // Are there any chars left after the last delim?
-        if (nStop == string::npos && nStart < input.size()) {
+        if (nStop == std::string::npos && nStart < input.size()) {
             // There are chars after the last delim - this is the last token.
             szItem = input.substr(nStart, input.size() - nStart);
             vecTokens.push_back(szItem);
@@ -211,7 +206,7 @@ int CliApp::processCmdVector(command_vec cmds) {
 
     command_vec matchedCmds;
 
-    const command_t* c = findCommand(cmd, matchedCmds);
+    Command* c = findCommand(cmd, matchedCmds);
 
     if (c == NULL) {
         if (matchedCmds.empty()) {
@@ -236,19 +231,19 @@ int CliApp::processCmdVector(command_vec cmds) {
 }
 
 void CliApp::saveHistory() {
-    if (history_fn != NULL) {
-        int wr = write_history(history_fn);
+    if (_history_fn != NULL) {
+        int wr = write_history(_history_fn);
 
         switch (wr) {
             case 0:
                 if (verbose) {
-                    std::cout << "History saved to " << history_fn << std::endl;
+                    std::cout << "History saved to " << _history_fn << std::endl;
                 }
 
                 break;
 
             default:
-                std::cerr << "Unable to save history to " << history_fn << ":" << strerror(wr) << std::endl;
+                std::cerr << "Unable to save history to " << _history_fn << ":" << strerror(wr) << std::endl;
         }
     }
 }
@@ -308,7 +303,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
             case 'F':
             case 'f':
                 if (!verifyFloat(cmds[an].c_str())) {
-                    std::cerr << "Expecting double number, received " << cmds[an].c_str() << std::endl;
+                    std::cerr << "Expecting double number, received " << cmds[an] << std::endl;
                     return -1;
                 }
 
@@ -317,7 +312,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
             case 'I':
             case 'i':
                 if (!verifyInteger(cmds[an].c_str())) {
-                    std::cerr << "Expecting integer number, received " << cmds[an].c_str() << std::endl;
+                    std::cerr << "Expecting integer number, received " << cmds[an] << std::endl;
                     return -1;
                 }
 
@@ -326,7 +321,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
             case 'B':
             case 'b':
                 if (!verifyBool(cmds[an].c_str())) {
-                    std::cerr << "Expecting boolean (true/false), received " << cmds[an].c_str() << std::endl;
+                    std::cerr << "Expecting boolean (true/false), received " << cmds[an] << std::endl;
                     return -1;
                 }
 
@@ -345,7 +340,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
     return an;
 }
 
-int CliApp::processCommand(const command_t* cmd, const command_vec& args) {
+int CliApp::processCommand(Command* cmd, const command_vec& args) {
     try {
         if (verifyArguments(args, cmd->args) >= 0) {
             return cmd->action(args);
@@ -353,13 +348,13 @@ int CliApp::processCommand(const command_t* cmd, const command_vec& args) {
     }
 
     catch (std::exception& err) {
-        cerr << "Processing " << cmd->command;
+        std::cerr << "Processing " << cmd->command;
 
         for (auto ar : args) {
-            cerr << " " << ar;
+            std::cerr << " " << ar;
         }
 
-        cerr << ": " << err.what() << endl;
+        std::cerr << ": " << err.what() << std::endl;
     }
 
     return -1;
@@ -371,18 +366,18 @@ int CliApp::processUnmached(command_vec cmds) {
 }
 
 void CliApp::printCommands() {
-    for (const command_t* p = commands; p->command != NULL; p++) {
-        std::cout << " " << p->command << std::endl;
+    for (auto command : _commands) {
+        std::cout << " " << command.command << std::endl;
     }
 }
 
-const command_t* CliApp::findCommand(std::string cmd, command_vec& matchedCmds) {
-    const command_t* ret = NULL;
+Command* CliApp::findCommand(std::string cmd, command_vec& matchedCmds) {
+    Command* ret = NULL;
 
-    for (const command_t* tc = commands; tc->command != NULL; tc++) {
+    for (std::list<Command>::iterator tc = _commands.begin(); tc != _commands.end(); tc++) {
         if (strncmp(cmd.c_str(), tc->command, cmd.length()) == 0) {
             matchedCmds.push_back(tc->command);
-            ret = tc;
+            ret = &(*tc);
         }
     }
 
@@ -426,7 +421,7 @@ void CliApp::readStreamCommands(std::istream& ins) {
     }
 }
 
-void CliApp::printCommandHelp(const command_t* cmd) {
+void CliApp::printCommandHelp(const Command* cmd) {
     std::cout << std::endl << " * " << strupper(cmd->command) << std::endl << std::endl;
 
     if (cmd->help_args) {
@@ -435,3 +430,6 @@ void CliApp::printCommandHelp(const command_t* cmd) {
 
     std::cout << cmd->help << std::endl << std::endl;
 }
+
+}  // namespace cRIO
+}  // namespace LSST
