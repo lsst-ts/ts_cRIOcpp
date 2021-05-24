@@ -99,7 +99,7 @@ void FPGA::ilcCommands(ILC &ilc) {
     for (uint16_t *p = buffer + 4; p < buffer + responseLen; p++) {
         switch (*p & 0xF000) {
             // data..
-            case FIFO::TX_WAIT_TRIGGER:
+            case FIFO::RX_MASK & 0xF000:
                 if (dataStart == NULL) {
                     dataStart = p;
                 }

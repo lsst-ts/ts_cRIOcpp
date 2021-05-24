@@ -30,7 +30,10 @@ using namespace std;
 namespace LSST {
 namespace cRIO {
 
-ModbusBuffer::ModbusBuffer() { clear(); }
+ModbusBuffer::ModbusBuffer() {
+    clear();
+    _data_prefix = FIFO::TX_MASK;
+}
 
 ModbusBuffer::~ModbusBuffer() {}
 
@@ -46,6 +49,14 @@ void ModbusBuffer::clear() {
     std::queue<std::pair<uint8_t, uint8_t>> emptyQ;
     _commanded.swap(emptyQ);
     reset();
+}
+
+void ModbusBuffer::simulateResponse(bool simulate) {
+    if (simulate) {
+        _data_prefix = FIFO::RX_MASK;
+    } else {
+        _data_prefix = FIFO::TX_MASK;
+    }
 }
 
 bool ModbusBuffer::endOfBuffer() { return _index >= _buffer.size(); }
@@ -157,8 +168,8 @@ void ModbusBuffer::writeI24(int32_t data) {
 }
 
 void ModbusBuffer::writeCRC() {
-    _buffer.push_back(0x1200 | ((_crcCounter & 0xFF) << 1));
-    _buffer.push_back(0x1200 | (((_crcCounter >> 8) & 0xFF) << 1));
+    _buffer.push_back(_data_prefix | ((_crcCounter & 0xFF) << 1));
+    _buffer.push_back(_data_prefix | (((_crcCounter >> 8) & 0xFF) << 1));
     _resetCRC();
 }
 
@@ -173,6 +184,22 @@ void ModbusBuffer::writeWaitForRx(uint32_t timeoutMicros) {
     _buffer.push_back(timeoutMicros > 0x0FFF
                               ? ((0x0FFF & ((timeoutMicros / 1000) + 1)) | FIFO::TX_WAIT_LONG_RX)
                               : (timeoutMicros | FIFO::TX_WAIT_RX));
+}
+
+void ModbusBuffer::writeRxEndFrame() { _buffer.push_back(FIFO::RX_ENDFRAME); }
+
+void ModbusBuffer::writeFPGATimestamp(uint64_t timestamp) {
+    for (int i = 0; i < 4; i++) {
+        _buffer.push_back(timestamp & 0xFFFF);
+        timestamp >>= 16;
+    }
+}
+
+void ModbusBuffer::writeRxTimestamp(uint64_t timestamp) {
+    for (int i = 0; i < 8; i++) {
+        _buffer.push_back(FIFO::RX_TIMESTAMP | (timestamp & 0xFF));
+        timestamp >>= 8;
+    }
 }
 
 void ModbusBuffer::setBuffer(uint16_t* buffer, size_t length) {
@@ -286,7 +313,7 @@ void ModbusBuffer::_pushCommanded(uint8_t address, uint8_t function) {
 
 uint16_t ModbusBuffer::_getByteInstruction(uint8_t data) {
     _processDataCRC(data);
-    return 0x1200 | ((static_cast<uint16_t>(data)) << 1);
+    return _data_prefix | ((static_cast<uint16_t>(data)) << 1);
 }
 
 }  // namespace cRIO
