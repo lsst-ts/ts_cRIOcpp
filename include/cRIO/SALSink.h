@@ -34,9 +34,12 @@
  *
  * #include <SALSink.h>
  *
- * SALSinkMacro(MTM1M3)
+ * SALSinkMacro(MTM1M3);
  *
  * @endcode
+ *
+ * @note ending semicolon (;) is required. The macro doesn't include one, so it
+ * can be called as a function to prevent g++ warnings.
  *
  * @see https://github.com/gabime/spdlog/wiki/4.-Sinks
  */
@@ -74,6 +77,6 @@
     };                                                                           \
                                                                                  \
     using SALSink_mt = SALSink<std::mutex>;                                      \
-    using SALSink_st = SALSink<spdlog::details::null_mutex>;
+    using SALSink_st = SALSink<spdlog::details::null_mutex>
 
 #endif  // SALSINK_H_
