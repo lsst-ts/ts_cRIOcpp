@@ -22,6 +22,8 @@
 #include <vector>
 #include <list>
 
+#include <cRIO/Thread.h>
+
 #include <spdlog/spdlog.h>
 
 namespace LSST {
@@ -43,9 +45,10 @@ struct Argument {
 /**
  * Core class for a command line (and interactive) application. Provides
  * functions for parsing command line arguments, using readline and history in
- * the interactive prompt, and providing help for commands.
+ * the interactive prompt, and providing help for commands. Includes simple
+ * thread management.
  *
- * The class shall be value initialized. See the following example code.
+ * See the following example code.
  *
  * @code
 #include <cRIO/Application.hpp>
@@ -141,6 +144,33 @@ public:
     command_vec processArgs(int argc, char* const argv[]);
 
     /**
+     * Adds thread to application threads. Runs the thread.
+     *
+     * @param thread pointer to Thread to add
+     *
+     * @see stopAllThreads()
+     *
+     * @multithreading safe
+     */
+    void addThread(Thread* thread);
+
+    /**
+     * Returns number of running threads.
+     *
+     * @return number of running threads.
+     *
+     * @multithreading safe
+     */
+    size_t runningThreads();
+
+    /**
+     * Stops and join all running threads.
+     *
+     * @multithreading safe
+     */
+    void stopAllThreads();
+
+    /**
      * Prints application help.
      */
     virtual void printAppHelp();
@@ -197,6 +227,8 @@ protected:
 private:
     const char* _description;
     std::list<Argument> _arguments;
+    std::list<Thread*> _threads;
+    std::mutex _threadsMutex;
     std::string _name;
     std::vector<spdlog::sink_ptr> _sinks;
 

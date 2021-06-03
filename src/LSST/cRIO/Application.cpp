@@ -95,6 +95,30 @@ command_vec Application::processArgs(int argc, char* const argv[]) {
     return argcommand;
 }
 
+void Application::addThread(Thread* thread) {
+    std::lock_guard<std::mutex> lockG(_threadsMutex);
+    _threads.push_back(thread);
+    thread->start();
+}
+
+size_t Application::runningThreads() {
+    std::lock_guard<std::mutex> lockG(_threadsMutex);
+    size_t ret = 0;
+    for (auto t : _threads) {
+        if (t->joinable()) ret++;
+    }
+    return ret;
+}
+
+void Application::stopAllThreads() {
+    std::lock_guard<std::mutex> lockG(_threadsMutex);
+    for (auto t : _threads) {
+        t->stop();
+        delete t;
+    }
+    _threads.clear();
+}
+
 void Application::setDebugLevel(int newLevel) {
     _debugLevel = newLevel;
     spdlog::set_level(getSpdLogLogLevel());
