@@ -77,6 +77,7 @@ int CSC::run(FPGA* fpga) {
         if (rl == 0) break;
     }
 
+    stopAllThreads();
     done();
 
     fpga->close();

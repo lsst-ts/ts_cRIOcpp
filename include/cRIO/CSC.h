@@ -54,6 +54,11 @@ public:
 
     const char* _configRoot;
 
+    /**
+     * Stops CSC.
+     */
+    void stop() { _keep_running = false; }
+
 protected:
     virtual void processArg(int opt, char* optarg);
 
