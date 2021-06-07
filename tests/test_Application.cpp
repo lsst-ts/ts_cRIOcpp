@@ -23,21 +23,15 @@
 #define CATCH_CONFIG_MAIN
 #include <catch/catch.hpp>
 
-#include <cRIO/CliApp.h>
-#include <iostream>
+#include <cRIO/Application.h>
+#include <cRIO/Thread.h>
 
 using namespace LSST::cRIO;
+using namespace std::chrono_literals;
 
-class AClass : public CliApp {
+class AClass : public Application {
 public:
-    AClass(const char* description) : CliApp(description), interactive(false), test_count(0) {}
-    bool interactive;
-    int test_count;
-
-    int testCmd(command_vec cmds) {
-        test_count++;
-        return 42;
-    }
+    AClass(const char* description) : Application(description) {}
 
 protected:
     void processArg(int opt, char* optarg) override;
@@ -48,29 +42,56 @@ void AClass::processArg(int opt, char* optarg) {
         case 'h':
             printAppHelp();
             break;
-        case 'i':
-            interactive = true;
-            break;
         default:
             std::cerr << "Unknown argument: " << static_cast<char>(opt) << std::endl;
             exit(EXIT_FAILURE);
     }
 }
 
-TEST_CASE("Test CliApp", "[CliApp]") {
-    AClass cli("description");
-    cli.addCommand("testcmd", std::bind(&AClass::testCmd, &cli, std::placeholders::_1), "s", 0,
-                   "[ALL|command]", "Prints all command or command help.");
+TEST_CASE("Test Application", "[Application]") {
+    AClass app("description");
+    app.addArgument('h', "print help");
 
     int argc = 3;
-    const char* const argv[argc] = {"test", "testcmd", "tt"};
+    const char* const argv[argc] = {"test", "-h", "tt"};
 
-    command_vec cmds = cli.processArgs(argc, (char**)argv);
-    REQUIRE(cmds.size() == 2);
-    REQUIRE(cmds[0] == "testcmd");
-    REQUIRE(cmds[1] == "tt");
+    command_vec cmds = app.processArgs(argc, (char**)argv);
+    REQUIRE(cmds.size() == 1);
+    REQUIRE(cmds[0] == "tt");
+}
 
-    REQUIRE(cli.test_count == 0);
-    cli.processCmdVector(cmds);
-    REQUIRE(cli.test_count == 1);
+class Thread1 : public Thread {
+    void run() override { std::this_thread::sleep_for(50ms); }
+};
+
+TEST_CASE("Test Application threading", "[Application]") {
+    AClass app("test threading");
+
+    auto t1_1 = new Thread1();
+    auto t1_2 = new Thread1();
+
+    app.addThread(t1_1);
+    app.addThread(t1_2);
+
+    REQUIRE(app.runningThreads() == 2);
+    app.stopAllThreads();
+    REQUIRE(app.runningThreads() == 0);
+}
+
+TEST_CASE("Test Thread management - stopping thread", "[Application]") {
+    AClass app("test threading");
+
+    auto t1_1 = new Thread1();
+    auto t1_2 = new Thread1();
+
+    app.addThread(t1_1);
+    app.addThread(t1_2);
+
+    REQUIRE(app.runningThreads() == 2);
+
+    t1_1->stop();
+    REQUIRE(app.runningThreads() == 1);
+
+    app.stopAllThreads();
+    REQUIRE(app.runningThreads() == 0);
 }

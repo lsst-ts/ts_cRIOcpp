@@ -34,7 +34,7 @@ namespace cRIO {
 class Thread {
 public:
     Thread();
-    ~Thread() { stop(); }
+    virtual ~Thread() { stop(); }
 
     /**
      * Starts the thread. Starts new thread running the loop.
@@ -50,6 +50,17 @@ public:
      * Join running thread. Waits for thread exits.
      */
     void join();
+
+    /**
+     * Returns true if thread is joinable (~is running).
+     *
+     * @return true if thread is started and running. False otherwise (thread
+     * doesn't exists, not started, joined).
+     */
+    bool joinable() {
+        if (_thread == nullptr) return false;
+        return _thread->joinable();
+    }
 
 protected:
     /**
