@@ -80,7 +80,7 @@ void AClass::processArg(int opt, char* optarg) {
 }
 
 TEST_CASE("Test CliApp", "[CliApp]") {
-    AClass cli("name", "description");
+    AClass cli("description");
     cli.addCommand("testcmd", std::bind(&AClass::testCmd, &cli, std::placeholders::_1), "s", 0,
                    "[ALL|command]", "Prints all command or command help.");
 
