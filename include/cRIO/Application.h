@@ -46,7 +46,8 @@ struct Argument {
  * Core class for a command line (and interactive) application. Provides
  * functions for parsing command line arguments, using readline and history in
  * the interactive prompt, and providing help for commands. Includes simple
- * thread management.
+ * thread management. Uses spdlog for logging, enables selection of active
+ * logging sinks.
  *
  * See the following example code.
  *
@@ -175,13 +176,47 @@ public:
      */
     virtual void printAppHelp();
 
+    /**
+     * Returns applicstion name.
+     *
+     * @return application name
+     */
     std::string getName() { return _name; }
+
+    /**
+     * Sets application name.
+     *
+     * @param name application name
+     */
     void setName(std::string name) { _name = name; }
 
+    /**
+     * Supported spdlog logging sinks.
+     *
+     * * <b>STDOUT</b> - logs to standard output
+     * * <b>DAILY</b> - logs to daily rotated logfile
+     * * <b>SYSLOG</b> - logs to SysLog
+     * * <b>SAL</b> - logs through SAL messages. Should be used only in CSC.
+     */
     typedef enum { STDOUT = 0x01, DAILY = 0x02, SYSLOG = 0x04, SAL = 0x10 } Sinks;
+
+    /**
+     * Enabled sinks. Bitmask of Sinks.
+     */
     int enabledSinks;
 
+    /**
+     * Return current debug level.
+     *
+     * @return current debug level
+     */
     int getDebugLevel() { return _debugLevel; }
+
+    /**
+     * Sets current debug level.
+     *
+     * @param newLevel new debug level
+     */
     void setDebugLevel(int newLevel);
 
 protected:
@@ -207,21 +242,35 @@ protected:
     virtual void processArg(int opt, char* optarg) = 0;
 
     /**
-     * Add sink to spdlogs sinks. Set default logger to accept this newly added
-     * sink.
+     * Add a spdlog sink to active spdlogs sinks. Set default logger to accept
+     * the newly added sink.
      *
-     * @param sink
+     * @param sink spdlog sink pointer
      */
     void addSink(spdlog::sink_ptr sink);
 
     /**
-     * Removes sink from spdlog sinks.
+     * Removes topmost (lastly added) sink from spdlog sinks. Used mostly to
+     * remove SAL sink, which is added as the last sink and needs to be
+     * removede before SAL connection is closed.
      */
     void removeSink();
 
+    /**
+     * Sets sinks according to bits set in enabledSinks.
+     */
     virtual void setSinks();
 
+    /**
+     * Returns current spdlog log level.
+     *
+     * @return spdlog log level. Spdlog log level uses steps by 10.
+     */
     spdlog::level::level_enum getSpdLogLogLevel();
+
+    /**
+     * Increase debug level.
+     */
     void incDebugLevel() { _debugLevel++; }
 
 private:
