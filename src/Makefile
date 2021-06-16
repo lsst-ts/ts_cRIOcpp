@@ -22,9 +22,7 @@ CPPFLAGS := -I. \
 
 libcRIOcpp.a: $(OBJS)
 	@echo '[AR ] $@'
-	${co}$(AR) r $@ $^
-	@echo '[RLB] $@'
-	${co}ranlib $@
+	${co}$(AR) rs $@ $^
 
 clean:
 	@$(foreach file,$(OBJS) $(CPP_DEPS) libcRIOcpp.a $(shell find -name '*.d'), echo '[RM ] ${file}'; $(RM) -r $(file);)
