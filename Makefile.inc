@@ -22,7 +22,7 @@ endif
 LIBS := -ldl -lpthread
 
 BOOST_CPPFLAGS := -I/usr/include/boost169
-CPP_FLAGS := -lpthread
+CPP_FLAGS += -lpthread
 
 VERSION := $(shell git describe --tags --dirty)
 ifeq ("$(VERSION)","")
