@@ -30,112 +30,93 @@ using namespace LSST::cRIO;
 
 IntelHex::IntelHex() {}
 
-bool IntelHex::load(const std::string &fileName) {
+void IntelHex::load(const std::string &fileName) {
     std::ifstream inputStream(fileName);
-    bool ret = load(inputStream);
+    load(inputStream);
     inputStream.close();
-    return ret;
 }
 
-bool IntelHex::load(std::istream &inputStream) {
+void IntelHex::load(std::istream &inputStream) {
     _hexData.clear();
+    _lineNo = 0;
     std::string lineText;
     bool allZero = true;
-    bool ok = true;
     bool ignoreData = false;
     while (std::getline(inputStream, lineText)) {
+        _lineNo++;
         IntelHexLine hexLine;
-        if (_processLine(lineText.c_str(), &hexLine)) {
-            switch (hexLine.RecordType) {
-                case IntelRecordType::Data:
-                    if (!ignoreData) {
-                        _hexData.push_back(hexLine);
-                    }
-                    break;
-                case IntelRecordType::ExtendedLinearAddress:
-                    // Basically if the data is non-zero that means we are skipping a bunch of address which
-                    // means we are at the end of the file and what we are skipping is a bunch of filler so
-                    // lets not bother doing anything and just ignore all of the data
-                    allZero = true;
-                    for (unsigned int i = 0; i < hexLine.Data.size() && allZero; ++i) {
-                        allZero = hexLine.Data[i] == 0;
-                    }
-                    ignoreData = !allZero;
-                    break;
-                default:
-                    break;
-            }
-        } else {
-            ok = false;
-            break;
+        _processLine(lineText.c_str(), &hexLine);
+        switch (hexLine.RecordType) {
+            case IntelRecordType::Data:
+                if (!ignoreData) {
+                    _hexData.push_back(hexLine);
+                }
+                break;
+            case IntelRecordType::ExtendedLinearAddress:
+                // Basically if the data is non-zero that means we are skipping a bunch of address which
+                // means we are at the end of the file and what we are skipping is a bunch of filler so
+                // lets not bother doing anything and just ignore all of the data
+                allZero = true;
+                for (unsigned int i = 0; i < hexLine.Data.size() && allZero; ++i) {
+                    allZero = hexLine.Data[i] == 0;
+                }
+                ignoreData = !allZero;
+                break;
+            default:
+                break;
         }
     }
-    return ok;
 }
 
-bool IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
-    bool ok = true;
+void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
     hexLine->StartCode = line[0];
     int offset = 1;
-    if (hexLine->StartCode == ':') {
-        unsigned int byteCount = 0;
-        unsigned int address = 0;
-        unsigned int recordType = 0;
-        int returnCode = sscanf(line + offset, "%2X%4X%2X", &byteCount, &address, &recordType);
-        hexLine->ByteCount = (char)byteCount;
-        hexLine->Address = (unsigned short)address;
-        hexLine->RecordType = (IntelRecordType::Types)recordType;
-        offset += 8;
-        if (returnCode >= 0) {
-            for (int i = 0; i < hexLine->ByteCount; ++i) {
-                unsigned int value = 0;
-                returnCode = sscanf(line + offset, "%2X", &value);
-                offset += 2;
-                if (returnCode >= 0) {
-                    hexLine->Data.push_back((char)value);
-                } else {
-                    SPDLOG_ERROR("FirmwareUpdate: Unable to parse DataByte {} for Address {}", i,
-                                 (int)hexLine->Address);
-                    ok = false;
-                    break;
-                }
-            }
-            if (ok) {
-                unsigned int expectedChecksum = 0;
-                returnCode = sscanf(line + offset, "%2X", &expectedChecksum);
-                hexLine->Checksum = expectedChecksum;
-                if (returnCode >= 0) {
-                    char checksum = 0;
-                    checksum += hexLine->ByteCount;
-                    checksum += (char)((hexLine->Address & 0xFF00) >> 8);
-                    checksum += (char)(hexLine->Address & 0x00FF);
-                    checksum += hexLine->RecordType;
-                    for (unsigned int i = 0; i < hexLine->Data.size(); ++i) {
-                        checksum += hexLine->Data[i];
-                    }
-                    checksum = ~checksum;
-                    checksum += 1;
-                    if (checksum != hexLine->Checksum) {
-                        SPDLOG_ERROR(
-                                "FirmwareUpdate: Checksum mismatch for Address 0x{:04X}, expecting 0x{:02X} "
-                                "got 0x{:02X}",
-                                (int)hexLine->Address, (int)hexLine->Checksum, checksum);
-                        ok = false;
-                    }
-                } else {
-                    SPDLOG_ERROR("FirmwareUpdate: Unable to parse Checksum for Address 0x{:04X}",
-                                 (int)hexLine->Address);
-                    ok = false;
-                }
-            }
-        } else {
-            SPDLOG_ERROR("FirmwareUpdate: Unable to Parse ByteCount, Address, and RecordType for line.");
-            ok = false;
-        }
-    } else {
-        SPDLOG_ERROR("FirmwareUpdate: Invalid IntelHexLine StartCode '{}' expecting '{}'",
-                     (int)hexLine->StartCode, (int)':');
-        ok = false;
+    if (hexLine->StartCode != ':') {
+        throw LoadError(_lineNo, 0xFFFF,
+                        fmt::format("Invalid IntelHexLine StartCode '{}' expecting '{}'",
+                                    (int)hexLine->StartCode, (int)':'));
     }
-    return ok;
+
+    unsigned int byteCount = 0;
+    unsigned int address = 0;
+    unsigned int recordType = 0;
+    int returnCode = sscanf(line + offset, "%2X%4X%2X", &byteCount, &address, &recordType);
+    if (returnCode != 3) {
+        throw LoadError(_lineNo, 0xFFFF, "Unable to Parse ByteCount, Address, and RecordType for line.");
+    }
+    hexLine->ByteCount = (char)byteCount;
+    hexLine->Address = (unsigned short)address;
+    hexLine->RecordType = (IntelRecordType::Types)recordType;
+    offset += 8;
+    for (int i = 0; i < hexLine->ByteCount; ++i) {
+        unsigned int value = 0;
+        returnCode = sscanf(line + offset, "%2X", &value);
+        offset += 2;
+        if (returnCode >= 0) {
+            hexLine->Data.push_back((char)value);
+        } else {
+            throw LoadError(_lineNo, address, "Unable to parse DataByte " + std::to_string(i));
+        }
+    }
+    unsigned int expectedChecksum = 0;
+    returnCode = sscanf(line + offset, "%2X", &expectedChecksum);
+    hexLine->Checksum = expectedChecksum;
+    if (returnCode != 1) {
+        throw LoadError(_lineNo, address, "Unable to parse Checksum");
+    }
+    char checksum = 0;
+    checksum += hexLine->ByteCount;
+    checksum += (char)((hexLine->Address & 0xFF00) >> 8);
+    checksum += (char)(hexLine->Address & 0x00FF);
+    checksum += hexLine->RecordType;
+    for (unsigned int i = 0; i < hexLine->Data.size(); ++i) {
+        checksum += hexLine->Data[i];
+    }
+    checksum = ~checksum;
+    checksum += 1;
+    if (checksum != hexLine->Checksum) {
+        throw LoadError(_lineNo, address,
+                        fmt::format("Checksum mismatch, expecting 0x{:02X}, got 0x{:02X}", hexLine->Checksum,
+                                    checksum));
+    }
 }

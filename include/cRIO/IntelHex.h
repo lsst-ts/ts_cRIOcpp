@@ -57,6 +57,18 @@ struct ILCApplicationStats {
     unsigned short StatsCRC;
 };
 
+class LoadError : public std::runtime_error {
+public:
+    LoadError(size_t line, uint16_t address, const std::string &arg) : std::runtime_error(arg) {
+        _line = line;
+        _address = address;
+    }
+
+private:
+    uint16_t _address;
+    size_t _line;
+};
+
 /**
  * Class to read and parse Intel hex file.
  */
@@ -68,15 +80,20 @@ public:
      * Parse & load Intel Hex file.
      *
      * @param fileName hex filename
+     *
+     * @throws LoadError on error
      */
-    bool load(const std::string &fileName);
-    bool load(std::istream &inputStream);
+    void load(const std::string &fileName);
+    void load(std::istream &inputStream);
+
+protected:
+    std::vector<unsigned char> appData;
 
 private:
-    bool _processLine(const char *line, IntelHexLine *hexLine);
+    void _processLine(const char *line, IntelHexLine *hexLine);
 
-    std::vector<unsigned char> _appData;
     std::vector<IntelHexLine> _hexData;
+    size_t _lineNo;
 };
 
 }  // namespace cRIO
