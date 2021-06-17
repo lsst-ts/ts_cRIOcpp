@@ -57,6 +57,18 @@ struct ILCApplicationStats {
     unsigned short StatsCRC;
 };
 
+class LoadError : public std::runtime_error {
+public:
+    LoadError(size_t line, uint16_t address, const std::string &arg) : std::runtime_error(arg) {
+        _line = line;
+        _address = address;
+    }
+
+private:
+    uint16_t _address;
+    size_t _line;
+};
+
 /**
  * Class to read and parse Intel hex file.
  */
