@@ -42,25 +42,23 @@ struct IntelRecordType {
 };
 
 struct IntelHexLine {
-    uint16_t address;
-    std::vector<uint8_t> data;
+    char StartCode;
+    char ByteCount;
+    unsigned short Address;
+    IntelRecordType::Types RecordType;
+    std::vector<char> Data;
+    char Checksum;
 };
 
-class LoadError : public std::runtime_error {
-public:
-    LoadError(size_t line, uint16_t address, const std::string &arg) : std::runtime_error(arg) {
-        _line = line;
-        _address = address;
-    }
-
-private:
-    uint16_t _address;
-    size_t _line;
+struct ILCApplicationStats {
+    unsigned short DataCRC;
+    unsigned short StartAddress;
+    unsigned short DataLength;
+    unsigned short StatsCRC;
 };
 
 /**
- * Class to read and parse Intel hex file. Provides methods to faciliate
- * loading firmware into ILC.
+ * Class to read and parse Intel hex file.
  */
 class IntelHex {
 public:
