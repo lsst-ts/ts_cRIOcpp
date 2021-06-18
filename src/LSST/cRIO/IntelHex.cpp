@@ -24,11 +24,15 @@
 
 #include <spdlog/spdlog.h>
 
+#include <algorithm>
 #include <fstream>
 
 using namespace LSST::cRIO;
 
-IntelHex::IntelHex() {}
+IntelHex::IntelHex() {
+    _startAddress = 0;
+    _endAddress = 0;
+}
 
 void IntelHex::load(const std::string &fileName) {
     std::ifstream inputStream(fileName);
@@ -40,27 +44,33 @@ void IntelHex::load(std::istream &inputStream) {
     _hexData.clear();
     _lineNo = 0;
     std::string lineText;
-    bool allZero = true;
-    bool ignoreData = false;
+    bool extensionData = false;
     while (std::getline(inputStream, lineText)) {
         _lineNo++;
         IntelHexLine hexLine;
         _processLine(lineText.c_str(), &hexLine);
         switch (hexLine.RecordType) {
             case IntelRecordType::Data:
-                if (!ignoreData) {
+                if (extensionData) {
+                    for (auto d : hexLine.Data) {
+                        if (d != 0) {
+                            throw LoadError(_lineNo, 0xFFFF,
+                                            fmt::format("Non zero data in extension - {}", d));
+                        }
+                    }
+                } else {
                     _hexData.push_back(hexLine);
                 }
                 break;
             case IntelRecordType::ExtendedLinearAddress:
-                // Basically if the data is non-zero that means we are skipping a bunch of address which
-                // means we are at the end of the file and what we are skipping is a bunch of filler so
-                // lets not bother doing anything and just ignore all of the data
-                allZero = true;
-                for (unsigned int i = 0; i < hexLine.Data.size() && allZero; ++i) {
-                    allZero = hexLine.Data[i] == 0;
+                // ILCs doesn't support extended addressing.
+                // Ignore all data above 0xFFFF address
+                if (hexLine.Data.size() != 2) {
+                    throw LoadError(
+                            _lineNo, 0xFFFF,
+                            fmt::format("Invalid extension size - expected 2, got {}", hexLine.Data.size()));
                 }
-                ignoreData = !allZero;
+                extensionData = *(reinterpret_cast<uint16_t *>(hexLine.Data.data())) > 0;
                 break;
             default:
                 break;
@@ -69,12 +79,10 @@ void IntelHex::load(std::istream &inputStream) {
 }
 
 void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
-    hexLine->StartCode = line[0];
     int offset = 1;
-    if (hexLine->StartCode != ':') {
+    if (line[0] != ':') {
         throw LoadError(_lineNo, 0xFFFF,
-                        fmt::format("Invalid IntelHexLine StartCode '{}' expecting '{}'",
-                                    (int)hexLine->StartCode, (int)':'));
+                        fmt::format("Invalid IntelHexLine StartCode '{}' expecting '{}'", line[0], ':'));
     }
 
     unsigned int byteCount = 0;
@@ -84,11 +92,10 @@ void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
     if (returnCode != 3) {
         throw LoadError(_lineNo, 0xFFFF, "Unable to Parse ByteCount, Address, and RecordType for line.");
     }
-    hexLine->ByteCount = (char)byteCount;
     hexLine->Address = (unsigned short)address;
     hexLine->RecordType = (IntelRecordType::Types)recordType;
     offset += 8;
-    for (int i = 0; i < hexLine->ByteCount; ++i) {
+    for (unsigned int i = 0; i < byteCount; ++i) {
         unsigned int value = 0;
         returnCode = sscanf(line + offset, "%2X", &value);
         offset += 2;
@@ -105,7 +112,7 @@ void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
         throw LoadError(_lineNo, address, "Unable to parse Checksum");
     }
     char checksum = 0;
-    checksum += hexLine->ByteCount;
+    checksum += byteCount;
     checksum += (char)((hexLine->Address & 0xFF00) >> 8);
     checksum += (char)(hexLine->Address & 0x00FF);
     checksum += hexLine->RecordType;
@@ -118,5 +125,32 @@ void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
         throw LoadError(_lineNo, address,
                         fmt::format("Checksum mismatch, expecting 0x{:02X}, got 0x{:02X}", hexLine->Checksum,
                                     checksum));
+    }
+}
+
+void IntelHex::_sortByAddress() {
+    std::sort(_hexData.begin(), _hexData.end(),
+              [](IntelHexLine a, IntelHexLine b) { return a.Address < b.Address; });
+}
+
+void IntelHex::_fillAppData() {
+    // initialize appData. Empty record is three 0xFF followed by 0x00.
+    for (size_t i = 0; i < 0xFFFF; i += 4) {
+        static const uint8_t emptyData[4] = {0xFF, 0xFF, 0xFF, 0x00};
+        memcpy(_appData + i, emptyData, 4);
+    }
+    _startAddress = 0xFFFF;
+    _endAddress = 0;
+
+    for (auto hd : _hexData) {
+        switch (hd.RecordType) {
+            case IntelRecordType::Data:
+                _startAddress = std::min(_startAddress, hd.Address);
+                _endAddress = std::max(_endAddress, hd.Address + hd.Data.size());
+                memcpy(_appData, hd.Data.data(), hd.Data.size());
+                break;
+            default:
+                break;
+        }
     }
 }

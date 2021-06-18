@@ -42,9 +42,7 @@ struct IntelRecordType {
 };
 
 struct IntelHexLine {
-    char StartCode;
-    char ByteCount;
-    unsigned short Address;
+    uint16_t Address;
     IntelRecordType::Types RecordType;
     std::vector<char> Data;
     char Checksum;
@@ -70,7 +68,8 @@ private:
 };
 
 /**
- * Class to read and parse Intel hex file.
+ * Class to read and parse Intel hex file. Provides methods to faciliate
+ * loading firmware into ILC.
  */
 class IntelHex {
 public:
@@ -86,14 +85,21 @@ public:
     void load(const std::string &fileName);
     void load(std::istream &inputStream);
 
-protected:
-    std::vector<unsigned char> appData;
-
 private:
     void _processLine(const char *line, IntelHexLine *hexLine);
+    void _sortByAddress();
+    void _fillAppData();
 
     std::vector<IntelHexLine> _hexData;
     size_t _lineNo;
+
+    /**
+     * Contains firmware data.
+     */
+    uint8_t _appData[0XFFFF];
+    uint16_t _startAddress;
+    size_t _currentAddress;
+    size_t _endAddress;
 };
 
 }  // namespace cRIO

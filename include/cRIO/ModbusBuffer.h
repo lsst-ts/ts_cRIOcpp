@@ -250,6 +250,12 @@ public:
      */
     uint32_t readWaitForRx();
 
+    /**
+     * Write uint8_t buffer to modbus, updates CRC.
+     *
+     * @param data
+     * @param len
+     */
     void writeBuffer(uint8_t* data, size_t len);
 
     /**
@@ -277,6 +283,13 @@ public:
      * buffer can accept more commands.
      */
     void writeCRC();
+
+    /**
+     * Returns CRC value.
+     *
+     * @return buffer Modbus CRC
+     */
+    uint16_t getCRC() { return _crcCounter; }
 
     /**
      * Write FPGA delay command. Delays processing of read buffer by given
