@@ -29,7 +29,10 @@
 
 using namespace LSST::cRIO;
 
-IntelHex::IntelHex() {}
+IntelHex::IntelHex() {
+    _startAddress = 0;
+    _endAddress = 0;
+}
 
 void IntelHex::load(const std::string &fileName) {
     std::ifstream inputStream(fileName);
@@ -49,19 +52,39 @@ void IntelHex::load(std::istream &inputStream) {
         _processLine(lineText.c_str(), &hexLine, recordType);
         switch (recordType) {
             case IntelRecordType::Data:
+<<<<<<< HEAD
                 if (extensionData == false) {
+=======
+                if (extensionData) {
+                    for (auto d : hexLine.Data) {
+                        if (d != 0) {
+                            throw LoadError(_lineNo, 0xFFFF,
+                                            fmt::format("Non zero data in extension - {}", d));
+                        }
+                    }
+                } else {
+>>>>>>> continue with firmwareUpdate implementation
                     _hexData.push_back(hexLine);
                 }
                 break;
             case IntelRecordType::ExtendedLinearAddress:
                 // ILCs doesn't support extended addressing.
                 // Ignore all data above 0xFFFF address
+<<<<<<< HEAD
                 if (hexLine.data.size() != 2) {
                     throw LoadError(
                             _lineNo, 0xFFFF,
                             fmt::format("Invalid extension size - expected 2, got {}", hexLine.data.size()));
                 }
                 extensionData = *(reinterpret_cast<uint16_t *>(hexLine.data.data())) > 0;
+=======
+                if (hexLine.Data.size() != 2) {
+                    throw LoadError(
+                            _lineNo, 0xFFFF,
+                            fmt::format("Invalid extension size - expected 2, got {}", hexLine.Data.size()));
+                }
+                extensionData = *(reinterpret_cast<uint16_t *>(hexLine.Data.data())) > 0;
+>>>>>>> continue with firmwareUpdate implementation
                 break;
             case IntelRecordType::EndOfFile:
                 return;
@@ -71,6 +94,7 @@ void IntelHex::load(std::istream &inputStream) {
     }
 }
 
+<<<<<<< HEAD
 std::vector<uint8_t> IntelHex::getData(uint16_t &startAddress) {
     _sortByAddress();
 
@@ -96,6 +120,9 @@ std::vector<uint8_t> IntelHex::getData(uint16_t &startAddress) {
 }
 
 void IntelHex::_processLine(const char *line, IntelHexLine *hexLine, IntelRecordType::Types &recordType) {
+=======
+void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
+>>>>>>> continue with firmwareUpdate implementation
     int offset = 1;
     if (line[0] != ':') {
         throw LoadError(_lineNo, 0xFFFF,

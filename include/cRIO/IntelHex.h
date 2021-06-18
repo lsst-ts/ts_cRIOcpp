@@ -42,9 +42,7 @@ struct IntelRecordType {
 };
 
 struct IntelHexLine {
-    char StartCode;
-    char ByteCount;
-    unsigned short Address;
+    uint16_t Address;
     IntelRecordType::Types RecordType;
     std::vector<char> Data;
     char Checksum;
@@ -70,7 +68,8 @@ private:
 };
 
 /**
- * Class to read and parse Intel hex file.
+ * Class to read and parse Intel hex file. Provides methods to faciliate
+ * loading firmware into ILC.
  */
 class IntelHex {
 public:

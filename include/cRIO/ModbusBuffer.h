@@ -285,6 +285,13 @@ public:
     void writeCRC();
 
     /**
+     * Returns CRC value.
+     *
+     * @return buffer Modbus CRC
+     */
+    uint16_t getCRC() { return _crcCounter; }
+
+    /**
      * Write FPGA delay command. Delays processing of read buffer by given
      * number of microseconds.
      *
