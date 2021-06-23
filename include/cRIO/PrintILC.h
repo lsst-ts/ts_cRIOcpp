@@ -38,9 +38,29 @@ public:
     PrintILC(uint8_t bus);
 
     /**
+     * Writes newly programmed application statistics and CRCs.
+     *
+     * @param address ILC address
+     * @param dataCRC
+     * @param startAddress
+     * @param dataLength
+     * @param statsCRC
+     */
+    void writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress, uint16_t dataLength,
+                               uint16_t statsCRC) {
+        callFunction(address, 100, 500000, dataCRC, startAddress, dataLength, statsCRC);
+    }
+
+    /**
      * Erase ILC application.
+     *
+     * @param address ILC address
      */
     void eraseILApplication(uint8_t address) { callFunction(address, 101, 500000); }
+
+    void writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length, uint8_t* data);
+
+    void writeVerifyApplication(uint8_t address) { callFunction(address, 103, 500000); }
 
     /**
      * Programs ILC. Executes a sequence of commands as follow:
@@ -54,6 +74,9 @@ public:
      * 7. verify applications
      * 8. put ILC into standby mode
      * 9. put ILC into disabled mode
+     *
+     * @param address ILC address
+     * @param hex Intel Hex file to load into ILC
      */
     void programILC(uint8_t address, IntelHex& hex);
 
@@ -71,6 +94,12 @@ protected:
     void processResetServer(uint8_t address) override;
 
     virtual void processEraseILCApplication(uint8_t address);
+
+    virtual void processWriteApplicationStats(uint8_t address);
+
+    virtual void processWriteApplicationPage(uint8_t address);
+
+    virtual void processVerifyUserApplication(uint8_t address);
 
     virtual void printBusAddress(uint8_t address);
 

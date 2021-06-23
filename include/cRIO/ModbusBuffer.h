@@ -385,7 +385,7 @@ protected:
         writeEndOfFrame();
         writeWaitForRx(timeout);
 
-        _pushCommanded(address, function);
+        pushCommanded(address, function);
     }
 
     /**
@@ -436,6 +436,8 @@ protected:
      */
     bool checkRecording(std::vector<uint8_t>& cached);
 
+    void pushCommanded(uint8_t address, uint8_t function);
+
 private:
     std::vector<uint16_t> _buffer;
     uint32_t _index;
@@ -450,8 +452,6 @@ private:
      * Reset internal CRC counter.
      */
     void _resetCRC() { _crcCounter = 0xFFFF; }
-
-    void _pushCommanded(uint8_t address, uint8_t function);
 
     /**
      * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.

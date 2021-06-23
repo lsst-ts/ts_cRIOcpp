@@ -28,6 +28,15 @@ using namespace LSST::cRIO;
 
 PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0) {
     setAlwaysTrigger(true);
+
+    addResponse(
+            100,
+            [this](uint8_t address) {
+                checkCRC();
+                processWriteApplicationStats(address);
+            },
+            228);
+
     addResponse(
             101,
             [this](uint8_t address) {
@@ -35,6 +44,35 @@ PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0) {
                 processEraseILCApplication(address);
             },
             229);
+
+    addResponse(
+            102,
+            [this](uint8_t address) {
+                checkCRC();
+                processWriteApplicationPage(address);
+            },
+            238);
+
+    addResponse(
+            103,
+            [this](uint8_t address) {
+                checkCRC();
+                processVerifyUserApplication(address);
+            },
+            231);
+}
+
+void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length, uint8_t *data) {
+    write(address);
+    write<uint8_t>(102);
+    write(startAddress);
+    write(length);
+    writeBuffer(data, length);
+    writeCRC();
+    writeEndOfFrame();
+    writeWaitForRx(500000);
+
+    pushCommanded(address, 102);
 }
 
 void PrintILC::programILC(uint8_t address, IntelHex &hex) {
@@ -83,9 +121,24 @@ void PrintILC::processResetServer(uint8_t address) {
     std::cout << "Reseted." << std::endl;
 }
 
+void PrintILC::processWriteApplicationStats(uint8_t address) {
+    printBusAddress(address);
+    std::cout << "New ILC application stats written." << std::endl;
+}
+
 void PrintILC::processEraseILCApplication(uint8_t address) {
     printBusAddress(address);
     std::cout << "ILC application erased." << std::endl;
+}
+
+void PrintILC::processWriteApplicationPage(uint8_t address) {
+    printBusAddress(address);
+    std::cout << "Page written." << std::endl;
+}
+
+void PrintILC::processVerifyUserApplication(uint8_t address) {
+    printBusAddress(address);
+    std::cout << "Verified user application." << std::endl;
 }
 
 void PrintILC::printBusAddress(uint8_t address) {

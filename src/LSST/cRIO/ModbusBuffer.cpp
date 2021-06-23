@@ -251,7 +251,7 @@ void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t time
     writeEndOfFrame();
     writeWaitForRx(timeout);
 
-    _pushCommanded(address, function);
+    pushCommanded(address, function);
 }
 
 void ModbusBuffer::broadcastFunction(uint8_t address, uint8_t function, uint8_t counter, uint32_t delay,
@@ -289,6 +289,12 @@ bool ModbusBuffer::checkRecording(std::vector<uint8_t>& cached) {
     return false;
 }
 
+void ModbusBuffer::pushCommanded(uint8_t address, uint8_t function) {
+    if ((address > 0 && address < 248) || (address == 255)) {
+        _commanded.push(std::pair<uint8_t, uint8_t>(address, function));
+    }
+}
+
 void ModbusBuffer::_processDataCRC(uint8_t data) {
     if (_recordChanges) {
         _records.push_back(data);
@@ -302,12 +308,6 @@ void ModbusBuffer::_processDataCRC(uint8_t data) {
         } else {
             _crcCounter = _crcCounter >> 1;
         }
-    }
-}
-
-void ModbusBuffer::_pushCommanded(uint8_t address, uint8_t function) {
-    if ((address > 0 && address < 248) || (address == 255)) {
-        _commanded.push(std::pair<uint8_t, uint8_t>(address, function));
     }
 }
 
