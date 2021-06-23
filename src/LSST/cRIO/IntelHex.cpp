@@ -72,6 +72,8 @@ void IntelHex::load(std::istream &inputStream) {
                 }
                 extensionData = *(reinterpret_cast<uint16_t *>(hexLine.Data.data())) > 0;
                 break;
+            case IntelRecordType::EndOfFile:
+                return;
             default:
                 break;
         }
