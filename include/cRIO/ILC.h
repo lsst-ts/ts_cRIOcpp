@@ -121,21 +121,6 @@ public:
     void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
 
     /**
-     * Programs ILC. Executes a sequence of commands as follow:
-     *
-     * 1. put ILC into standby mode
-     * 2. put ILC into firmware update mode
-     * 3. clears ILC faults
-     * 4. erase ILC application
-     * 5. write ILC application
-     * 6. write ILC application statistics
-     * 7. verify applications
-     * 8. put ILC into standby mode
-     * 9. put ILC into disabled mode
-     */
-    void programILC(uint8_t address, IntelHex& hex);
-
-    /**
      * Add response callbacks. Both function code and error response code shall
      * be specified.
      *
