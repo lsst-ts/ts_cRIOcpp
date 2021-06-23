@@ -30,7 +30,8 @@ namespace cRIO {
 
 /**
  * Virtual class printing out ILC responses to basic (implemented in all ILCs)
- * commands.
+ * commands. Intended for command line applications. Adds functions to program
+ * ILC from provided Intel Hex File.
  */
 class PrintILC : public virtual ILC {
 public:
