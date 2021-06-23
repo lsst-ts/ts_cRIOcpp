@@ -59,6 +59,10 @@ public:
      */
     void eraseILApplication(uint8_t address) { callFunction(address, 101, 500000); }
 
+    void writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length, uint8_t *data);
+
+    void writeVerifyApplication(uint8_t address) { callFunction(address, 103, 500000); }
+
     /**
      * Writes ILC firmware page. Calls functions 103. Please note that every
      * fourth byte from hexfile is skipped.
