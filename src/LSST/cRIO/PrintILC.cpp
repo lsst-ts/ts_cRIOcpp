@@ -26,6 +26,26 @@
 
 using namespace LSST::cRIO;
 
+PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0) {
+    setAlwaysTrigger(true);
+    addResponse(
+            101,
+            [this](uint8_t address) {
+                checkCRC();
+                processEraseILCApplication(address);
+            },
+            229);
+}
+
+void PrintILC::programILC(uint8_t address, IntelHex &hex) {
+    changeILCMode(address, ILCMode::Standby);
+    changeILCMode(address, ILCMode::FirmwareUpdate);
+    changeILCMode(address, ILCMode::ClearFaults);
+
+    changeILCMode(address, ILCMode::Standby);
+    changeILCMode(address, ILCMode::Disabled);
+}
+
 void PrintILC::processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType,
                                uint8_t networkNodeType, uint8_t ilcSelectedOptions,
                                uint8_t networkNodeOptions, uint8_t majorRev, uint8_t minorRev,
@@ -61,6 +81,11 @@ void PrintILC::processSetTempILCAddress(uint8_t address, uint8_t newAddress) {
 void PrintILC::processResetServer(uint8_t address) {
     printBusAddress(address);
     std::cout << "Reseted." << std::endl;
+}
+
+void PrintILC::processEraseILCApplication(uint8_t address) {
+    printBusAddress(address);
+    std::cout << "ILC application erased." << std::endl;
 }
 
 void PrintILC::printBusAddress(uint8_t address) {

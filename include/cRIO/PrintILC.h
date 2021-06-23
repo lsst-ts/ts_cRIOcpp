@@ -34,7 +34,27 @@ namespace cRIO {
  */
 class PrintILC : public virtual ILC {
 public:
-    PrintILC(uint8_t bus) : ILC(bus), _printout(0) { setAlwaysTrigger(true); }
+    PrintILC(uint8_t bus);
+
+    /**
+     * Erase ILC application.
+     */
+    void eraseILApplication(uint8_t address) { callFunction(address, 101, 500000); }
+
+    /**
+     * Programs ILC. Executes a sequence of commands as follow:
+     *
+     * 1. put ILC into standby mode
+     * 2. put ILC into firmware update mode
+     * 3. clears ILC faults
+     * 4. erase ILC application
+     * 5. write ILC application
+     * 6. write ILC application statistics
+     * 7. verify applications
+     * 8. put ILC into standby mode
+     * 9. put ILC into disabled mode
+     */
+    void programILC(uint8_t address, IntelHex& hex);
 
 protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
@@ -48,6 +68,8 @@ protected:
     void processSetTempILCAddress(uint8_t address, uint8_t newAddress) override;
 
     void processResetServer(uint8_t address) override;
+
+    virtual void processEraseILCApplication(uint8_t address);
 
     virtual void printBusAddress(uint8_t address);
 

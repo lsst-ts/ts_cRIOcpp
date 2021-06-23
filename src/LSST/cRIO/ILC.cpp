@@ -104,15 +104,6 @@ ILC::ILC(uint8_t bus) {
             235);
 }
 
-void ILC::programILC(uint8_t address, IntelHex &hex) {
-    changeILCMode(address, ILCMode::Standby);
-    changeILCMode(address, ILCMode::FirmwareUpdate);
-    changeILCMode(address, ILCMode::ClearFaults);
-
-    changeILCMode(address, ILCMode::Standby);
-    changeILCMode(address, ILCMode::Disabled);
-}
-
 void ILC::addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,
                       std::function<void(uint8_t, uint8_t)> errorAction) {
     _actions[func] = action;
