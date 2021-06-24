@@ -128,7 +128,7 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     uint16_t startAddress;
     uint16_t dataLength;
 
-    _writeHex(address, hex, dataCRC, startAddress, dataLength);
+    _writeHex(fpga, address, hex, dataCRC, startAddress, dataLength);
 
     writeApplicationStats(address, dataCRC, startAddress, dataLength);
     writeVerifyApplication(address);
