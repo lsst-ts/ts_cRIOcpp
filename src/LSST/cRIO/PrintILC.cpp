@@ -81,6 +81,14 @@ void PrintILC::programILC(uint8_t address, IntelHex &hex) {
     changeILCMode(address, ILCMode::FirmwareUpdate);
     changeILCMode(address, ILCMode::ClearFaults);
 
+    uint16_t dataCRC;
+    uint16_t startAddress;
+    uint16_t dataLength;
+
+    _writeHex(address, hex, dataCRC, startAddress, dataLength);
+
+    writeApplicationStats(address, dataCRC, startAddress, dataLength, 0x0000);
+
     changeILCMode(address, ILCMode::Standby);
     changeILCMode(address, ILCMode::Disabled);
 }
@@ -176,4 +184,38 @@ void PrintILC::printSepline() {
         std::cout << std::endl;
     }
     _printout++;
+}
+
+void PrintILC::_writeHex(uint8_t address, IntelHex &hex, uint16_t &dataCRC, uint16_t &startAddress,
+                         uint16_t &dataLength) {
+    // align data to 256 bytes pages
+    std::vector<uint8_t> data = hex.getData(startAddress);
+
+    size_t mod = data.size() % 256;
+    if (mod == 0) return;
+
+    for (int i = mod; i < 256; i++) {
+        data.push_back(((i % 4) == 3) ? 0x00 : 0xFF);
+    }
+
+    // dataCRC = _dataSend.getCRC();
+    dataLength = data.size();
+
+    uint8_t *startData = data.data();
+    uint8_t *endData = data.data() + data.size();
+    uint16_t dataAddress = startAddress;
+    while (startData < endData) {
+        uint8_t page[192];
+        int i = 0;
+        while (i < 192) {
+            for (int j = 0; j < 3; j++) {
+                page[i] = *startData;
+                startData++;
+            }
+            // skip every fourth byte
+            startData++;
+        }
+        writeApplicationPage(address, dataAddress, 192, page);
+        dataAddress += 256;
+    }
 }

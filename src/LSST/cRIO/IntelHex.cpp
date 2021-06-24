@@ -29,10 +29,7 @@
 
 using namespace LSST::cRIO;
 
-IntelHex::IntelHex() {
-    _startAddress = 0;
-    _endAddress = 0;
-}
+IntelHex::IntelHex() {}
 
 void IntelHex::load(const std::string &fileName) {
     std::ifstream inputStream(fileName);
@@ -53,7 +50,7 @@ void IntelHex::load(std::istream &inputStream) {
         switch (recordType) {
             case IntelRecordType::Data:
                 if (extensionData) {
-                    for (auto d : hexLine.Data) {
+                    for (auto d : hexLine.data) {
                         if (d != 0) {
                             throw LoadError(_lineNo, 0xFFFF,
                                             fmt::format("Non zero data in extension - {}", d));
@@ -66,12 +63,12 @@ void IntelHex::load(std::istream &inputStream) {
             case IntelRecordType::ExtendedLinearAddress:
                 // ILCs doesn't support extended addressing.
                 // Ignore all data above 0xFFFF address
-                if (hexLine.Data.size() != 2) {
+                if (hexLine.data.size() != 2) {
                     throw LoadError(
                             _lineNo, 0xFFFF,
-                            fmt::format("Invalid extension size - expected 2, got {}", hexLine.Data.size()));
+                            fmt::format("Invalid extension size - expected 2, got {}", hexLine.data.size()));
                 }
-                extensionData = *(reinterpret_cast<uint16_t *>(hexLine.Data.data())) > 0;
+                extensionData = *(reinterpret_cast<uint16_t *>(hexLine.data.data())) > 0;
                 break;
             case IntelRecordType::EndOfFile:
                 return;
@@ -79,6 +76,30 @@ void IntelHex::load(std::istream &inputStream) {
                 break;
         }
     }
+}
+
+std::vector<uint8_t> IntelHex::getData(uint16_t &startAddress) {
+    _sortByAddress();
+
+    startAddress = _hexData.front().address;
+
+    uint16_t lastCopied = startAddress;
+
+    std::vector<uint8_t> ret;
+
+    for (auto hd : _hexData) {
+        for (uint16_t i = lastCopied; i < hd.address; i++) {
+            ret.push_back(((i % 4) == 3) ? 0x00 : 0xff);
+        }
+
+        size_t start = ret.size();
+        ret.resize(ret.size() + hd.data.size());
+        memcpy(ret.data() + start, hd.data.data(), hd.data.size());
+
+        lastCopied = hd.address + hd.data.size();
+    }
+
+    return ret;
 }
 
 void IntelHex::_processLine(const char *line, IntelHexLine *hexLine, IntelRecordType::Types &recordType) {
@@ -95,7 +116,7 @@ void IntelHex::_processLine(const char *line, IntelHexLine *hexLine, IntelRecord
     if (returnCode != 3) {
         throw LoadError(_lineNo, 0xFFFF, "Unable to Parse ByteCount, Address, and RecordType for line.");
     }
-    hexLine->Address = (unsigned short)address;
+    hexLine->address = (unsigned short)address;
     recordType = static_cast<IntelRecordType::Types>(recType);
     offset += 8;
     for (unsigned int i = 0; i < byteCount; ++i) {
@@ -103,55 +124,34 @@ void IntelHex::_processLine(const char *line, IntelHexLine *hexLine, IntelRecord
         returnCode = sscanf(line + offset, "%2X", &value);
         offset += 2;
         if (returnCode >= 0) {
-            hexLine->Data.push_back((char)value);
+            hexLine->data.push_back(static_cast<uint8_t>(value));
         } else {
             throw LoadError(_lineNo, address, "Unable to parse DataByte " + std::to_string(i));
         }
     }
     unsigned int expectedChecksum = 0;
     returnCode = sscanf(line + offset, "%2X", &expectedChecksum);
-    hexLine->Checksum = expectedChecksum;
     if (returnCode != 1) {
         throw LoadError(_lineNo, address, "Unable to parse Checksum");
     }
-    char checksum = 0;
+    uint8_t checksum = 0;
     checksum += byteCount;
-    checksum += (char)((hexLine->Address & 0xFF00) >> 8);
-    checksum += (char)(hexLine->Address & 0x00FF);
+    checksum += static_cast<uint8_t>((hexLine->address & 0xFF00) >> 8);
+    checksum += static_cast<uint8_t>(hexLine->address & 0x00FF);
     checksum += recordType;
-    for (unsigned int i = 0; i < hexLine->Data.size(); ++i) {
-        checksum += hexLine->Data[i];
+    for (unsigned int i = 0; i < hexLine->data.size(); ++i) {
+        checksum += hexLine->data[i];
     }
     checksum = ~checksum;
     checksum += 1;
-    if (checksum != hexLine->Checksum) {
+    if (checksum != expectedChecksum) {
         throw LoadError(_lineNo, address,
-                        fmt::format("Checksum mismatch, expecting 0x{:02X}, got 0x{:02X}", hexLine->Checksum,
+                        fmt::format("Checksum mismatch, expecting 0x{:02X}, got 0x{:02X}", expectedChecksum,
                                     checksum));
     }
 }
 
 void IntelHex::_sortByAddress() {
     std::sort(_hexData.begin(), _hexData.end(),
-              [](IntelHexLine a, IntelHexLine b) { return a.Address < b.Address; });
-}
-
-void IntelHex::_fillAppData() {
-    _sortByAddress();
-
-    _startAddress = _hexData.front().Address;
-    _endAddress = _hexData.back().Address + _hexData.back().Data.size();
-
-    _appData.clear();
-    _appData.resize(_endAddress - _startAddress);
-
-    uint16_t lastCopied = _startAddress;
-
-    for (auto hd : _hexData) {
-        for (uint16_t i = hd.Address; i < lastCopied; i++) {
-            _appData[i] = 0xff;
-        }
-        memcpy(_appData.data() + (hd.Address - _startAddress), hd.Data.data(), hd.Data.size());
-        lastCopied = hd.Address + hd.Data.size();
-    }
+              [](IntelHexLine a, IntelHexLine b) { return a.address < b.address; });
 }

@@ -42,17 +42,8 @@ struct IntelRecordType {
 };
 
 struct IntelHexLine {
-    uint16_t Address;
-    IntelRecordType::Types RecordType;
-    std::vector<char> Data;
-    char Checksum;
-};
-
-struct ILCApplicationStats {
-    unsigned short DataCRC;
-    unsigned short StartAddress;
-    unsigned short DataLength;
-    unsigned short StatsCRC;
+    uint16_t address;
+    std::vector<uint8_t> data;
 };
 
 class LoadError : public std::runtime_error {
@@ -85,10 +76,17 @@ public:
     void load(const std::string &fileName);
     void load(std::istream &inputStream);
 
+    /**
+     * Returns data to be written into ILC. Only three bytes out of every four
+     * are written.
+     *
+     * @param buffer buffer where data will be stored
+     */
+    std::vector<uint8_t> getData(uint16_t &startAddress);
+
 private:
-    void _processLine(const char *line, IntelHexLine *hexLine);
+    void _processLine(const char *line, IntelHexLine *hexLine, IntelRecordType::Types &recordType);
     void _sortByAddress();
-    void _fillAppData();
 
     std::vector<IntelHexLine> _hexData;
     size_t _lineNo;
@@ -96,10 +94,7 @@ private:
     /**
      * Contains firmware data.
      */
-    uint8_t _appData[0XFFFF];
-    uint16_t _startAddress;
-    size_t _currentAddress;
-    size_t _endAddress;
+    std::vector<uint8_t> _appData;
 };
 
 }  // namespace cRIO
