@@ -27,7 +27,8 @@
 
 using namespace LSST::cRIO;
 
-FPGACliApp::FPGACliApp(const char* description) : CliApp(description), _fpga(nullptr), _autoOpen(true) {
+FPGACliApp::FPGACliApp(const char* description)
+        : CliApp(description), _fpga(nullptr), _ilcs(5), _autoOpen(true) {
     addArgument('d', "increase debug level");
     addArgument('h', "print this help");
     addArgument('O', "don't auto open (and run) FPGA");
@@ -57,7 +58,7 @@ int FPGACliApp::info(command_vec cmds) {
         u.first->reportServerID(u.second);
     }
 
-    for (auto ilcp : ilcs) {
+    for (auto ilcp : _ilcs) {
         if (ilcp->getLength() > 0) {
             _fpga->ilcCommands(*ilcp);
         }

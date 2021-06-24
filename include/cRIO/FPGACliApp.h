@@ -69,14 +69,17 @@ protected:
     virtual FPGA* newFPGA(const char* dir) = 0;
     virtual ILCUnits getILCs(command_vec arguments) = 0;
 
+    FPGA* getFPGA() { return _fpga; }
+    ILC* getILC(int index) { return _ilcs[index]; }
+
 private:
     FPGA* _fpga;
-    std::list<ILC*> ilcs;
+    std::vector<ILC*> _ilcs;
 
     bool _autoOpen;
 
     void _clearILCs() {
-        for (auto ilcp : ilcs) {
+        for (auto ilcp : _ilcs) {
             ilcp->clear();
         }
     }
