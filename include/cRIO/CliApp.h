@@ -172,6 +172,14 @@ public:
      */
     static const bool onOff(std::string on);
 
+    /**
+     * Utitlity function to print out buffer as hex dump.
+     *
+     * @param buf buffer to print
+     * @param len length of the buffer
+     */
+    static const void printHexBuf(uint8_t* buf, size_t len, const char* prefix = "");
+
 protected:
     /**
      * Can be overwritten to perform any pre/post command processing.

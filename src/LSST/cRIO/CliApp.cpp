@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <libgen.h>
@@ -252,6 +253,14 @@ const bool CliApp::onOff(std::string on) {
     if (strcasecmp(on.c_str(), "on") == 0 || on == "1") return true;
     if (strcasecmp(on.c_str(), "off") == 0 || on == "0") return false;
     throw std::runtime_error("Invalid on/off string:" + on);
+}
+
+const void CliApp::printHexBuf(uint8_t* buf, size_t len, const char* prefix) {
+    std::cout << std::hex;
+    for (size_t i = 0; i < len; i++) {
+        std::cout << prefix << std::setfill('0') << std::setw(2) << static_cast<int>(buf[i]);
+    }
+    std::cout << std::dec;
 }
 
 /**
