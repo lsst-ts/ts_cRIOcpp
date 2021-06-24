@@ -97,8 +97,16 @@ void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint
 
 void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     changeILCMode(address, ILCMode::Standby);
+    fpga->ilcCommands(*this);
+    clear();
+
     changeILCMode(address, ILCMode::FirmwareUpdate);
+    fpga->ilcCommands(*this);
+    clear();
+
     changeILCMode(address, ILCMode::ClearFaults);
+    fpga->ilcCommands(*this);
+    clear();
 
     uint16_t dataCRC;
     uint16_t startAddress;
@@ -107,10 +115,20 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     _writeHex(fpga, address, hex, dataCRC, startAddress, dataLength);
 
     writeApplicationStats(address, dataCRC, startAddress, dataLength);
+    fpga->ilcCommands(*this);
+    clear();
+
     writeVerifyApplication(address);
+    fpga->ilcCommands(*this);
+    clear();
 
     changeILCMode(address, ILCMode::Standby);
+    fpga->ilcCommands(*this);
+    clear();
+
     changeILCMode(address, ILCMode::Disabled);
+    fpga->ilcCommands(*this);
+    clear();
 }
 
 void PrintILC::processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType,

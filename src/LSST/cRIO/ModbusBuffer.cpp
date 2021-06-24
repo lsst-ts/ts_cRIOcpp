@@ -222,10 +222,10 @@ void ModbusBuffer::checkCommandedEmpty() {
             os << ",";
         }
         auto c = _commanded.front();
-        os << c.first << " " << c.second;
+        os << static_cast<int>(c.first) << ":" << static_cast<int>(c.second);
         _commanded.pop();
     }
-    throw std::runtime_error("Responses for those requests weren't received: " + os.str());
+    throw std::runtime_error("Responses for those <address:function> pairs weren't received: " + os.str());
 }
 
 void ModbusBuffer::CRC::add(uint8_t data) {
