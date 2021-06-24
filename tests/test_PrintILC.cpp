@@ -75,6 +75,7 @@ protected:
     void processVerifyUserApplication(uint8_t address, uint16_t status) override;
 
     void processWriteApplicationPage(uint8_t address) override { _ackFunction(address, 102); }
+    void processVerifyUserApplication(uint8_t address, uint16_t status) override;
 
 private:
     ModbusBuffer response;
