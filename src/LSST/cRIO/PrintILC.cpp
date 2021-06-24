@@ -95,7 +95,7 @@ void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint
     pushCommanded(address, 102);
 }
 
-void PrintILC::programILC(uint8_t address, IntelHex &hex) {
+void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     changeILCMode(address, ILCMode::Standby);
     changeILCMode(address, ILCMode::FirmwareUpdate);
     changeILCMode(address, ILCMode::ClearFaults);
@@ -235,6 +235,7 @@ void PrintILC::_writeHex(uint8_t address, IntelHex &hex, uint16_t &dataCRC, uint
         while (i < 192) {
             for (int j = 0; j < 3; j++) {
                 page[i] = *startData;
+                i++;
                 startData++;
             }
             // skip every fourth byte

@@ -24,6 +24,7 @@
 #define _cRIO_PrintILC_
 
 #include <cRIO/ILC.h>
+#include <cRIO/FPGA.h>
 
 namespace LSST {
 namespace cRIO {
@@ -71,10 +72,11 @@ public:
      * 8. put ILC into standby mode
      * 9. put ILC into disabled mode
      *
+     * @param FPGA
      * @param address ILC address
      * @param hex Intel Hex file to load into ILC
      */
-    void programILC(uint8_t address, IntelHex &hex);
+    void programILC(FPGA *fpga, uint8_t address, IntelHex &hex);
 
 protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
