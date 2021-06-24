@@ -367,3 +367,29 @@ TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
     readAll(2956, 48342);
     REQUIRE(mbuf.checkRecording(changed) == true);
 }
+
+TEST_CASE("CRC class", "[ModbusBuffer::CRC]") {
+    ModbusBuffer::CRC crc;
+
+    for (uint8_t d = 0; d < 0xFF; d++) {
+        crc.add(d);
+    }
+
+    REQUIRE(crc.get() == 0xADD6);
+
+    crc.reset();
+
+    for (auto d : std::string("This is Modbus CRC!")) {
+        crc.add(d);
+    }
+
+    REQUIRE(crc.get() == 0xAEDA);
+
+    crc.reset();
+
+    for (auto d : std::string("Calculating CRC is as easy as answering 42.")) {
+        crc.add(d);
+    }
+
+    REQUIRE(crc.get() == 0x2879);
+}
