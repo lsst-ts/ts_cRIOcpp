@@ -95,6 +95,7 @@ void IntelHex::load(std::istream &inputStream) {
 }
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 std::vector<uint8_t> IntelHex::getData(uint16_t &startAddress) {
     _sortByAddress();
 
@@ -123,6 +124,9 @@ void IntelHex::_processLine(const char *line, IntelHexLine *hexLine, IntelRecord
 =======
 void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
 >>>>>>> continue with firmwareUpdate implementation
+=======
+void IntelHex::_processLine(const char *line, IntelHexLine *hexLine, IntelRecordType::Types &recordType) {
+>>>>>>> write app data
     int offset = 1;
     if (line[0] != ':') {
         throw LoadError(_lineNo, 0xFFFF,
@@ -136,7 +140,11 @@ void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
     if (returnCode != 3) {
         throw LoadError(_lineNo, 0xFFFF, "Unable to Parse ByteCount, Address, and RecordType for line.");
     }
+<<<<<<< HEAD
     hexLine->address = (unsigned short)address;
+=======
+    hexLine->Address = (unsigned short)address;
+>>>>>>> write app data
     recordType = static_cast<IntelRecordType::Types>(recType);
     offset += 8;
     for (unsigned int i = 0; i < byteCount; ++i) {
