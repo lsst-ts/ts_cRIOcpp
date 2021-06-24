@@ -179,6 +179,7 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
                 break;
             case 100: {
                 uint16_t dataCRC = buf.read<uint16_t>();
+                REQUIRE(dataCRC == 0xF411);
                 uint16_t startAddress = buf.read<uint16_t>();
                 REQUIRE(startAddress == 0);
                 uint16_t length = buf.read<uint16_t>();
