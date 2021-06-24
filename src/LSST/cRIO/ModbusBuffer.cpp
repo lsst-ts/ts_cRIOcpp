@@ -240,6 +240,18 @@ void ModbusBuffer::CRC::add(uint8_t data) {
     }
 }
 
+void ModbusBuffer::CRC::add(uint8_t data) {
+    _crcCounter = _crcCounter ^ (uint16_t(data));
+    for (int j = 0; j < 8; j++) {
+        if (_crcCounter & 0x0001) {
+            _crcCounter = _crcCounter >> 1;
+            _crcCounter = _crcCounter ^ 0xA001;
+        } else {
+            _crcCounter = _crcCounter >> 1;
+        }
+    }
+}
+
 ModbusBuffer::CRCError::CRCError(uint16_t calculated, uint16_t received)
         : std::runtime_error(fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}", calculated,
                                          received)) {}
