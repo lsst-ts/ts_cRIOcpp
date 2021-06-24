@@ -48,8 +48,9 @@ void IntelHex::load(std::istream &inputStream) {
     while (std::getline(inputStream, lineText)) {
         _lineNo++;
         IntelHexLine hexLine;
-        _processLine(lineText.c_str(), &hexLine);
-        switch (hexLine.RecordType) {
+        IntelRecordType::Types recordType;
+        _processLine(lineText.c_str(), &hexLine, recordType);
+        switch (recordType) {
             case IntelRecordType::Data:
                 if (extensionData) {
                     for (auto d : hexLine.Data) {
@@ -80,7 +81,7 @@ void IntelHex::load(std::istream &inputStream) {
     }
 }
 
-void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
+void IntelHex::_processLine(const char *line, IntelHexLine *hexLine, IntelRecordType::Types &recordType) {
     int offset = 1;
     if (line[0] != ':') {
         throw LoadError(_lineNo, 0xFFFF,
@@ -89,13 +90,13 @@ void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
 
     unsigned int byteCount = 0;
     unsigned int address = 0;
-    unsigned int recordType = 0;
-    int returnCode = sscanf(line + offset, "%2X%4X%2X", &byteCount, &address, &recordType);
+    unsigned int recType = 0;
+    int returnCode = sscanf(line + offset, "%2X%4X%2X", &byteCount, &address, &recType);
     if (returnCode != 3) {
         throw LoadError(_lineNo, 0xFFFF, "Unable to Parse ByteCount, Address, and RecordType for line.");
     }
     hexLine->Address = (unsigned short)address;
-    hexLine->RecordType = (IntelRecordType::Types)recordType;
+    recordType = static_cast<IntelRecordType::Types>(recType);
     offset += 8;
     for (unsigned int i = 0; i < byteCount; ++i) {
         unsigned int value = 0;
@@ -117,7 +118,7 @@ void IntelHex::_processLine(const char *line, IntelHexLine *hexLine) {
     checksum += byteCount;
     checksum += (char)((hexLine->Address & 0xFF00) >> 8);
     checksum += (char)(hexLine->Address & 0x00FF);
-    checksum += hexLine->RecordType;
+    checksum += recordType;
     for (unsigned int i = 0; i < hexLine->Data.size(); ++i) {
         checksum += hexLine->Data[i];
     }
@@ -136,23 +137,21 @@ void IntelHex::_sortByAddress() {
 }
 
 void IntelHex::_fillAppData() {
-    // initialize appData. Empty record is three 0xFF followed by 0x00.
-    for (size_t i = 0; i < 0xFFFF; i += 4) {
-        static const uint8_t emptyData[4] = {0xFF, 0xFF, 0xFF, 0x00};
-        memcpy(_appData + i, emptyData, 4);
-    }
-    _startAddress = 0xFFFF;
-    _endAddress = 0;
+    _sortByAddress();
+
+    _startAddress = _hexData.front().Address;
+    _endAddress = _hexData.back().Address + _hexData.back().Data.size();
+
+    _appData.clear();
+    _appData.resize(_endAddress - _startAddress);
+
+    uint16_t lastCopied = _startAddress;
 
     for (auto hd : _hexData) {
-        switch (hd.RecordType) {
-            case IntelRecordType::Data:
-                _startAddress = std::min(_startAddress, hd.Address);
-                _endAddress = std::max(_endAddress, hd.Address + hd.Data.size());
-                memcpy(_appData, hd.Data.data(), hd.Data.size());
-                break;
-            default:
-                break;
+        for (uint16_t i = hd.Address; i < lastCopied; i++) {
+            _appData[i] = 0xff;
         }
+        memcpy(_appData.data() + (hd.Address - _startAddress), hd.Data.data(), hd.Data.size());
+        lastCopied = hd.Address + hd.Data.size();
     }
 }

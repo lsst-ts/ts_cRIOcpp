@@ -56,8 +56,9 @@ PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0) {
     addResponse(
             103,
             [this](uint8_t address) {
+                uint16_t status = read<uint16_t>();
                 checkCRC();
-                processVerifyUserApplication(address);
+                processVerifyUserApplication(address, status);
             },
             231);
 }
@@ -136,9 +137,31 @@ void PrintILC::processWriteApplicationPage(uint8_t address) {
     std::cout << "Page written." << std::endl;
 }
 
-void PrintILC::processVerifyUserApplication(uint8_t address) {
+void PrintILC::processVerifyUserApplication(uint8_t address, uint16_t status) {
     printBusAddress(address);
-    std::cout << "Verified user application." << std::endl;
+    uint8_t exception = 0;
+    switch (status) {
+        case 0x0000:
+            std::cout << "Verified user application." << std::endl;
+            return;
+        case 0x00FF:
+            std::cout << "Application Stats Error" << std::endl;
+            exception = 1;
+            break;
+        case 0xFF00:
+            std::cout << "Application Error" << std::endl;
+            exception = 2;
+            break;
+        case 0xFFFF:
+            std::cout << "Application Stats and Application Error" << std::endl;
+            exception = 3;
+            break;
+        default:
+            std::cout << "Uknown status: " << status << std::endl;
+            exception = 4;
+            break;
+    }
+    throw Exception(address, 102, exception);
 }
 
 void PrintILC::printBusAddress(uint8_t address) {
