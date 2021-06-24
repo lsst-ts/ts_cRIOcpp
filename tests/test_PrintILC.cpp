@@ -70,10 +70,13 @@ public:
 protected:
     void processChangeILCMode(uint8_t address, uint16_t mode) override;
 
+    void processWriteApplicationPage(uint8_t address) override { _ackFunction(address, 102); }
+
 private:
     ModbusBuffer response;
 
     void _simulateModbus(uint16_t* data, size_t length);
+    void _ackFunction(uint8_t address, uint8_t func);
 
     enum { IDLE, LEN, DATA } _U16ResponseStatus;
 };
@@ -145,7 +148,6 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
     // data received from ILCs (& FIFO::TX_WAIT_LONG_RX)
     // end of frame (FIFO::RX_ENDFRAME)
     // 8 bytes of end timestap (& FIFO::RX_TIMESTAMP)
-
     response.writeFPGATimestamp(currentTimestamp++);
 
     ModbusBuffer buf(data, length);
@@ -164,7 +166,16 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
                 buf.checkCRC();
                 processChangeILCMode(address, currentMode);
                 break;
-            // info
+            case 102: {
+                uint16_t startAddress = buf.read<uint16_t>();
+                uint16_t length = buf.read<uint16_t>();
+                REQUIRE(length == 192);
+                uint8_t fw[192];
+                buf.readBuffer(fw, 192);
+                buf.checkCRC();
+                processWriteApplicationPage(address);
+                break;
+            }
             default:
                 throw std::runtime_error("Invalid function number " + std::to_string(func));
         }
@@ -172,6 +183,13 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
 
         response.writeRxEndFrame();
     }
+}
+
+void TestFPGA::_ackFunction(uint8_t address, uint8_t func) {
+    response.write(address);
+    response.write(func);
+
+    response.writeCRC();
 }
 
 TEST_CASE("Test program ILC", "[PrintILC]") {
