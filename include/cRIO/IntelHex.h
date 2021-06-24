@@ -42,17 +42,8 @@ struct IntelRecordType {
 };
 
 struct IntelHexLine {
-    uint16_t Address;
-    IntelRecordType::Types RecordType;
-    std::vector<char> Data;
-    char Checksum;
-};
-
-struct ILCApplicationStats {
-    unsigned short DataCRC;
-    unsigned short StartAddress;
-    unsigned short DataLength;
-    unsigned short StatsCRC;
+    uint16_t address;
+    std::vector<uint8_t> data;
 };
 
 class LoadError : public std::runtime_error {
