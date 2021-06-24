@@ -117,7 +117,7 @@ void FPGACliApp::processArg(int opt, char* optarg) {
             break;
 
         default:
-            std::cerr << "Unknown command: " << (char)(opt) << std::endl;
+            std::cerr << "Unknown argument: " << (char)(opt) << std::endl;
             exit(EXIT_FAILURE);
     }
 }

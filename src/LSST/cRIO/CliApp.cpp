@@ -58,6 +58,11 @@ CliApp::~CliApp() {
 
 void CliApp::addCommand(const char* command, std::function<int(command_vec)> action, const char* args,
                         int flags, const char* help_args, const char* help) {
+    for (auto iter = _commands.begin(); iter != _commands.end(); iter++)
+        if (std::string(command) < std::string(iter->command)) {
+            _commands.insert(iter, Command(command, action, args, flags, help_args, help));
+            return;
+        }
     _commands.push_back(Command(command, action, args, flags, help_args, help));
 }
 
