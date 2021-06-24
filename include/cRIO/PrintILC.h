@@ -44,12 +44,8 @@ public:
      * @param dataCRC
      * @param startAddress
      * @param dataLength
-     * @param statsCRC
      */
-    void writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress, uint16_t dataLength,
-                               uint16_t statsCRC) {
-        callFunction(address, 100, 500000, dataCRC, startAddress, dataLength, statsCRC);
-    }
+    void writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress, uint16_t dataLength);
 
     /**
      * Erase ILC application.

@@ -20,7 +20,9 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cRIO/ModbusBuffer.h>
 #include <cRIO/PrintILC.h>
+
 #include <iomanip>
 #include <iostream>
 
@@ -63,6 +65,23 @@ PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0) {
             231);
 }
 
+void PrintILC::writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress,
+                                     uint16_t dataLength) {
+    uint8_t buffer[12];
+    *(reinterpret_cast<uint16_t *>(buffer + 0)) = htons(dataCRC);
+    *(reinterpret_cast<uint16_t *>(buffer + 2)) = 0;
+    *(reinterpret_cast<uint16_t *>(buffer + 4)) = htons(startAddress);
+    *(reinterpret_cast<uint16_t *>(buffer + 6)) = 0;
+    *(reinterpret_cast<uint16_t *>(buffer + 8)) = htons(dataLength);
+    *(reinterpret_cast<uint16_t *>(buffer + 10)) = 0;
+
+    ModbusBuffer::CRC crc;
+    for (auto d : buffer) {
+        crc.add(d);
+    }
+    callFunction(address, 100, 500000, dataCRC, startAddress, dataLength, crc.get());
+}
+
 void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length, uint8_t *data) {
     write(address);
     write<uint8_t>(102);
@@ -87,7 +106,8 @@ void PrintILC::programILC(uint8_t address, IntelHex &hex) {
 
     _writeHex(address, hex, dataCRC, startAddress, dataLength);
 
-    writeApplicationStats(address, dataCRC, startAddress, dataLength, 0x0000);
+    writeApplicationStats(address, dataCRC, startAddress, dataLength);
+    writeVerifyApplication(address);
 
     changeILCMode(address, ILCMode::Standby);
     changeILCMode(address, ILCMode::Disabled);
@@ -198,7 +218,12 @@ void PrintILC::_writeHex(uint8_t address, IntelHex &hex, uint16_t &dataCRC, uint
         data.push_back(((i % 4) == 3) ? 0x00 : 0xFF);
     }
 
-    // dataCRC = _dataSend.getCRC();
+    ModbusBuffer::CRC crc;
+    for (auto d : data) {
+        crc.add(d);
+    }
+    dataCRC = crc.get();
+
     dataLength = data.size();
 
     uint8_t *startData = data.data();
