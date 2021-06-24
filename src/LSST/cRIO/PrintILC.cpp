@@ -130,7 +130,8 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
 
     _writeHex(address, hex, dataCRC, startAddress, dataLength);
 
-    writeApplicationStats(address, dataCRC, startAddress, dataLength, 0x0000);
+    writeApplicationStats(address, dataCRC, startAddress, dataLength);
+    writeVerifyApplication(address);
 
     changeILCMode(address, ILCMode::Standby);
     fpga->ilcCommands(*this);
