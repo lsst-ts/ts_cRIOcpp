@@ -106,7 +106,7 @@ protected:
 private:
     int _printout;
 
-    void _writeHex(uint8_t address, IntelHex &hex, uint16_t &dataCRC, uint16_t &startAddress,
+    void _writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &dataCRC, uint16_t &startAddress,
                    uint16_t &dataLength);
 };
 

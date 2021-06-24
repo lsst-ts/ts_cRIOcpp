@@ -116,12 +116,14 @@ void TestFPGA::writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout)
 void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     switch (_U16ResponseStatus) {
         case IDLE:
-            break;
+            throw std::runtime_error("readU16ResponseFIFO called out of order");
         case LEN:
+            REQUIRE(length == 1);
             *data = response.getLength();
             _U16ResponseStatus = DATA;
             break;
         case DATA:
+            REQUIRE(length == response.getLength());
             memcpy(data, response.getBuffer(), response.getLength() * 2);
             response.clear();
             _U16ResponseStatus = IDLE;
@@ -156,9 +158,10 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
 
         uint8_t address = buf.read<uint8_t>();
         uint8_t func = buf.read<uint8_t>();
-        buf.checkCRC();
         switch (func) {
             case 65:
+                currentMode = buf.read<uint16_t>();
+                buf.checkCRC();
                 processChangeILCMode(address, currentMode);
                 break;
             // info

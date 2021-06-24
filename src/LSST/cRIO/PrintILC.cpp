@@ -104,7 +104,7 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     uint16_t startAddress;
     uint16_t dataLength;
 
-    _writeHex(address, hex, dataCRC, startAddress, dataLength);
+    _writeHex(fpga, address, hex, dataCRC, startAddress, dataLength);
 
     writeApplicationStats(address, dataCRC, startAddress, dataLength);
     writeVerifyApplication(address);
@@ -206,8 +206,8 @@ void PrintILC::printSepline() {
     _printout++;
 }
 
-void PrintILC::_writeHex(uint8_t address, IntelHex &hex, uint16_t &dataCRC, uint16_t &startAddress,
-                         uint16_t &dataLength) {
+void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &dataCRC,
+                         uint16_t &startAddress, uint16_t &dataLength) {
     // align data to 256 bytes pages
     std::vector<uint8_t> data = hex.getData(startAddress);
 
@@ -242,6 +242,9 @@ void PrintILC::_writeHex(uint8_t address, IntelHex &hex, uint16_t &dataCRC, uint
             startData++;
         }
         writeApplicationPage(address, dataAddress, 192, page);
+        fpga->ilcCommands(*this);
+
+        clear();
         dataAddress += 256;
     }
 }
