@@ -69,8 +69,8 @@ public:
 
 protected:
     void processChangeILCMode(uint8_t address, uint16_t mode) override;
-
     void processWriteApplicationPage(uint8_t address) override { _ackFunction(address, 102); }
+    void processVerifyUserApplication(uint8_t address, uint16_t status) override;
 
 private:
     ModbusBuffer response;
@@ -142,6 +142,13 @@ void TestFPGA::processChangeILCMode(uint8_t address, uint16_t mode) {
     response.writeCRC();
 }
 
+void TestFPGA::processVerifyUserApplication(uint8_t address, uint16_t status) {
+    response.write(address);
+    response.write<uint8_t>(103);
+    response.write(status);
+
+    response.writeCRC();
+}
 void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
     // reply format:
     // 4 bytes (forming uint64_t in low endian) beginning timestamp
@@ -166,6 +173,24 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
                 buf.checkCRC();
                 processChangeILCMode(address, currentMode);
                 break;
+            case 100: {
+                uint16_t dataCRC = buf.read<uint16_t>();
+                uint16_t startAddress = buf.read<uint16_t>();
+                REQUIRE(startAddress == 0);
+                uint16_t length = buf.read<uint16_t>();
+                REQUIRE(length == 256);
+                uint16_t crc = buf.read<uint16_t>();
+                buf.checkCRC();
+                _ackFunction(address, 100);
+                break;
+            }
+
+            case 101: {
+                buf.checkCRC();
+                _ackFunction(address, func);
+                break;
+            }
+
             case 102: {
                 uint16_t startAddress = buf.read<uint16_t>();
                 uint16_t length = buf.read<uint16_t>();
@@ -174,6 +199,11 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
                 buf.readBuffer(fw, 192);
                 buf.checkCRC();
                 processWriteApplicationPage(address);
+                break;
+            }
+            case 103: {
+                buf.checkCRC();
+                processVerifyUserApplication(address, 0);
                 break;
             }
             default:
