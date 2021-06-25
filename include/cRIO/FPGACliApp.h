@@ -27,7 +27,8 @@ namespace cRIO {
 
 constexpr int NEED_FPGA = 0x01;
 
-typedef std::list<std::pair<ILC*, uint8_t>> ILCUnits;
+typedef std::pair<ILC*, uint8_t> ILCUnit;
+typedef std::list<ILCUnit> ILCUnits;
 
 /**
  * Class for Command Line Client applications requiring access to FPGA.
