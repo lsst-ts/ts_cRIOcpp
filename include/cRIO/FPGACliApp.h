@@ -71,11 +71,13 @@ protected:
     virtual ILCUnits getILCs(command_vec arguments) = 0;
 
     FPGA* getFPGA() { return _fpga; }
-    ILC* getILC(int index) { return _ilcs[index]; }
+    std::shared_ptr<ILC> getILC(int index) { return _ilcs[index]; }
+
+    void addILC(std::shared_ptr<ILC> ilc) { _ilcs.push_back(ilc); }
 
 private:
     FPGA* _fpga;
-    std::vector<ILC*> _ilcs;
+    std::vector<std::shared_ptr<ILC>> _ilcs;
 
     bool _autoOpen;
 
