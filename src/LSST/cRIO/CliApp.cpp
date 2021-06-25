@@ -101,7 +101,7 @@ int CliApp::helpCommands(command_vec cmds) {
     return 0;
 }
 
-void CliApp::goInteractive(const char* prompt) {
+void CliApp::goInteractive(std::string prompt) {
     asprintf(&_history_fn, "%s/.%s_history", getenv("HOME"), getName().c_str());
 
     using_history();
@@ -121,7 +121,7 @@ void CliApp::goInteractive(const char* prompt) {
 
     signal(SIGINT, [](int) { exit(0); });
 
-    while ((buf = readline(prompt)) != NULL) {
+    while ((buf = readline(prompt.c_str())) != NULL) {
         if (strlen(buf) > 0) {
             add_history(buf);
         }

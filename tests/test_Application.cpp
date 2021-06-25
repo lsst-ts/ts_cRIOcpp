@@ -31,7 +31,7 @@ using namespace std::chrono_literals;
 
 class AClass : public Application {
 public:
-    AClass(const char* description) : Application(description) {}
+    AClass(const char* name, const char* description) : Application(name, description) {}
 
 protected:
     void processArg(int opt, char* optarg) override;
@@ -49,7 +49,7 @@ void AClass::processArg(int opt, char* optarg) {
 }
 
 TEST_CASE("Test Application", "[Application]") {
-    AClass app("description");
+    AClass app("test", "description");
     app.addArgument('h', "print help");
 
     int argc = 3;
@@ -65,7 +65,7 @@ class Thread1 : public Thread {
 };
 
 TEST_CASE("Test Application threading", "[Application]") {
-    AClass app("test threading");
+    AClass app("thereads", "test threading");
 
     auto t1_1 = new Thread1();
     auto t1_2 = new Thread1();
@@ -79,7 +79,7 @@ TEST_CASE("Test Application threading", "[Application]") {
 }
 
 TEST_CASE("Test Thread management - stopping thread", "[Application]") {
-    AClass app("test threading");
+    AClass app("stop_threads", "test threading");
 
     auto t1_1 = new Thread1();
     auto t1_2 = new Thread1();

@@ -54,7 +54,7 @@ public:
 
 class TestCSC : public CSC {
 public:
-    TestCSC(std::string name, const char* description, bool call_done)
+    TestCSC(const char* name, const char* description, bool call_done)
             : CSC(name, description), _call_done(call_done) {}
 
 protected:

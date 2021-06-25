@@ -63,7 +63,7 @@ using namespace LSST::cRIO;
 
 class AClass : public CliApp {
 public:
-    AClass(const char* description) : CliApp(description), interactive(false) {}
+    AClass() : CliApp("AnApp", "demo CliApp subclass"), interactive(false) {}
     bool interactive;
 
 protected:
@@ -113,7 +113,7 @@ public:
      *
      * @param _description a short description of the application
      */
-    CliApp(const char* description) : Application(description), _history_fn(NULL) {}
+    CliApp(const char* name, const char* description) : Application(name, description), _history_fn(NULL) {}
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
@@ -139,7 +139,7 @@ public:
     /**
      * Starts commands interactive processing.
      */
-    void goInteractive(const char* prompt = "> ");
+    void goInteractive(std::string prompt = "> ");
 
     /**
      * Process character buffer as command.

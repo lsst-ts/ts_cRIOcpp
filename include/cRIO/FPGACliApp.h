@@ -27,7 +27,7 @@ namespace cRIO {
 
 constexpr int NEED_FPGA = 0x01;
 
-typedef std::pair<ILC*, uint8_t> ILCUnit;
+typedef std::pair<std::shared_ptr<ILC>, uint8_t> ILCUnit;
 typedef std::list<ILCUnit> ILCUnits;
 
 /**
@@ -41,15 +41,23 @@ public:
     /**
      * Construct FPGACliApp.
      *
-     * @param _description a short description of the application
+     * @param name application name
+     * @param description a short description of the application
      */
-    FPGACliApp(const char* description);
+    FPGACliApp(const char* name, const char* description);
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
      * steps in their own destructor.
      */
     virtual ~FPGACliApp();
+
+    /**
+     * Run the application.
+     *
+     * @return application return code
+     */
+    virtual int run(int argc, char* const argv[]);
 
     int info(command_vec cmds);
     int closeFPGA(command_vec cmds);

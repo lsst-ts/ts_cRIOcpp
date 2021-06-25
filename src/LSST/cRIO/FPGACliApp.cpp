@@ -27,8 +27,8 @@
 
 using namespace LSST::cRIO;
 
-FPGACliApp::FPGACliApp(const char* description)
-        : CliApp(description), _fpga(nullptr), _ilcs(5), _autoOpen(true) {
+FPGACliApp::FPGACliApp(const char* name, const char* description)
+        : CliApp(name, description), _fpga(nullptr), _ilcs(5), _autoOpen(true) {
     addArgument('d', "increase debug level");
     addArgument('h', "print this help");
     addArgument('O', "don't auto open (and run) FPGA");
@@ -65,6 +65,24 @@ int FPGACliApp::info(command_vec cmds) {
     }
 
     return 0;
+}
+
+int FPGACliApp::run(int argc, char* const argv[]) {
+    command_vec cmds = processArgs(argc, argv);
+
+    if (_autoOpen) {
+        command_vec cmds;
+        openFPGA(cmds);
+    }
+
+    if (cmds.empty()) {
+        std::cout << "Please type help for more help." << std::endl;
+        goInteractive(getName() + " > ");
+        closeFPGA(command_vec());
+        return 0;
+    }
+
+    return processCmdVector(cmds);
 }
 
 int FPGACliApp::openFPGA(command_vec cmds) {
