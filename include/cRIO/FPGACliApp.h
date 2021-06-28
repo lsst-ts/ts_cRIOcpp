@@ -20,14 +20,14 @@
 
 #include <cRIO/CliApp.h>
 #include <cRIO/FPGA.h>
-#include <cRIO/ILC.h>
+#include <cRIO/PrintILC.h>
 
 namespace LSST {
 namespace cRIO {
 
 constexpr int NEED_FPGA = 0x01;
 
-typedef std::pair<std::shared_ptr<ILC>, uint8_t> ILCUnit;
+typedef std::pair<std::shared_ptr<PrintILC>, uint8_t> ILCUnit;
 typedef std::list<ILCUnit> ILCUnits;
 
 /**
@@ -80,13 +80,13 @@ protected:
     virtual ILCUnits getILCs(command_vec arguments) = 0;
 
     FPGA* getFPGA() { return _fpga; }
-    std::shared_ptr<ILC> getILC(int index) { return _ilcs[index]; }
+    std::shared_ptr<PrintILC> getILC(int index) { return _ilcs[index]; }
 
-    void addILC(std::shared_ptr<ILC> ilc) { _ilcs.push_back(ilc); }
+    void addILC(std::shared_ptr<PrintILC> ilc) { _ilcs.push_back(ilc); }
 
 private:
     FPGA* _fpga;
-    std::vector<std::shared_ptr<ILC>> _ilcs;
+    std::vector<std::shared_ptr<PrintILC>> _ilcs;
 
     bool _autoOpen;
 

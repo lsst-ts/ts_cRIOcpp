@@ -98,6 +98,19 @@ int FPGACliApp::info(command_vec cmds) {
 int FPGACliApp::programILC(command_vec cmds) {
     IntelHex hf;
     hf.load(cmds[0]);
+
+    cmds.erase(cmds.begin());
+    ILCUnits units = getILCs(cmds);
+
+    if (units.empty()) {
+        return -1;
+    }
+
+    for (auto u : units) {
+        u.first->programILC(getFPGA(), u.second, hf);
+    }
+
+    return 0;
 }
 
 int FPGACliApp::openFPGA(command_vec cmds) {

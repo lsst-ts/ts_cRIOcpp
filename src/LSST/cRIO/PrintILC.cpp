@@ -96,6 +96,8 @@ void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint
 }
 
 void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
+    printBusAddress(address);
+
     changeILCMode(address, ILCMode::Standby);
     fpga->ilcCommands(*this);
     clear();
