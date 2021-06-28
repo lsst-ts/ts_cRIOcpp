@@ -72,7 +72,7 @@ public:
      * 8. put ILC into standby mode
      * 9. put ILC into disabled mode
      *
-     * @param FPGA
+     * @param fpga FPGA object
      * @param address ILC address
      * @param hex Intel Hex file to load into ILC
      */
