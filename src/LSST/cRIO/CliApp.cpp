@@ -275,7 +275,7 @@ const void CliApp::printHexBuf(uint8_t* buf, size_t len, const char* prefix) {
  * -1 if there isn't a match.
  */
 int verifyArguments(const command_vec& cmds, const char* args) {
-    auto verifyFloat = [](const char* d) -> int {
+    auto verifyDouble = [](const char* d) -> int {
         try {
             std::stod(d);
             return true;
@@ -302,7 +302,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
     for (const char* a = args; *a; a++, an++) {
         if (an >= cmds.size()) {
-            if (*a == 's' || *a == 'f' || *a == 'i' || *a == 'b' || *a == 'd' || *a == 'h' || *a == '?') {
+            if (*a == 's' || *a == 'i' || *a == 'b' || *a == 'd' || *a == 'h' || *a == '?') {
                 return an;
             }
 
@@ -314,14 +314,23 @@ int verifyArguments(const command_vec& cmds, const char* args) {
         switch (*a) {
             case '?':
                 return cmds.size();
-            case 'F':
-            case 'f':
-                if (!verifyFloat(cmds[an].c_str())) {
+            case 'D':
+            case 'd':
+                if (!verifyDouble(cmds[an].c_str())) {
                     std::cerr << "Expecting double number, received " << cmds[an] << std::endl;
                     return -1;
                 }
 
                 break;
+
+            case 'F': {
+                struct stat fsta;
+                if (stat(cmds[an].c_str(), &fsta) != 0) {
+                    std::cerr << "Unable to access file " << cmds[an] << ": " << strerror(errno) << std::endl;
+                    return -1;
+                }
+                break;
+            }
 
             case 'I':
             case 'i':

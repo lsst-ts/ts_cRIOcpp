@@ -30,9 +30,10 @@ namespace cRIO {
  * upper case mandatory. The following characters can be used for arguments:
  *
  * ? - variable number of arguments expected
- * Ss - mandatory|optional string argument
- * Ff - mandatory|optional float (double) argument
+ * Dd - mandatory|optional double (float) argument
+ * F - mandatory filename argument
  * Ii - mandatory|optional integer argument
+ * Ss - mandatory|optional string argument
  */
 struct Command {
     Command(const char* _command, std::function<int(command_vec)> _action, const char* _args, int _flags,

@@ -62,6 +62,7 @@ public:
     int info(command_vec cmds);
     int closeFPGA(command_vec cmds);
     int openFPGA(command_vec cmds);
+    int programILC(command_vec cmds);
     int verbose(command_vec cmds);
 
 protected:

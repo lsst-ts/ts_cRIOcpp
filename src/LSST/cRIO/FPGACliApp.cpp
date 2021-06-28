@@ -22,6 +22,7 @@
  */
 
 #include "cRIO/FPGACliApp.h"
+#include "cRIO/IntelHex.h"
 
 #include <iostream>
 
@@ -35,6 +36,8 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
 
     addCommand("close", std::bind(&FPGACliApp::closeFPGA, this, std::placeholders::_1), "", NEED_FPGA, NULL,
                "Close FPGA connection");
+    addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
+               NEED_FPGA, "<firmware hex file> <ILC...>", "Program ILC with new firmware.");
     addCommand("help", std::bind(&FPGACliApp::helpCommands, this, std::placeholders::_1), "", 0, NULL,
                "Print commands help");
     addCommand("open", std::bind(&FPGACliApp::openFPGA, this, std::placeholders::_1), "", 0, NULL,
@@ -44,6 +47,31 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
 }
 
 FPGACliApp::~FPGACliApp() {}
+
+int FPGACliApp::run(int argc, char* const argv[]) {
+    command_vec cmds = processArgs(argc, argv);
+
+    if (_autoOpen) {
+        command_vec cmds;
+        openFPGA(cmds);
+    }
+
+    if (cmds.empty()) {
+        std::cout << "Please type help for more help." << std::endl;
+        goInteractive(getName() + " > ");
+        closeFPGA(command_vec());
+        return 0;
+    }
+
+    return processCmdVector(cmds);
+}
+
+int FPGACliApp::closeFPGA(command_vec cmds) {
+    _fpga->close();
+    delete _fpga;
+    _fpga = nullptr;
+    return 0;
+}
 
 int FPGACliApp::info(command_vec cmds) {
     _clearILCs();
@@ -67,22 +95,9 @@ int FPGACliApp::info(command_vec cmds) {
     return 0;
 }
 
-int FPGACliApp::run(int argc, char* const argv[]) {
-    command_vec cmds = processArgs(argc, argv);
-
-    if (_autoOpen) {
-        command_vec cmds;
-        openFPGA(cmds);
-    }
-
-    if (cmds.empty()) {
-        std::cout << "Please type help for more help." << std::endl;
-        goInteractive(getName() + " > ");
-        closeFPGA(command_vec());
-        return 0;
-    }
-
-    return processCmdVector(cmds);
+int FPGACliApp::programILC(command_vec cmds) {
+    IntelHex hf;
+    hf.load(cmds[0]);
 }
 
 int FPGACliApp::openFPGA(command_vec cmds) {
@@ -99,13 +114,6 @@ int FPGACliApp::openFPGA(command_vec cmds) {
     _fpga = newFPGA(dir);
     _fpga->initialize();
     _fpga->open();
-    return 0;
-}
-
-int FPGACliApp::closeFPGA(command_vec cmds) {
-    _fpga->close();
-    delete _fpga;
-    _fpga = nullptr;
     return 0;
 }
 
