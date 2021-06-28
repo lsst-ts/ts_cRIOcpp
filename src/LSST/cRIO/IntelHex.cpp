@@ -49,14 +49,7 @@ void IntelHex::load(std::istream &inputStream) {
         _processLine(lineText.c_str(), &hexLine, recordType);
         switch (recordType) {
             case IntelRecordType::Data:
-                if (extensionData) {
-                    for (auto d : hexLine.data) {
-                        if (d != 0) {
-                            throw LoadError(_lineNo, 0xFFFF,
-                                            fmt::format("Non zero data in extension - {}", d));
-                        }
-                    }
-                } else {
+                if (extensionData == false) {
                     _hexData.push_back(hexLine);
                 }
                 break;
