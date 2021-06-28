@@ -78,6 +78,7 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     mbuf.write<uint8_t>(0x12);
     mbuf.write<uint16_t>(0x3456);
     mbuf.write<uint32_t>(0x7890abcd);
+    mbuf.write<uint64_t>(0xAAbbCCddEEff00);
 
     mbuf.writeCRC();
 
@@ -98,6 +99,7 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     REQUIRE(mbuf.read<uint8_t>() == 0x12);
     REQUIRE(mbuf.read<uint16_t>() == 0x3456);
     REQUIRE(mbuf.read<uint32_t>() == 0x7890abcd);
+    REQUIRE(mbuf.read<uint64_t>() == 0xAAbbCCddEEff00);
 
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }

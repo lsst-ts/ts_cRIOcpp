@@ -597,6 +597,12 @@ inline void ModbusBuffer::write(uint32_t data) {
 }
 
 template <>
+inline void ModbusBuffer::write(uint64_t data) {
+    uint64_t d = htobe64(data);
+    writeBuffer(reinterpret_cast<uint8_t*>(&d), 8);
+}
+
+template <>
 inline void ModbusBuffer::write(float data) {
     uint32_t* db = reinterpret_cast<uint32_t*>(&data);
     write<uint32_t>(*db);
