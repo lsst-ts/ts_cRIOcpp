@@ -39,12 +39,16 @@ public:
     PrintILC(uint8_t bus);
 
     /**
-     * Writes newly programmed application statistics and CRCs.
+     * Writes newly programmed application statistics and CRCs. Calculates
+     * fourth ILC function 100 argument - ModBus 16bit CRC from input
+     * arguments.
      *
      * @param address ILC address
-     * @param dataCRC
-     * @param startAddress
-     * @param dataLength
+     * @param dataCRC data ModBus 16bit CRC. This is calculated rfom
+     * @param startAddress start memory address. Lowest start address from all function 103 calls.
+     * @param dataLength data length (unshrunk). Highest start address from all function 103 + 256.
+     *
+     * @see programILC
      */
     void writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress, uint16_t dataLength);
 
@@ -55,8 +59,24 @@ public:
      */
     void eraseILApplication(uint8_t address) { callFunction(address, 101, 500000); }
 
+    /**
+     * Writes ILC firmware page. Calls functions 103. Please note that every
+     * fourth byte from hexfile is skipped.
+     *
+     * @param address ILC address
+     * @param startAddress firmware start address
+     * @param length data length. Shall be 192
+     * @param data firmware data
+     *
+     * @see programILC
+     */
     void writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length, uint8_t *data);
 
+    /**
+     * Verifies firmware upload.
+     *
+     * @param address ILC address
+     */
     void writeVerifyApplication(uint8_t address) { callFunction(address, 103, 500000); }
 
     /**
@@ -71,6 +91,13 @@ public:
      * 7. verify applications
      * 8. put ILC into standby mode
      * 9. put ILC into disabled mode
+     *
+     * @note Every fourth byte in input hex file is unused. ILC bootloader
+     * expand input pages, adds 0x00 after every third byte. Control checksum
+     * passed in function call 100 (Write Application Stats), addresses passed
+     * in functions 100 and 102 (Write Application Page) are calculated and
+     * taken from the full, unshrunk (expanded) firmware (e.g. from what is
+     * written in hex file).
      *
      * @param fpga FPGA object
      * @param address ILC address
@@ -91,14 +118,48 @@ protected:
 
     void processResetServer(uint8_t address) override;
 
+    /**
+     * Called when Erase ILC Application (ILC function 101) is acknowledged.
+     *
+     * @param address ILC address
+     */
     virtual void processEraseILCApplication(uint8_t address);
 
+    /**
+     * Called when Write Application Stats (ILC function 100) is acknowledged.
+     *
+     * @param address ILC address
+     */
     virtual void processWriteApplicationStats(uint8_t address);
 
+    /**
+     * Called when Write Application Page (ILC function 102) is acknowledged.
+     *
+     * @param address ILC address
+     */
     virtual void processWriteApplicationPage(uint8_t address);
 
+    /**
+     * Called when Verify User Application (ILC function 103) is acknowledged.
+     *
+     * Status:
+     * <ol>
+     *   <li><b>0x0000</b> all OK, success</li>
+     *   <li><b>0x00FF</b> application stats error</li>
+     *   <li><b>0xFF00</b> application error</li>
+     *   <li><b>0xFFFF</b> application stats and application error</li>
+     * </ol>
+     *
+     * @param address ILC address
+     * @param status program ILC status
+     */
     virtual void processVerifyUserApplication(uint8_t address, uint16_t status);
 
+    /**
+     * Prints bus and ILC address. Used inside various responses to print out which ILC replied.
+     *
+     * @param address ILC address
+     */
     virtual void printBusAddress(uint8_t address);
 
     virtual void printSepline();

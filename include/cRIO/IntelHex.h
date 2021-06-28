@@ -78,7 +78,8 @@ public:
 
     /**
      * Returns data to be written into ILC. Only three bytes out of every four
-     * are written.
+     * are written, but full buffer, as assembled from hex file lines, is
+     * returned.
      *
      * @param buffer buffer where data will be stored
      */
