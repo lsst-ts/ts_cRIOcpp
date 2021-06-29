@@ -30,9 +30,10 @@ namespace cRIO {
  * upper case mandatory. The following characters can be used for arguments:
  *
  * ? - variable number of arguments expected
- * Ss - mandatory|optional string argument
- * Ff - mandatory|optional float (double) argument
+ * Dd - mandatory|optional double (float) argument
+ * F - mandatory filename argument
  * Ii - mandatory|optional integer argument
+ * Ss - mandatory|optional string argument
  */
 struct Command {
     Command(const char* _command, std::function<int(command_vec)> _action, const char* _args, int _flags,
@@ -63,7 +64,7 @@ using namespace LSST::cRIO;
 
 class AClass : public CliApp {
 public:
-    AClass(const char* description) : CliApp(description), interactive(false) {}
+    AClass() : CliApp("AnApp", "demo CliApp subclass"), interactive(false) {}
     bool interactive;
 
 protected:
@@ -113,7 +114,7 @@ public:
      *
      * @param _description a short description of the application
      */
-    CliApp(const char* description) : Application(description), _history_fn(NULL) {}
+    CliApp(const char* name, const char* description) : Application(name, description), _history_fn(NULL) {}
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
@@ -139,7 +140,7 @@ public:
     /**
      * Starts commands interactive processing.
      */
-    void goInteractive(const char* prompt = "> ");
+    void goInteractive(std::string prompt = "> ");
 
     /**
      * Process character buffer as command.
@@ -171,6 +172,14 @@ public:
      * Transforms on/off, 0/1 etc strings into bool.
      */
     static const bool onOff(std::string on);
+
+    /**
+     * Utitlity function to print out buffer as hex dump.
+     *
+     * @param buf buffer to print
+     * @param len length of the buffer
+     */
+    static const void printHexBuf(uint8_t* buf, size_t len, const char* prefix = "");
 
 protected:
     /**

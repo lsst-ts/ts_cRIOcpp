@@ -30,7 +30,8 @@ using namespace LSST::cRIO;
 
 class AClass : public CliApp {
 public:
-    AClass(const char* description) : CliApp(description), interactive(false), test_count(0) {}
+    AClass(const char* name, const char* description)
+            : CliApp(name, description), interactive(false), test_count(0) {}
     bool interactive;
     int test_count;
 
@@ -58,7 +59,7 @@ void AClass::processArg(int opt, char* optarg) {
 }
 
 TEST_CASE("Test CliApp", "[CliApp]") {
-    AClass cli("description");
+    AClass cli("name", "description");
     cli.addCommand("testcmd", std::bind(&AClass::testCmd, &cli, std::placeholders::_1), "s", 0,
                    "[ALL|command]", "Prints all command or command help.");
 

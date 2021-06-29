@@ -78,6 +78,7 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     mbuf.write<uint8_t>(0x12);
     mbuf.write<uint16_t>(0x3456);
     mbuf.write<uint32_t>(0x7890abcd);
+    mbuf.write<uint64_t>(0xAAbbCCddEEff00);
 
     mbuf.writeCRC();
 
@@ -98,6 +99,7 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     REQUIRE(mbuf.read<uint8_t>() == 0x12);
     REQUIRE(mbuf.read<uint16_t>() == 0x3456);
     REQUIRE(mbuf.read<uint32_t>() == 0x7890abcd);
+    REQUIRE(mbuf.read<uint64_t>() == 0xAAbbCCddEEff00);
 
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }
@@ -366,4 +368,40 @@ TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
 
     readAll(2956, 48342);
     REQUIRE(mbuf.checkRecording(changed) == true);
+}
+
+TEST_CASE("CRC class", "[ModbusBuffer::CRC]") {
+    ModbusBuffer::CRC crc;
+
+    for (uint8_t d = 0; d < 0xFF; d++) {
+        crc.add(d);
+    }
+
+    REQUIRE(crc.get() == 0xADD6);
+
+    crc.reset();
+
+    for (auto d : std::string("This is Modbus CRC!")) {
+        crc.add(d);
+    }
+
+    REQUIRE(crc.get() == 0xAEDA);
+
+    crc.reset();
+
+    for (auto d : std::string("Calculating CRC is as easy as answering 42.")) {
+        crc.add(d);
+    }
+
+    REQUIRE(crc.get() == 0x2879);
+
+    crc.reset();
+
+    uint8_t data[5] = {0x12, 0x34, 0x56, 0x78, 0xff};
+
+    for (auto d : data) {
+        crc.add(d);
+    }
+
+    REQUIRE(crc.get() == 0x6310);
 }

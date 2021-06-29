@@ -26,6 +26,7 @@
 #include <algorithm>
 #include <readline/readline.h>
 #include <readline/history.h>
+#include <iomanip>
 #include <iostream>
 #include <fstream>
 #include <libgen.h>
@@ -57,6 +58,11 @@ CliApp::~CliApp() {
 
 void CliApp::addCommand(const char* command, std::function<int(command_vec)> action, const char* args,
                         int flags, const char* help_args, const char* help) {
+    for (auto iter = _commands.begin(); iter != _commands.end(); iter++)
+        if (std::string(command) < std::string(iter->command)) {
+            _commands.insert(iter, Command(command, action, args, flags, help_args, help));
+            return;
+        }
     _commands.push_back(Command(command, action, args, flags, help_args, help));
 }
 
@@ -95,7 +101,7 @@ int CliApp::helpCommands(command_vec cmds) {
     return 0;
 }
 
-void CliApp::goInteractive(const char* prompt) {
+void CliApp::goInteractive(std::string prompt) {
     asprintf(&_history_fn, "%s/.%s_history", getenv("HOME"), getName().c_str());
 
     using_history();
@@ -115,7 +121,7 @@ void CliApp::goInteractive(const char* prompt) {
 
     signal(SIGINT, [](int) { exit(0); });
 
-    while ((buf = readline(prompt)) != NULL) {
+    while ((buf = readline(prompt.c_str())) != NULL) {
         if (strlen(buf) > 0) {
             add_history(buf);
         }
@@ -254,6 +260,14 @@ const bool CliApp::onOff(std::string on) {
     throw std::runtime_error("Invalid on/off string:" + on);
 }
 
+const void CliApp::printHexBuf(uint8_t* buf, size_t len, const char* prefix) {
+    std::cout << std::hex;
+    for (size_t i = 0; i < len; i++) {
+        std::cout << prefix << std::setfill('0') << std::setw(2) << static_cast<int>(buf[i]);
+    }
+    std::cout << std::dec;
+}
+
 /**
  * Verify if passed arguments match argument map.
  *
@@ -261,7 +275,7 @@ const bool CliApp::onOff(std::string on) {
  * -1 if there isn't a match.
  */
 int verifyArguments(const command_vec& cmds, const char* args) {
-    auto verifyFloat = [](const char* d) -> int {
+    auto verifyDouble = [](const char* d) -> int {
         try {
             std::stod(d);
             return true;
@@ -288,7 +302,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
     for (const char* a = args; *a; a++, an++) {
         if (an >= cmds.size()) {
-            if (*a == 's' || *a == 'f' || *a == 'i' || *a == 'b' || *a == 'd' || *a == 'h' || *a == '?') {
+            if (*a == 's' || *a == 'i' || *a == 'b' || *a == 'd' || *a == 'h' || *a == '?') {
                 return an;
             }
 
@@ -300,14 +314,23 @@ int verifyArguments(const command_vec& cmds, const char* args) {
         switch (*a) {
             case '?':
                 return cmds.size();
-            case 'F':
-            case 'f':
-                if (!verifyFloat(cmds[an].c_str())) {
+            case 'D':
+            case 'd':
+                if (!verifyDouble(cmds[an].c_str())) {
                     std::cerr << "Expecting double number, received " << cmds[an] << std::endl;
                     return -1;
                 }
 
                 break;
+
+            case 'F': {
+                struct stat fsta;
+                if (stat(cmds[an].c_str(), &fsta) != 0) {
+                    std::cerr << "Unable to access file " << cmds[an] << ": " << strerror(errno) << std::endl;
+                    return -1;
+                }
+                break;
+            }
 
             case 'I':
             case 'i':

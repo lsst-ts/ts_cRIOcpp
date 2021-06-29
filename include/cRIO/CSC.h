@@ -43,7 +43,7 @@ namespace cRIO {
  */
 class CSC : public Application {
 public:
-    CSC(std::string name, const char* description);
+    CSC(const char* name, const char* description);
     virtual ~CSC();
 
     /**

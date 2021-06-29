@@ -183,7 +183,7 @@ public:
      *
      * Intended usage:
      *
-     * @code
+     * @code{.cpp}
      * ModbusBuffer b;
      * b.setBuffer({(0x1200 | (0x0a << 1)), (0x1200 | (0x0c << 1)), (0x1200 | (0x0d << 1))}, 3);
      * uint8_t p1 = b.read<uint8_t>();
@@ -250,6 +250,12 @@ public:
      */
     uint32_t readWaitForRx();
 
+    /**
+     * Write uint8_t buffer to modbus, updates CRC.
+     *
+     * @param data
+     * @param len
+     */
     void writeBuffer(uint8_t* data, size_t len);
 
     /**
@@ -321,6 +327,50 @@ public:
     void checkCommandedEmpty();
 
     /**
+     * Class to calculate CRC. Example usage:
+     *
+     * @code{.cpp}
+     * ModbusBuffer::CRC crc;
+     *
+     * for (uint8_t d = 0; d < 0xFF; d++) {
+     *     crc.add(d);
+     * }
+     * std::cout << "Modbus CRC is " << crc.get() << "(0x" << << std::setw(4) << std::setfill('0')
+     *     << std::hex << crc.get() << ")" << std::endl;
+     * @endcode
+     */
+    class CRC {
+    public:
+        /**
+         * Construct CRC class. The class is ready to accept add calls (reset
+         * don't need to be called).
+         */
+        CRC() { reset(); }
+
+        /**
+         * Reset internal CRC counter.
+         */
+        void reset() { _crcCounter = 0xFFFF; }
+
+        /**
+         * Adds data to CRC buffer. Updates CRC value to match previous data.
+         *
+         * @param data data to be added
+         */
+        void add(uint8_t data);
+
+        /**
+         * Returns CRC value.
+         *
+         * @return buffer Modbus CRC
+         */
+        uint16_t get() { return _crcCounter; }
+
+    private:
+        uint16_t _crcCounter;
+    };
+
+    /**
      * Exception thrown when calculated CRC doesn't match received CRC.
      */
     class CRCError : public std::runtime_error {
@@ -372,7 +422,7 @@ protected:
         writeEndOfFrame();
         writeWaitForRx(timeout);
 
-        _pushCommanded(address, function);
+        pushCommanded(address, function);
     }
 
     /**
@@ -423,22 +473,17 @@ protected:
      */
     bool checkRecording(std::vector<uint8_t>& cached);
 
+    void pushCommanded(uint8_t address, uint8_t function);
+
 private:
     std::vector<uint16_t> _buffer;
     uint32_t _index;
-    uint16_t _crcCounter;
+    CRC _crc;
     uint16_t _data_prefix;
 
     std::queue<std::pair<uint8_t, uint8_t>> _commanded;
 
     void _processDataCRC(uint8_t data);
-
-    /**
-     * Reset internal CRC counter.
-     */
-    void _resetCRC() { _crcCounter = 0xFFFF; }
-
-    void _pushCommanded(uint8_t address, uint8_t function);
 
     /**
      * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
@@ -549,6 +594,12 @@ template <>
 inline void ModbusBuffer::write(uint32_t data) {
     uint32_t d = htonl(data);
     writeBuffer(reinterpret_cast<uint8_t*>(&d), 4);
+}
+
+template <>
+inline void ModbusBuffer::write(uint64_t data) {
+    uint64_t d = htobe64(data);
+    writeBuffer(reinterpret_cast<uint8_t*>(&d), 8);
 }
 
 template <>

@@ -24,6 +24,7 @@
 #define _cRIO_ILC_
 
 #include <cRIO/ModbusBuffer.h>
+#include <cRIO/IntelHex.h>
 
 #include <functional>
 #include <map>
@@ -80,6 +81,8 @@ public:
      */
     void reportServerStatus(uint8_t address) { callFunction(address, 18, 270); }
 
+    enum ILCMode { Standby = 0, Disabled = 1, Enabled = 2, FirmwareUpdate = 3, Fault = 4, ClearFaults = 5 };
+
     /**
      * Change ILC mode. Calls function 65 (0x41). Supported ILC modes are:
      *
@@ -90,6 +93,7 @@ public:
      * 2.   | all ILCs     | Enabled mode (Acquire and Motion)
      * 3.   | all ILCs     | Firmware update
      * 4.   | all ILCs     | Fault
+     * 5.   | all ILCs     | Clear faults
      *
      * where all is Electromechanical (Hard-Point), Pneumatic, Thermal and
      * Hadpoint Monitoring ILC. HM is Hardpoint Monitoring.

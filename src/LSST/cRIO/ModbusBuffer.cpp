@@ -39,7 +39,7 @@ ModbusBuffer::~ModbusBuffer() {}
 
 void ModbusBuffer::reset() {
     _index = 0;
-    _resetCRC();
+    _crc.reset();
     _recordChanges = false;
     _records.clear();
 }
@@ -100,14 +100,14 @@ double ModbusBuffer::readTimestamp() {
 
 void ModbusBuffer::checkCRC() {
     uint16_t crc;
-    uint16_t calCrc = _crcCounter;
+    uint16_t calCrc = _crc.get();
     _recordChanges = false;
     readBuffer(&crc, 2);
     crc = le32toh(crc);
     if (crc != calCrc) {
         throw CRCError(calCrc, crc);
     }
-    _resetCRC();
+    _crc.reset();
 }
 
 uint32_t ModbusBuffer::readDelay() {
@@ -134,7 +134,7 @@ void ModbusBuffer::readEndOfFrame() {
                 fmt::format("Expected end of frame, finds {:04x} (@ offset {})", _buffer[_index], _index));
     }
     _index++;
-    _resetCRC();
+    _crc.reset();
 }
 
 uint32_t ModbusBuffer::readWaitForRx() {
@@ -168,9 +168,10 @@ void ModbusBuffer::writeI24(int32_t data) {
 }
 
 void ModbusBuffer::writeCRC() {
-    _buffer.push_back(_data_prefix | ((_crcCounter & 0xFF) << 1));
-    _buffer.push_back(_data_prefix | (((_crcCounter >> 8) & 0xFF) << 1));
-    _resetCRC();
+    uint16_t crc = _crc.get();
+    _buffer.push_back(_data_prefix | ((crc & 0xFF) << 1));
+    _buffer.push_back(_data_prefix | (((crc >> 8) & 0xFF) << 1));
+    _crc.reset();
 }
 
 void ModbusBuffer::writeDelay(uint32_t delayMicros) {
@@ -206,7 +207,7 @@ void ModbusBuffer::setBuffer(uint16_t* buffer, size_t length) {
     _buffer.clear();
 
     _index = 0;
-    _resetCRC();
+    _crc.reset();
     _buffer.resize(length);
     memcpy(_buffer.data(), buffer, length * sizeof(uint16_t));
 }
@@ -221,10 +222,22 @@ void ModbusBuffer::checkCommandedEmpty() {
             os << ",";
         }
         auto c = _commanded.front();
-        os << c.first << " " << c.second;
+        os << static_cast<int>(c.first) << ":" << static_cast<int>(c.second);
         _commanded.pop();
     }
-    throw std::runtime_error("Responses for those requests weren't received: " + os.str());
+    throw std::runtime_error("Responses for those <address:function> pairs weren't received: " + os.str());
+}
+
+void ModbusBuffer::CRC::add(uint8_t data) {
+    _crcCounter = _crcCounter ^ (uint16_t(data));
+    for (int j = 0; j < 8; j++) {
+        if (_crcCounter & 0x0001) {
+            _crcCounter = _crcCounter >> 1;
+            _crcCounter = _crcCounter ^ 0xA001;
+        } else {
+            _crcCounter = _crcCounter >> 1;
+        }
+    }
 }
 
 ModbusBuffer::CRCError::CRCError(uint16_t calculated, uint16_t received)
@@ -251,7 +264,7 @@ void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t time
     writeEndOfFrame();
     writeWaitForRx(timeout);
 
-    _pushCommanded(address, function);
+    pushCommanded(address, function);
 }
 
 void ModbusBuffer::broadcastFunction(uint8_t address, uint8_t function, uint8_t counter, uint32_t delay,
@@ -289,26 +302,18 @@ bool ModbusBuffer::checkRecording(std::vector<uint8_t>& cached) {
     return false;
 }
 
+void ModbusBuffer::pushCommanded(uint8_t address, uint8_t function) {
+    if ((address > 0 && address < 248) || (address == 255)) {
+        _commanded.push(std::pair<uint8_t, uint8_t>(address, function));
+    }
+}
+
 void ModbusBuffer::_processDataCRC(uint8_t data) {
     if (_recordChanges) {
         _records.push_back(data);
     }
 
-    _crcCounter = _crcCounter ^ (uint16_t(data));
-    for (int j = 0; j < 8; j++) {
-        if (_crcCounter & 0x0001) {
-            _crcCounter = _crcCounter >> 1;
-            _crcCounter = _crcCounter ^ 0xA001;
-        } else {
-            _crcCounter = _crcCounter >> 1;
-        }
-    }
-}
-
-void ModbusBuffer::_pushCommanded(uint8_t address, uint8_t function) {
-    if ((address > 0 && address < 248) || (address == 255)) {
-        _commanded.push(std::pair<uint8_t, uint8_t>(address, function));
-    }
+    _crc.add(data);
 }
 
 uint16_t ModbusBuffer::_getByteInstruction(uint8_t data) {

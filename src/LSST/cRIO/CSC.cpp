@@ -38,8 +38,7 @@
 
 using namespace LSST::cRIO;
 
-CSC::CSC(std::string name, const char* description) : Application(description) {
-    setName(name);
+CSC::CSC(const char* name, const char* description) : Application(name, description) {
     _debugLevelSAL = 0;
     _keep_running = true;
     _configRoot = getenv("PWD");

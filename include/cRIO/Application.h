@@ -98,11 +98,13 @@ int main(int argc, char * argv[])
 class Application {
 public:
     /**
-     * Construct CliApp.
+     * Construct Application.
      *
-     * @param _description a short description of the application
+     * @param name application name
+     * @param description a short description of the application
      */
-    Application(const char* description = NULL) : _description(description), _debugLevel(0) {}
+    Application(const char* name, const char* description)
+            : _name(name), _description(description), _debugLevel(0) {}
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
@@ -274,11 +276,11 @@ protected:
     void incDebugLevel() { _debugLevel++; }
 
 private:
-    const char* _description;
     std::list<Argument> _arguments;
     std::list<Thread*> _threads;
     std::mutex _threadsMutex;
     std::string _name;
+    const char* _description;
     std::vector<spdlog::sink_ptr> _sinks;
 
     int _debugLevel;
