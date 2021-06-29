@@ -22,8 +22,6 @@
 #include <cRIO/FPGA.h>
 #include <cRIO/PrintILC.h>
 
-#include <functional>
-
 namespace LSST {
 namespace cRIO {
 
@@ -61,16 +59,13 @@ public:
      */
     virtual int run(int argc, char* const argv[]);
 
-    int timeit(command_vec cmds);
-
+    int info(command_vec cmds);
     int closeFPGA(command_vec cmds);
     int openFPGA(command_vec cmds);
     int programILC(command_vec cmds);
     int verbose(command_vec cmds);
 
 protected:
-    void addILCCommand(const char* command, std::function<void(ILCUnit)> action, const char* help);
-
     void processArg(int opt, char* optarg) override;
     int processCommand(Command* cmd, const command_vec& args) override;
 
@@ -89,25 +84,17 @@ protected:
 
     void addILC(std::shared_ptr<PrintILC> ilc) { _ilcs.push_back(ilc); }
 
-    void addMPU(const char* name, std::shared_ptr<MPU> mpu) { _mpu.emplace(name, mpu); }
+private:
+    FPGA* _fpga;
+    std::vector<std::shared_ptr<PrintILC>> _ilcs;
 
-    void printMPU();
+    bool _autoOpen;
 
-    std::shared_ptr<MPU> getMPU(std::string name);
-
-    void clearILCs() {
+    void _clearILCs() {
         for (auto ilcp : _ilcs) {
             ilcp->clear();
         }
     }
-
-private:
-    FPGA* _fpga;
-    std::vector<std::shared_ptr<PrintILC>> _ilcs;
-    std::map<std::string, std::shared_ptr<MPU>> _mpu;
-
-    bool _autoOpen;
-    bool _timeIt;
 };
 
 }  // namespace cRIO

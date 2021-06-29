@@ -24,40 +24,18 @@
 #include "cRIO/FPGACliApp.h"
 #include "cRIO/IntelHex.h"
 
-#include <iomanip>
 #include <iostream>
 
 using namespace LSST::cRIO;
 
 FPGACliApp::FPGACliApp(const char* name, const char* description)
-        : CliApp(name, description), _fpga(nullptr), _ilcs(), _autoOpen(true), _timeIt(false) {
+        : CliApp(name, description), _fpga(nullptr), _ilcs(5), _autoOpen(true) {
     addArgument('d', "increase debug level");
     addArgument('h', "print this help");
     addArgument('O', "don't auto open (and run) FPGA");
 
-    addCommand("@timeit", std::bind(&FPGACliApp::timeit, this, std::placeholders::_1), "b", 0, "[flag]",
-               "Sets timing flag");
     addCommand("close", std::bind(&FPGACliApp::closeFPGA, this, std::placeholders::_1), "", NEED_FPGA, NULL,
                "Close FPGA connection");
-    addILCCommand(
-            "info", [](ILCUnit u) { u.first->reportServerID(u.second); }, "Print ILC info");
-    addILCCommand(
-            "status", [](ILCUnit u) { u.first->reportServerStatus(u.second); }, "Print ILC status");
-    addILCCommand(
-            "standby", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::Standby); },
-            "Change to standby mode");
-    addILCCommand(
-            "disable", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::Disabled); },
-            "Change to disabled mode");
-    addILCCommand(
-            "enable", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::Enabled); },
-            "Change to enabled mode");
-    addILCCommand(
-            "clear-faults", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::ClearFaults); },
-            "Clear ILC faults");
-    addILCCommand(
-            "reset", [](ILCUnit u) { u.first->resetServer(u.second); }, "Reset server");
-
     addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
                NEED_FPGA, "<firmware hex file> <ILC...>", "Program ILC with new firmware.");
     addCommand("help", std::bind(&FPGACliApp::helpCommands, this, std::placeholders::_1), "", 0, NULL,
@@ -88,22 +66,32 @@ int FPGACliApp::run(int argc, char* const argv[]) {
     return processCmdVector(cmds);
 }
 
-int FPGACliApp::timeit(command_vec cmds) {
-    if (cmds.size() == 1) {
-        _timeIt = onOff(cmds[0]);
-    }
-    if (_timeIt) {
-        std::cout << "Will time executed commands." << std::endl;
-    } else {
-        std::cout << "Commands will not be timed." << std::endl;
-    }
-    return 0;
-}
-
 int FPGACliApp::closeFPGA(command_vec cmds) {
     _fpga->close();
     delete _fpga;
     _fpga = nullptr;
+    return 0;
+}
+
+int FPGACliApp::info(command_vec cmds) {
+    _clearILCs();
+
+    ILCUnits units = getILCs(cmds);
+
+    if (units.empty()) {
+        return -1;
+    }
+
+    for (auto u : units) {
+        u.first->reportServerID(u.second);
+    }
+
+    for (auto ilcp : _ilcs) {
+        if (ilcp->getLength() > 0) {
+            _fpga->ilcCommands(*ilcp);
+        }
+    }
+
     return 0;
 }
 
@@ -153,33 +141,6 @@ int FPGACliApp::verbose(command_vec cmds) {
     return 0;
 }
 
-void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)> action, const char* help) {
-    addCommand(
-            command,
-            [action, this](command_vec cmds) -> int {
-                clearILCs();
-
-                ILCUnits units = getILCs(cmds);
-
-                if (units.empty()) {
-                    return -1;
-                }
-
-                for (auto u : units) {
-                    action(u);
-                }
-
-                for (auto ilcp : _ilcs) {
-                    if (ilcp->getLength() > 0) {
-                        _fpga->ilcCommands(*ilcp);
-                    }
-                }
-
-                return 0;
-            },
-            "s?", NEED_FPGA, "<address>...", help);
-}
-
 void FPGACliApp::processArg(int opt, char* optarg) {
     switch (opt) {
         case 'd':
@@ -207,36 +168,5 @@ int FPGACliApp::processCommand(Command* cmd, const command_vec& args) {
                   << std::endl;
         return -1;
     }
-
-    auto start = std::chrono::steady_clock::now();
-
-    int ret = CliApp::processCommand(cmd, args);
-
-    auto end = std::chrono::steady_clock::now();
-
-    if (_timeIt) {
-        std::chrono::duration<double> diff = end - start;
-        std::cout << "Took " << std::setprecision(3) << (diff.count() * 1000.0) << " ms" << std::endl;
-    }
-
-    return ret;
-}
-
-std::shared_ptr<MPU> FPGACliApp::getMPU(std::string name) {
-    std::shared_ptr<MPU> ret = NULL;
-    for (auto m : _mpu) {
-        if (strncmp(name.c_str(), m.first.c_str(), name.length()) == 0) {
-            if (ret) {
-                return NULL;
-            }
-            ret = m.second;
-        }
-    }
-    return ret;
-}
-
-void FPGACliApp::printMPU() {
-    for (auto m : _mpu) {
-        std::cerr << "  * " << m.first << std::endl;
-    }
+    return CliApp::processCommand(cmd, args);
 }

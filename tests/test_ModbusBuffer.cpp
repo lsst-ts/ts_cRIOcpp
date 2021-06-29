@@ -317,7 +317,7 @@ TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
 }
 
 TEST_CASE("CRC class", "[ModbusBuffer::CRC]") {
-    TestModbusBuffer::CRC crc;
+    ModbusBuffer::CRC crc;
 
     for (uint8_t d = 0; d < 0xFF; d++) {
         crc.add(d);

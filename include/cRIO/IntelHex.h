@@ -81,8 +81,7 @@ public:
      * are written, but full buffer, as assembled from hex file lines, is
      * returned.
      *
-     * @param startAddress returns memory start address
-     * @return vector with data
+     * @param buffer buffer where data will be stored
      */
     std::vector<uint8_t> getData(uint16_t &startAddress);
 

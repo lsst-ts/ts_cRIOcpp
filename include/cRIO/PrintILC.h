@@ -44,7 +44,7 @@ public:
      * arguments.
      *
      * @param address ILC address
-     * @param dataCRC data ModBus 16bit CRC. This is calculated fom
+     * @param dataCRC data ModBus 16bit CRC. This is calculated rfom
      * @param startAddress start memory address. Lowest start address from all function 103 calls.
      * @param dataLength data length (unshrunk). Highest start address from all function 103 + 256.
      *
@@ -57,7 +57,7 @@ public:
      *
      * @param address ILC address
      */
-    void eraseILCApplication(uint8_t address) { callFunction(address, 101, 500000); }
+    void eraseILApplication(uint8_t address) { callFunction(address, 101, 500000); }
 
     /**
      * Writes ILC firmware page. Calls functions 103. Please note that every
@@ -166,12 +166,9 @@ protected:
 
 private:
     int _printout;
-    uint8_t _lastAddress;
-    ModbusBuffer::CRC _crc;
-    uint16_t _startAddress;
-    uint16_t _dataLength;
 
-    void _writeHex(FPGA *fpga, uint8_t address, IntelHex &hex);
+    void _writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &dataCRC, uint16_t &startAddress,
+                   uint16_t &dataLength);
 };
 
 }  // namespace cRIO

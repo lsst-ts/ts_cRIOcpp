@@ -22,7 +22,7 @@ endif
 LIBS += $(shell pkg-config yaml-cpp --libs) -ldl -lpthread
 
 BOOST_CPPFLAGS := -I/usr/include/boost169
-CPP_FLAGS += $(shell pkg-config yaml-cpp --cflags)
+CPP_FLAGS += -lpthread
 
 VERSION := $(shell git describe --tags --dirty)
 ifeq ("$(VERSION)","")

@@ -323,7 +323,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
     for (const char* a = args; *a; a++, an++) {
         if (an >= cmds.size()) {
-            if (*a == 'b' || *a == 'd' || *a == 'h' || *a == 'i' || *a == 's' || *a == '?') {
+            if (*a == 's' || *a == 'i' || *a == 'b' || *a == 'd' || *a == 'h' || *a == '?') {
                 return an;
             }
 
@@ -333,15 +333,8 @@ int verifyArguments(const command_vec& cmds, const char* args) {
         }
 
         switch (*a) {
-            case 'B':
-            case 'b':
-                if (!verifyBool(cmds[an].c_str())) {
-                    std::cerr << "Expecting boolean (true/false), received " << cmds[an] << std::endl;
-                    return -1;
-                }
-
-                break;
-
+            case '?':
+                return cmds.size();
             case 'D':
             case 'd':
                 if (!verifyDouble(cmds[an].c_str())) {
