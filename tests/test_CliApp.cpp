@@ -40,6 +40,20 @@ public:
         return 42;
     }
 
+    int testHex(command_vec cmds) {
+        test_count++;
+        CHECK(cmds.size() == 1);
+        CHECK(std::stoi(cmds[0], nullptr, 16) == 0x123A);
+        return 0;
+    }
+
+    int testInt(command_vec cmds) {
+        test_count++;
+        CHECK(cmds.size() == 1);
+        CHECK(std::stoi(cmds[0], nullptr, 0) == 0x21FD);
+        return 0;
+    }
+
 protected:
     void processArg(int opt, char* optarg) override;
 };
@@ -74,4 +88,28 @@ TEST_CASE("Test CliApp", "[CliApp]") {
     REQUIRE(cli.test_count == 0);
     cli.processCmdVector(cmds);
     REQUIRE(cli.test_count == 1);
+}
+
+TEST_CASE("Test Hex format", "[CliApp]") {
+    AClass cli("name", "description");
+    cli.addCommand("testcmd", std::bind(&AClass::testHex, &cli, std::placeholders::_1), "H", 0, "[address]",
+                   "Prints memory at given address.");
+
+    int argc = 1;
+    const char* const argv[argc] = {"test"};
+
+    command_vec cmds = cli.processArgs(argc, (char**)argv);
+    REQUIRE(cmds.size() == 0);
+
+    command_vec cmds_in = {"testcmd", "0x123A"};
+
+    REQUIRE(cli.test_count == 0);
+    cli.processCmdVector(cmds_in);
+    REQUIRE(cli.test_count == 1);
+
+    command_vec cmds_failed = {"testcmd"};
+    REQUIRE(cli.processCmdVector(cmds_failed) == -1);
+
+    command_vec cmds_failed_2 = {"testcmd", "0x123A", "0x123A"};
+    REQUIRE(cli.processCmdVector(cmds_failed_2) == -1);
 }

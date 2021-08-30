@@ -122,6 +122,45 @@ public:
      */
     virtual ~CliApp();
 
+    /**
+     * Add command for processing.
+     *
+     * @section Arguments characters
+     *
+     * The following characters can occur in args strings. Lower case are
+     * optional (argument can occur), upper case means required (argument must
+     * be provided).
+     *
+     * Character | Description
+     * --------- | -----------
+     * bB        | Boolean value. TRUE, FALSE, 0, 1, ON, OFF (case insensitive) are supported
+     * dD        | Double (float) value. Any notation shall be supported (scientific, fixed, ..)
+     * hH        | Hex value. Numbers and [A-F] are allowed.
+     * iI        | Integer. Standard 0x prefixes can be used to signal binary, hex, ..
+     * sS        | String.
+     * ?         | The argument can occur multiple times. Shall occur only once, at the end of the argument
+specification.
+     *
+     * @param command the command
+     * @param action action triggered
+     * @param args allowed arguments
+     * @param flags custom flags. Up to child class which flags will be supported
+     * @param help_args arguments list printed in help
+     * @param help help content - describe command
+     *
+     * @see processArg
+     * @see processCommand
+     *
+     * @example
+     *
+     * Assuming cli is address of some CliApp class, call the following to bind call of theAnswer method to
+get_the_answer command.
+     *
+     * @code
+    addCommand("get_the_answer", std::bind(&Class::theAnswer, &cli, std::placeholders::_1), "s?", 0,
+               "[choice..]", "Get random answer.");
+     * @endcode
+     */
     void addCommand(const char* command, std::function<int(command_vec)> action, const char* args, int flags,
                     const char* help_args, const char* help);
 

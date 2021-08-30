@@ -35,6 +35,8 @@ TEST_CASE("load", "[IntelHex]") {
 
     std::vector<uint8_t> data = hex.getData(startAddress);
 
+    CHECK(false == true);
+
     REQUIRE(startAddress == 0);
     REQUIRE(data.size() == 0x43);
 
@@ -52,5 +54,6 @@ TEST_CASE("load", "[IntelHex]") {
 
     for (int i = 0; i < 0x43; i++) {
         REQUIRE(data[i] == hexData[i]);
+        CHECK(data[i] == 0);
     }
 }
