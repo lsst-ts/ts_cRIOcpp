@@ -277,7 +277,11 @@ const void CliApp::printHexBuf(uint8_t* buf, size_t len, const char* prefix) {
 int verifyArguments(const command_vec& cmds, const char* args) {
     auto verifyDouble = [](const char* d) -> int {
         try {
-            std::stod(d);
+            size_t pos;
+            std::stod(d, &pos);
+            if (pos != strlen(d)) {
+                return false;
+            }
             return true;
         } catch (...) {
             return false;
@@ -286,7 +290,11 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
     auto verifyInteger = [](const char* i) -> int {
         try {
-            std::stoi(i, nullptr, 0);
+            size_t pos;
+            std::stoi(i, &pos, 0);
+            if (pos != strlen(i)) {
+                return false;
+            }
             return true;
         } catch (...) {
             return false;
@@ -295,7 +303,11 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
     auto verifyHex = [](const char* h) -> int {
         try {
-            std::stoi(h, nullptr, 16);
+            size_t pos;
+            std::stoi(h, &pos, 16);
+            if (strlen(h) != pos) {
+                return false;
+            }
             return true;
         } catch (...) {
             return false;
