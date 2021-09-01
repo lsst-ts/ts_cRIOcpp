@@ -54,6 +54,13 @@ public:
         return 0;
     }
 
+    int testDouble(command_vec cmds) {
+        test_count++;
+        CHECK(cmds.size() == 1);
+        CHECK(std::stod(cmds[0], nullptr) == Approx(M_PI));
+        return 0;
+    }
+
 protected:
     void processArg(int opt, char* optarg) override;
 };
@@ -90,6 +97,38 @@ TEST_CASE("Test CliApp", "[CliApp]") {
     REQUIRE(cli.test_count == 1);
 }
 
+TEST_CASE("Test int format", "[CliApp]") {
+    AClass cli("name", "description");
+    cli.addCommand("testcmd", std::bind(&AClass::testInt, &cli, std::placeholders::_1), "I", 0, "[address]",
+                   "Prints memory at given address.");
+
+    int argc = 1;
+    const char* const argv[argc] = {"test"};
+
+    command_vec cmds = cli.processArgs(argc, (char**)argv);
+    REQUIRE(cmds.size() == 0);
+
+    cmds = {"testcmd", "8701"};
+
+    REQUIRE(cli.test_count == 0);
+    REQUIRE(cli.processCmdVector(cmds) == 0);
+    REQUIRE(cli.test_count == 1);
+
+    cmds = {"testcmd"};
+    REQUIRE(cli.processCmdVector(cmds) == -1);
+
+    cmds = {"testcmd", "0x21FD", "0x123A"};
+    REQUIRE(cli.processCmdVector(cmds) == -1);
+
+    cmds = {"testcmd", "21FD"};
+    REQUIRE(cli.processCmdVector(cmds) == -1);
+
+    cmds = {"testcmd", "0x21FD"};
+    REQUIRE(cli.processCmdVector(cmds) == 0);
+
+    REQUIRE(cli.test_count == 2);
+}
+
 TEST_CASE("Test Hex format", "[CliApp]") {
     AClass cli("name", "description");
     cli.addCommand("testcmd", std::bind(&AClass::testHex, &cli, std::placeholders::_1), "H", 0, "[address]",
@@ -104,8 +143,11 @@ TEST_CASE("Test Hex format", "[CliApp]") {
     cmds = {"testcmd", "0x123A"};
 
     REQUIRE(cli.test_count == 0);
-    cli.processCmdVector(cmds);
+    REQUIRE(cli.processCmdVector(cmds) == 0);
     REQUIRE(cli.test_count == 1);
+
+    cmds = {"testcmd", "123A"};
+    REQUIRE(cli.processCmdVector(cmds) == 0);
 
     cmds = {"testcmd"};
     REQUIRE(cli.processCmdVector(cmds) == -1);
@@ -115,12 +157,14 @@ TEST_CASE("Test Hex format", "[CliApp]") {
 
     cmds = {"testcmd", "0x123AG"};
     REQUIRE(cli.processCmdVector(cmds) == -1);
+
+    REQUIRE(cli.test_count == 2);
 }
 
-TEST_CASE("Test int format", "[CliApp]") {
+TEST_CASE("Test double format", "[CliApp]") {
     AClass cli("name", "description");
-    cli.addCommand("testcmd", std::bind(&AClass::testHex, &cli, std::placeholders::_1), "I", 0, "[address]",
-                   "Prints memory at given address.");
+    cli.addCommand("testcmd", std::bind(&AClass::testDouble, &cli, std::placeholders::_1), "D", 0,
+                   "[address]", "Set a parameter.");
 
     int argc = 1;
     const char* const argv[argc] = {"test"};
@@ -128,15 +172,17 @@ TEST_CASE("Test int format", "[CliApp]") {
     command_vec cmds = cli.processArgs(argc, (char**)argv);
     REQUIRE(cmds.size() == 0);
 
-    cmds = {"testcmd", "0x123A"};
+    cmds = {"testcmd", std::to_string(M_PI)};
 
     REQUIRE(cli.test_count == 0);
-    cli.processCmdVector(cmds);
+    REQUIRE(cli.processCmdVector(cmds) == 0);
     REQUIRE(cli.test_count == 1);
 
     cmds = {"testcmd"};
     REQUIRE(cli.processCmdVector(cmds) == -1);
 
-    cmds = {"testcmd", "0x123A", "0x123A"};
+    cmds = {"testcmd", "1.23f", "1.45f"};
     REQUIRE(cli.processCmdVector(cmds) == -1);
+
+    REQUIRE(cli.test_count == 1);
 }
