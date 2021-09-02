@@ -44,7 +44,7 @@ public:
      * arguments.
      *
      * @param address ILC address
-     * @param dataCRC data ModBus 16bit CRC. This is calculated rfom
+     * @param dataCRC data ModBus 16bit CRC. This is calculated fom
      * @param startAddress start memory address. Lowest start address from all function 103 calls.
      * @param dataLength data length (unshrunk). Highest start address from all function 103 + 256.
      *

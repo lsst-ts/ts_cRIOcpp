@@ -30,10 +30,7 @@ using namespace std;
 namespace LSST {
 namespace cRIO {
 
-ModbusBuffer::ModbusBuffer() {
-    clear();
-    _data_prefix = FIFO::TX_MASK;
-}
+ModbusBuffer::ModbusBuffer() { clear(); }
 
 ModbusBuffer::~ModbusBuffer() {}
 
@@ -51,14 +48,6 @@ void ModbusBuffer::clear() {
     reset();
 }
 
-void ModbusBuffer::simulateResponse(bool simulate) {
-    if (simulate) {
-        _data_prefix = FIFO::RX_MASK;
-    } else {
-        _data_prefix = FIFO::TX_MASK;
-    }
-}
-
 bool ModbusBuffer::endOfBuffer() { return _index >= _buffer.size(); }
 
 bool ModbusBuffer::endOfFrame() { return _buffer[_index] == FIFO::RX_ENDFRAME; }
@@ -66,15 +55,15 @@ bool ModbusBuffer::endOfFrame() { return _buffer[_index] == FIFO::RX_ENDFRAME; }
 std::vector<uint8_t> ModbusBuffer::getReadData(int32_t length) {
     std::vector<uint8_t> data;
     for (size_t i = _index - length; i < _index; i++) {
-        data.push_back(_readInstructionByte());
+        data.push_back(readInstructionByte());
     }
     return data;
 }
 
 void ModbusBuffer::readBuffer(void* buf, size_t len) {
     for (size_t i = 0; i < len; i++) {
-        uint8_t d = _readInstructionByte();
-        _processDataCRC(d);
+        uint8_t d = readInstructionByte();
+        processDataCRC(d);
         (reinterpret_cast<uint8_t*>(buf))[i] = d;
     }
 }
@@ -157,20 +146,20 @@ uint32_t ModbusBuffer::readWaitForRx() {
 
 void ModbusBuffer::writeBuffer(uint8_t* data, size_t len) {
     for (size_t i = 0; i < len; i++) {
-        _buffer.push_back(_getByteInstruction(data[i]));
+        _buffer.push_back(getByteInstruction(data[i]));
     }
 }
 
 void ModbusBuffer::writeI24(int32_t data) {
-    _buffer.push_back(_getByteInstruction((uint8_t)(data >> 16)));
-    _buffer.push_back(_getByteInstruction((uint8_t)(data >> 8)));
-    _buffer.push_back(_getByteInstruction((uint8_t)data));
+    _buffer.push_back(getByteInstruction((uint8_t)(data >> 16)));
+    _buffer.push_back(getByteInstruction((uint8_t)(data >> 8)));
+    _buffer.push_back(getByteInstruction((uint8_t)data));
 }
 
 void ModbusBuffer::writeCRC() {
     uint16_t crc = _crc.get();
-    _buffer.push_back(_data_prefix | ((crc & 0xFF) << 1));
-    _buffer.push_back(_data_prefix | (((crc >> 8) & 0xFF) << 1));
+    _buffer.push_back(getByteInstruction(crc & 0xFF));
+    _buffer.push_back(getByteInstruction((crc >> 8) & 0xFF));
     _crc.reset();
 }
 
@@ -269,6 +258,26 @@ ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func
                                          "{1} (0x{1:02x}) from {0}",
                                          address, function, expectedAddress, expectedFunction)) {}
 
+uint16_t ModbusBuffer::getByteInstruction(uint8_t data) {
+    processDataCRC(data);
+    return data;
+}
+
+void ModbusBuffer::processDataCRC(uint8_t data) {
+    if (_recordChanges) {
+        _records.push_back(data);
+    }
+
+    _crc.add(data);
+}
+
+uint8_t ModbusBuffer::readInstructionByte() {
+    if (endOfBuffer()) {
+        throw EndOfBuffer();
+    }
+    return (uint8_t)(_buffer[_index++]);
+}
+
 void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t timeout) {
     write(address);
     write(function);
@@ -318,19 +327,6 @@ void ModbusBuffer::pushCommanded(uint8_t address, uint8_t function) {
     if ((address > 0 && address < 248) || (address == 255)) {
         _commanded.push(std::pair<uint8_t, uint8_t>(address, function));
     }
-}
-
-void ModbusBuffer::_processDataCRC(uint8_t data) {
-    if (_recordChanges) {
-        _records.push_back(data);
-    }
-
-    _crc.add(data);
-}
-
-uint16_t ModbusBuffer::_getByteInstruction(uint8_t data) {
-    _processDataCRC(data);
-    return _data_prefix | ((static_cast<uint16_t>(data)) << 1);
 }
 
 }  // namespace cRIO

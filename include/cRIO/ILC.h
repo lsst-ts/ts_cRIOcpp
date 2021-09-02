@@ -47,6 +47,26 @@ namespace cRIO {
  *
  * When processing data, the class guarantee that every non-broadcast call
  * generates reply at correct order - see ILC::processResponse() for details.
+ *
+ * Provides function to write and read cRIO FIFO (FPGA) Modbus buffers. Modbus
+ * serial bus is serviced inside FPGA with
+ * [Common_FPGA_Modbus](https://github.com/lsst-ts/Common_FPGA_Modbus) module.
+ *
+ * 8bit data are stored as 16bit values. Real data are left shifted by 1. Last
+ * bit (0, transmitted first) is start bit, always 0 for ILC communication.
+ * First data bit (transmitted last) is stop bit, shall be 1. So uint8_t data d
+ * needs to be written as:
+ *
+ * (0x1200 | (d << 1))
+ * (TX_MASK | (d << 1))
+ *
+ * and response from FPGA ResponseFIFOs is coming with 0x9200 prefix, so:
+ *
+ * (0x9200 | (d << 1))
+ * (RX_MASK | (d << 1))
+ *
+ * Please see ModbusBuffer::simulateReponse() for details of how to change
+ * prefix.
  */
 class ILC : public ModbusBuffer {
 public:
@@ -56,6 +76,13 @@ public:
      * @param bus ILC bus number (1..). Defaults to 1.
      */
     ILC(uint8_t bus = 1);
+
+    /**
+     * Sets simulate mode.
+     *
+     * @param simulate true if buffer shall product simulated replies
+     */
+    void simulateResponse(bool simulate);
 
     /**
      * Returns bus number. 1 based (1-5). 1=A,2=B,..5=E bus.
@@ -192,6 +219,24 @@ public:
     };
 
 protected:
+    /**
+     * Return data item to write to buffer. Updates CRC counter.
+     *
+     * @param data data to write.
+     *
+     * @return 16bit for command queue.
+     */
+    virtual uint16_t getByteInstruction(uint8_t data);
+
+    /**
+     * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
+     *
+     * @throw EndOfBuffer if asking for instruction after end of the buffer
+     *
+     * @return byte written by the instruction. Start bit is removed.
+     */
+    virtual uint8_t readInstructionByte();
+
     /**
      * Called before responses are processed (before processXX methods are
      * called).
@@ -346,6 +391,7 @@ protected:
     bool responseMatchCached(uint8_t address, uint8_t func);
 
 private:
+    uint16_t _data_prefix;
     uint8_t _bus;
 
     std::map<uint8_t, std::function<void(uint8_t)>> _actions;

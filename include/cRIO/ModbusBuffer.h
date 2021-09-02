@@ -53,26 +53,7 @@ const static uint16_t RX_MASK = 0x9200;
 }  // namespace FIFO
 
 /**
- * Utility class for Modbus buffer management. Provides function to write and
- * read cRIO FIFO (FPGA) Modbus buffers. Modbus serial bus is serviced inside
- * FPGA with
- * [Common_FPGA_Modbus](https://github.com/lsst-ts/Common_FPGA_Modbus) module.
- *
- * 8bit data are stored as 16bit values. Real data are left shifted by 1. Last
- * bit (0, transmitted first) is start bit, always 0 for ILC communication.
- * First data bit (transmitted last) is stop bit, shall be 1. So uint8_t data d
- * needs to be written as:
- *
- * (0x1200 | (d << 1))
- * (TX_MASK | (d << 1))
- *
- * and response from FPGA ResponseFIFOs is coming with 0x9200 prefix, so:
- *
- * (0x9200 | (d << 1))
- * (RX_MASK | (d << 1))
- *
- * Please see ModbusBuffer::simulateReponse() for details of how to change
- * prefix.
+ * Utility class for Modbus buffer management.
  *
  * This class doesn't handle subnet. Doesn't handle FPGA FIFO read/writes -
  * that's responsibility of FPGA. ModbusBuffer handles only serialization & de
@@ -133,13 +114,6 @@ public:
      * Clears modbus buffer.
      */
     void clear();
-
-    /**
-     * Sets simulate mode.
-     *
-     * @param simulate true if buffer shall product simulated replies
-     */
-    void simulateResponse(bool simulate);
 
     bool endOfBuffer();
     bool endOfFrame();
@@ -392,6 +366,26 @@ public:
 
 protected:
     /**
+     * Return data item to write to buffer. Updates CRC counter.
+     *
+     * @param data data to write.
+     *
+     * @return 16bit for command queue.
+     */
+    virtual uint16_t getByteInstruction(uint8_t data);
+
+    void processDataCRC(uint8_t data);
+
+    /**
+     * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
+     *
+     * @throw EndOfBuffer if asking for instruction after end of the buffer
+     *
+     * @return byte written by the instruction. Start bit is removed.
+     */
+    virtual uint8_t readInstructionByte();
+
+    /**
      * Add to buffer Modbus function. Assumes subnet, data lengths and triggers are
      * send by FPGA class. If non-broadcast address is passed, stores address
      * and function into _commanded buffer.
@@ -475,38 +469,13 @@ protected:
 
     void pushCommanded(uint8_t address, uint8_t function);
 
-private:
     std::vector<uint16_t> _buffer;
     uint32_t _index;
+
+private:
     CRC _crc;
-    uint16_t _data_prefix;
 
     std::queue<std::pair<uint8_t, uint8_t>> _commanded;
-
-    void _processDataCRC(uint8_t data);
-
-    /**
-     * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
-     *
-     * @throw EndOfBuffer if asking for instruction after end of the buffer
-     *
-     * @return byte written by the instruction. Start bit is removed.
-     */
-    uint8_t _readInstructionByte() {
-        if (endOfBuffer()) {
-            throw EndOfBuffer();
-        }
-        return (uint8_t)((_buffer[_index++] >> 1) & 0xFF);
-    }
-
-    /**
-     * Return data item to write to buffer. Updates CRC counter.
-     *
-     * @param data data to write.
-     *
-     * @return 16bit for command queue.
-     */
-    uint16_t _getByteInstruction(uint8_t data);
 
     void _functionArguments() {}
 

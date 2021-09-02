@@ -29,6 +29,7 @@ namespace LSST {
 namespace cRIO {
 
 ILC::ILC(uint8_t bus) {
+    _data_prefix = FIFO::TX_MASK;
     _bus = bus;
     _broadcastCounter = 0;
     _alwaysTrigger = false;
@@ -104,6 +105,14 @@ ILC::ILC(uint8_t bus) {
             235);
 }
 
+void ILC::simulateResponse(bool simulate) {
+    if (simulate) {
+        _data_prefix = FIFO::RX_MASK;
+    } else {
+        _data_prefix = FIFO::TX_MASK;
+    }
+}
+
 void ILC::addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,
                       std::function<void(uint8_t, uint8_t)> errorAction) {
     _actions[func] = action;
@@ -164,6 +173,18 @@ uint8_t ILC::nextBroadcastCounter() {
         _broadcastCounter = 0;
     }
     return _broadcastCounter;
+}
+
+uint16_t ILC::getByteInstruction(uint8_t data) {
+    processDataCRC(data);
+    return _data_prefix | ((static_cast<uint16_t>(data)) << 1);
+}
+
+uint8_t ILC::readInstructionByte() {
+    if (endOfBuffer()) {
+        throw EndOfBuffer();
+    }
+    return (uint8_t)((_buffer[_index++] >> 1) & 0xFF);
 }
 
 bool ILC::responseMatchCached(uint8_t address, uint8_t func) {

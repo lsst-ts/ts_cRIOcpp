@@ -25,7 +25,7 @@
 
 #include <cRIO/FPGA.h>
 #include <cRIO/IntelHex.h>
-#include <cRIO/ModbusBuffer.h>
+#include <cRIO/ILC.h>
 #include <cRIO/PrintILC.h>
 
 using namespace LSST::cRIO;
@@ -78,7 +78,7 @@ protected:
     void processVerifyUserApplication(uint8_t address, uint16_t status) override;
 
 private:
-    ModbusBuffer response;
+    TestILC _response;
 
     void _simulateModbus(uint16_t* data, size_t length);
     void _ackFunction(uint8_t address, uint8_t func);
@@ -88,8 +88,9 @@ private:
     uint8_t* _pages;
 };
 
-TestFPGA::TestFPGA() : FPGA(fpgaType::SS), PrintILC(1), _U16ResponseStatus(IDLE), _pages(nullptr) {
-    response.simulateResponse(true);
+TestFPGA::TestFPGA()
+        : FPGA(fpgaType::SS), PrintILC(1), _response(1), _U16ResponseStatus(IDLE), _pages(nullptr) {
+    _response.simulateResponse(true);
 }
 
 void TestFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
@@ -129,42 +130,44 @@ void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeo
             throw std::runtime_error("readU16ResponseFIFO called out of order");
         case LEN:
             REQUIRE(length == 1);
-            *data = response.getLength();
+            *data = _response.getLength();
             _U16ResponseStatus = DATA;
             break;
         case DATA:
-            REQUIRE(length == response.getLength());
-            memcpy(data, response.getBuffer(), response.getLength() * 2);
-            response.clear();
+            REQUIRE(length == _response.getLength());
+            memcpy(data, _response.getBuffer(), _response.getLength() * 2);
+            _response.clear();
             _U16ResponseStatus = IDLE;
             break;
     }
 }
 
 void TestFPGA::processChangeILCMode(uint8_t address, uint16_t mode) {
-    response.write(address);
-    response.write<uint8_t>(65);
-    response.write(mode);
+    _response.write(address);
+    _response.write<uint8_t>(65);
+    _response.write(mode);
 
-    response.writeCRC();
+    _response.writeCRC();
 }
 
 void TestFPGA::processVerifyUserApplication(uint8_t address, uint16_t status) {
-    response.write(address);
-    response.write<uint8_t>(103);
-    response.write(status);
+    _response.write(address);
+    _response.write<uint8_t>(103);
+    _response.write(status);
 
-    response.writeCRC();
+    _response.writeCRC();
 }
+
 void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
     // reply format:
     // 4 bytes (forming uint64_t in low endian) beginning timestamp
     // data received from ILCs (& FIFO::TX_WAIT_LONG_RX)
     // end of frame (FIFO::RX_ENDFRAME)
     // 8 bytes of end timestap (& FIFO::RX_TIMESTAMP)
-    response.writeFPGATimestamp(currentTimestamp++);
+    _response.writeFPGATimestamp(currentTimestamp++);
 
-    ModbusBuffer buf(data, length);
+    TestILC buf(1);
+    buf.setBuffer(data, length);
     while (!buf.endOfBuffer()) {
         uint16_t p = buf.peek();
         if ((p & FIFO::CMD_MASK) != FIFO::WRITE) {
@@ -173,6 +176,7 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
         }
 
         uint8_t address = buf.read<uint8_t>();
+        REQUIRE(address == 8);
         uint8_t func = buf.read<uint8_t>();
         switch (func) {
             case 65:
@@ -221,17 +225,17 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
             default:
                 throw std::runtime_error("Invalid function number " + std::to_string(func));
         }
-        response.writeRxTimestamp(currentTimestamp++);
+        _response.writeRxTimestamp(currentTimestamp++);
 
-        response.writeRxEndFrame();
+        _response.writeRxEndFrame();
     }
 }
 
 void TestFPGA::_ackFunction(uint8_t address, uint8_t func) {
-    response.write(address);
-    response.write(func);
+    _response.write(address);
+    _response.write(func);
 
-    response.writeCRC();
+    _response.writeCRC();
 }
 
 TEST_CASE("Test program ILC", "[PrintILC]") {
