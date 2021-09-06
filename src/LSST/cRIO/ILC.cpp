@@ -105,6 +105,56 @@ ILC::ILC(uint8_t bus) {
             235);
 }
 
+void ILC::writeEndOfFrame() { pushBuffer(FIFO::TX_FRAMEEND); }
+
+void ILC::writeWaitForRx(uint32_t timeoutMicros) {
+    pushBuffer(timeoutMicros > 0x0FFF ? ((0x0FFF & ((timeoutMicros / 1000) + 1)) | FIFO::TX_WAIT_LONG_RX)
+                                      : (timeoutMicros | FIFO::TX_WAIT_RX));
+}
+
+void ILC::writeRxEndFrame() { pushBuffer(FIFO::RX_ENDFRAME); }
+
+void ILC::writeFPGATimestamp(uint64_t timestamp) {
+    for (int i = 0; i < 4; i++) {
+        pushBuffer(timestamp & 0xFFFF);
+        timestamp >>= 16;
+    }
+}
+
+void ILC::writeRxTimestamp(uint64_t timestamp) {
+    for (int i = 0; i < 8; i++) {
+        pushBuffer(FIFO::RX_TIMESTAMP | (timestamp & 0xFF));
+        timestamp >>= 8;
+    }
+}
+
+void ILC::readEndOfFrame() {
+    if (getCurrentBuffer() != FIFO::TX_FRAMEEND) {
+        throw std::runtime_error(fmt::format("Expected end of frame, finds {:04x} (@ offset {})",
+                                             getCurrentBuffer(), getCurrentIndex()));
+    }
+    incIndex();
+    resetCRC();
+}
+
+uint32_t ILC::readWaitForRx() {
+    uint16_t c = getCurrentBuffer() & 0xF000;
+    uint32_t ret = 0;
+    switch (c) {
+        case FIFO::TX_WAIT_RX:
+            ret = 0x0FFF & getCurrentBuffer();
+            break;
+        case FIFO::TX_WAIT_LONG_RX:
+            ret = (0x0FFF & getCurrentBuffer()) * 1000;
+            break;
+        default:
+            throw std::runtime_error(fmt::format("Expected wait for RX, finds {:04x} (@ offset {})",
+                                                 getCurrentBuffer(), getCurrentIndex()));
+    }
+    incIndex();
+    return ret;
+}
+
 void ILC::simulateResponse(bool simulate) {
     if (simulate) {
         _data_prefix = FIFO::RX_MASK;
@@ -184,7 +234,7 @@ uint8_t ILC::readInstructionByte() {
     if (endOfBuffer()) {
         throw EndOfBuffer();
     }
-    return (uint8_t)((_buffer[_index++] >> 1) & 0xFF);
+    return (uint8_t)((getCurrentBufferAndInc() >> 1) & 0xFF);
 }
 
 bool ILC::responseMatchCached(uint8_t address, uint8_t func) {

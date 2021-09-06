@@ -117,33 +117,6 @@ uint32_t ModbusBuffer::readDelay() {
     return ret;
 }
 
-void ModbusBuffer::readEndOfFrame() {
-    if (_buffer[_index] != FIFO::TX_FRAMEEND) {
-        throw std::runtime_error(
-                fmt::format("Expected end of frame, finds {:04x} (@ offset {})", _buffer[_index], _index));
-    }
-    _index++;
-    _crc.reset();
-}
-
-uint32_t ModbusBuffer::readWaitForRx() {
-    uint16_t c = _buffer[_index] & 0xF000;
-    uint32_t ret = 0;
-    switch (c) {
-        case FIFO::TX_WAIT_RX:
-            ret = 0x0FFF & _buffer[_index];
-            break;
-        case FIFO::TX_WAIT_LONG_RX:
-            ret = (0x0FFF & _buffer[_index]) * 1000;
-            break;
-        default:
-            throw std::runtime_error(
-                    fmt::format("Expected wait for RX, finds {:04x} (@ offset {)", _buffer[_index], _index));
-    }
-    _index++;
-    return ret;
-}
-
 void ModbusBuffer::writeBuffer(uint8_t* data, size_t len) {
     for (size_t i = 0; i < len; i++) {
         _buffer.push_back(getByteInstruction(data[i]));
@@ -168,28 +141,10 @@ void ModbusBuffer::writeDelay(uint32_t delayMicros) {
                                            : (delayMicros | FIFO::DELAY));
 }
 
-void ModbusBuffer::writeEndOfFrame() { _buffer.push_back(FIFO::TX_FRAMEEND); }
-
 void ModbusBuffer::writeWaitForRx(uint32_t timeoutMicros) {
     _buffer.push_back(timeoutMicros > 0x0FFF
                               ? ((0x0FFF & ((timeoutMicros / 1000) + 1)) | FIFO::TX_WAIT_LONG_RX)
                               : (timeoutMicros | FIFO::TX_WAIT_RX));
-}
-
-void ModbusBuffer::writeRxEndFrame() { _buffer.push_back(FIFO::RX_ENDFRAME); }
-
-void ModbusBuffer::writeFPGATimestamp(uint64_t timestamp) {
-    for (int i = 0; i < 4; i++) {
-        _buffer.push_back(timestamp & 0xFFFF);
-        timestamp >>= 16;
-    }
-}
-
-void ModbusBuffer::writeRxTimestamp(uint64_t timestamp) {
-    for (int i = 0; i < 8; i++) {
-        _buffer.push_back(FIFO::RX_TIMESTAMP | (timestamp & 0xFF));
-        timestamp >>= 8;
-    }
 }
 
 void ModbusBuffer::setBuffer(uint16_t* buffer, size_t length) {

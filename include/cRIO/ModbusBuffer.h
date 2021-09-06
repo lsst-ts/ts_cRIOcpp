@@ -108,7 +108,7 @@ public:
      * internal CRC counter, so CRC will be recalculated during subsequent
      * reads.
      */
-    void reset();
+    virtual void reset();
 
     /**
      * Clears modbus buffer.
@@ -213,16 +213,7 @@ public:
      *
      * @throw std::runtime_error if end of frame isn't next buffer entry
      */
-    void readEndOfFrame();
-
-    /**
-     * Returns wait for receive timeout.
-     *
-     * @return timeout in us (microseconds)
-     *
-     * @throw std::runtime_error if wait for rx delay command isn't present
-     */
-    uint32_t readWaitForRx();
+    virtual void readEndOfFrame() = 0;
 
     /**
      * Write uint8_t buffer to modbus, updates CRC.
@@ -269,21 +260,18 @@ public:
     /**
      * Writes end of the frame. Causes silence on transmitting bus, so
      * commanded ILC can check CRC of the incomming message and starts to
-     * execute the commanded action.
+     * execute the commanded action. Should be overriden in children.
      */
-    void writeEndOfFrame();
+    virtual void writeEndOfFrame() = 0;
 
     /**
      * Write FPGA Modbus command to wait for ILC response. If no response is received within timeout,
      *
      * @param timeoutMicros
      */
-    void writeWaitForRx(uint32_t timeoutMicros);
+    virtual void writeWaitForRx(uint32_t timeoutMicros) = 0;
 
-    void writeRxEndFrame();
-
-    void writeFPGATimestamp(uint64_t timestamp);
-    void writeRxTimestamp(uint64_t timestamp);
+    virtual void writeRxEndFrame() = 0;
 
     /**
      * Sets current read buffer
@@ -365,6 +353,14 @@ public:
     };
 
 protected:
+    uint16_t getCurrentBuffer() { return _buffer[_index]; }
+    uint16_t getCurrentBufferAndInc() { return _buffer[_index++]; }
+    size_t getCurrentIndex() { return _index; }
+
+    void pushBuffer(uint16_t data) { _buffer.push_back(data); }
+    void incIndex() { _index++; }
+    void resetCRC() { _crc.reset(); }
+
     /**
      * Return data item to write to buffer. Updates CRC counter.
      *
@@ -469,10 +465,14 @@ protected:
 
     void pushCommanded(uint8_t address, uint8_t function);
 
-    std::vector<uint16_t> _buffer;
-    uint32_t _index;
-
 private:
+    std::vector<uint16_t> _buffer;
+
+    /**
+     * Current indes in the buffer.
+     */
+    size_t _index;
+
     CRC _crc;
 
     std::queue<std::pair<uint8_t, uint8_t>> _commanded;

@@ -77,6 +77,26 @@ public:
      */
     ILC(uint8_t bus = 1);
 
+    void writeEndOfFrame() override;
+
+    void writeWaitForRx(uint32_t timeoutMicros) override;
+
+    void writeRxEndFrame() override;
+
+    void writeFPGATimestamp(uint64_t timestamp);
+    void writeRxTimestamp(uint64_t timestamp);
+
+    void readEndOfFrame() override;
+
+    /**
+     * Returns wait for receive timeout.
+     *
+     * @return timeout in us (microseconds)
+     *
+     * @throw std::runtime_error if wait for rx delay command isn't present
+     */
+    uint32_t readWaitForRx();
+
     /**
      * Sets simulate mode.
      *
