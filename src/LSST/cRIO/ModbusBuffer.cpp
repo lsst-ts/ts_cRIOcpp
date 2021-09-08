@@ -119,32 +119,31 @@ uint32_t ModbusBuffer::readDelay() {
 
 void ModbusBuffer::writeBuffer(uint8_t* data, size_t len) {
     for (size_t i = 0; i < len; i++) {
-        _buffer.push_back(getByteInstruction(data[i]));
+        pushBuffer(getByteInstruction(data[i]));
     }
 }
 
 void ModbusBuffer::writeI24(int32_t data) {
-    _buffer.push_back(getByteInstruction((uint8_t)(data >> 16)));
-    _buffer.push_back(getByteInstruction((uint8_t)(data >> 8)));
-    _buffer.push_back(getByteInstruction((uint8_t)data));
+    pushBuffer(getByteInstruction((uint8_t)(data >> 16)));
+    pushBuffer(getByteInstruction((uint8_t)(data >> 8)));
+    pushBuffer(getByteInstruction((uint8_t)data));
 }
 
 void ModbusBuffer::writeCRC() {
     uint16_t crc = _crc.get();
-    _buffer.push_back(getByteInstruction(crc & 0xFF));
-    _buffer.push_back(getByteInstruction((crc >> 8) & 0xFF));
+    pushBuffer(getByteInstruction(crc & 0xFF));
+    pushBuffer(getByteInstruction((crc >> 8) & 0xFF));
     _crc.reset();
 }
 
 void ModbusBuffer::writeDelay(uint32_t delayMicros) {
-    _buffer.push_back(delayMicros > 0x0FFF ? ((0x0FFF & ((delayMicros / 1000) + 1)) | FIFO::LONG_DELAY)
-                                           : (delayMicros | FIFO::DELAY));
+    pushBuffer(delayMicros > 0x0FFF ? ((0x0FFF & ((delayMicros / 1000) + 1)) | FIFO::LONG_DELAY)
+                                    : (delayMicros | FIFO::DELAY));
 }
 
 void ModbusBuffer::writeWaitForRx(uint32_t timeoutMicros) {
-    _buffer.push_back(timeoutMicros > 0x0FFF
-                              ? ((0x0FFF & ((timeoutMicros / 1000) + 1)) | FIFO::TX_WAIT_LONG_RX)
-                              : (timeoutMicros | FIFO::TX_WAIT_RX));
+    pushBuffer(timeoutMicros > 0x0FFF ? ((0x0FFF & ((timeoutMicros / 1000) + 1)) | FIFO::TX_WAIT_LONG_RX)
+                                      : (timeoutMicros | FIFO::TX_WAIT_RX));
 }
 
 void ModbusBuffer::setBuffer(uint16_t* buffer, size_t length) {

@@ -1,5 +1,5 @@
 /*
- * Modbus Processing Unit class.
+ * This file is part of LSST cRIOcpp test suite. Tests MPU class.
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -20,33 +20,31 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#define CATCH_CONFIG_MAIN
+#include <catch/catch.hpp>
+
 #include <cRIO/MPU.h>
 
 using namespace LSST::cRIO;
 
-void MPUBuffer::readHoldingRegisters(uint8_t mpu_address, uint16_t address, uint16_t count) {
-    callFunction(mpu_address, 3, 0, address, count);
-}
+TEST_CASE("Test MPU read holding registers", "[MPU]") {
+    MPU mpu(12);
+    mpu.readHoldingRegisters(3, 10, 101);
 
-MPU::MPU(uint8_t mpu_address) : _mpu_address(mpu_address) {}
+    uint16_t* commands = mpu.getCommands();
 
-void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout) {
-    MPUBuffer buffer;
-    buffer.readHoldingRegisters(_mpu_address, address, count);
-
-    // write request
-    _commands.push_back(MPUCommands::WRITE);
-    _commands.push_back(buffer.getLength());
-    for (auto b : buffer.getBufferVector()) {
-        _commands.push_back(b);
-    }
-
-    _commands.push_back(MPUCommands::WAIT_MS);
-    _commands.push_back(timeout);
-
-    // read response
-    _commands.push_back(MPUCommands::READ);
-    // extras: device address, function, length (all 1 byte), CRC (2 bytes) = 5 total
-    _commands.push_back(5 + count * 2);
-    _commands.push_back(MPUCommands::CHECK_CRC);
+    REQUIRE(commands[0] == MPUCommands::WRITE);
+    REQUIRE(commands[1] == 8);
+    REQUIRE(commands[2] == 12);
+    REQUIRE(commands[3] == 3);
+    REQUIRE(commands[4] == 0);
+    REQUIRE(commands[5] == 3);
+    REQUIRE(commands[6] == 0);
+    REQUIRE(commands[7] == 10);
+    REQUIRE(commands[8] == 0x34);
+    REQUIRE(commands[9] == 0xD0);
+    REQUIRE(commands[10] == MPUCommands::WAIT_MS);
+    REQUIRE(commands[11] == 101);
+    REQUIRE(commands[12] == MPUCommands::READ);
+    REQUIRE(commands[13] == 25);
 }

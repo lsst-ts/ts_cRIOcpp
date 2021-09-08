@@ -34,7 +34,7 @@ namespace cRIO {
 namespace MPUCommands {
 const static uint8_t STOP = 0;
 const static uint8_t WRITE_BYTE = 1;
-const static uint8_t WAIT_M2 = 2;
+const static uint8_t WAIT_MS = 2;
 const static uint8_t READ = 3;
 const static uint8_t LOOP = 4;
 const static uint8_t CHECK_CRC = 5;
@@ -47,24 +47,27 @@ const static uint8_t TELEMETRY_64 = 30;
 const static uint8_t EXIT = 255;
 }  // namespace MPUCommands
 
-class MPU : public ModbusBuffer {
+class MPUBuffer : public ModbusBuffer {
+public:
+    void writeEndOfFrame() override {}
+    void writeWaitForRx(uint32_t timeoutMicros) override {}
+    void writeRxEndFrame() override {}
+
+    void readEndOfFrame() override {}
+
+    void readHoldingRegisters(uint8_t mpu_address, uint16_t address, uint16_t count = 1);
+};
+
+class MPU {
 public:
     MPU(uint8_t mpu_address);
+    void readHoldingRegisters(uint16_t address, uint16_t count = 1, uint8_t timeout = 100);
 
-    void reset() override;
+    uint16_t* getCommands() { return _commands.data(); }
 
-    void writeEndOfFrame() override;
-
-    void writeWaitForRx(uint32_t timeoutMicros) override;
-
-    void writeRxEndFrame() override;
-
-    void readHoldingRegisters(uint16_t address, uint16_t count = 1);
-
-protected:
 private:
+    std::vector<uint16_t> _commands;
     uint8_t _mpu_address;
-    uint16_t _count;
 };
 
 }  // namespace cRIO

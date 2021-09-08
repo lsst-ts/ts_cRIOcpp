@@ -96,6 +96,8 @@ public:
      */
     uint16_t* getBuffer() { return _buffer.data(); }
 
+    const std::vector<uint16_t> getBufferVector() { return _buffer; }
+
     /**
      * Returns buffer length.
      *
