@@ -31,6 +31,10 @@
 namespace LSST {
 namespace cRIO {
 
+/**
+ * Modbus Processing Unit (MPU) commands. Please see
+ * https://github.com/lsst-ts/Modbus_Processing_Unit for command details.
+ */
 namespace MPUCommands {
 const static uint8_t STOP = 0;
 const static uint8_t WRITE_BYTE = 1;
@@ -47,6 +51,10 @@ const static uint8_t TELEMETRY_64 = 30;
 const static uint8_t EXIT = 255;
 }  // namespace MPUCommands
 
+/**
+ * Helper class. Forms MPU buffer, which should be included in commands send to
+ * MPU.
+ */
 class MPUBuffer : public ModbusBuffer {
 public:
     void writeEndOfFrame() override {}
@@ -55,14 +63,43 @@ public:
 
     void readEndOfFrame() override {}
 
+    /**
+     * Writes buffer to readout register content.
+     *
+     * @param mpu_address
+     * @param address
+     * @param count
+     */
     void readHoldingRegisters(uint8_t mpu_address, uint16_t address, uint16_t count = 1);
 };
 
+/**
+ * The Modbus Processing Unit class. Prepares buffer with commands to send to
+ * FPGA, read responses & telemetry values.
+ */
 class MPU {
 public:
+    /**
+     * Contruct MPU class.
+     *
+     * @param mpu_address MPU ModBus address
+     */
     MPU(uint8_t mpu_address);
+
+    /**
+     * Reads holding register(s).
+     *
+     * @param address register address
+     * @param count number of registers to read
+     * @param timeout timeout for register readout (in ms)
+     */
     void readHoldingRegisters(uint16_t address, uint16_t count = 1, uint8_t timeout = 100);
 
+    /**
+     * Returns commands buffer.
+     *
+     * @return current command buffer
+     */
     uint16_t* getCommands() { return _commands.data(); }
 
 private:
