@@ -30,6 +30,8 @@ MPU::MPU(uint8_t mpu_address) : _mpu_address(mpu_address) {
             3,
             [this](uint8_t address) {
                 if (address != _mpu_address) {
+                    throw std::runtime_error(
+                            fmt::format("Invalid ModBus address {}, expected {}", address, _mpu_address));
                 }
                 uint8_t len = read<uint8_t>();
                 for (size_t i = 0; i < len; i += 2) {
@@ -39,6 +41,30 @@ MPU::MPU(uint8_t mpu_address) : _mpu_address(mpu_address) {
                     _registers[_readRegisters.front()] = read<uint16_t>();
                     _readRegisters.pop_front();
                 }
+                checkCRC();
+            },
+            0);
+
+    addResponse(
+            16,
+            [this](uint8_t address) {
+                if (address != _mpu_address) {
+                    throw std::runtime_error(
+                            fmt::format("Invalid ModBus address {}, expected {}", address, _mpu_address));
+                }
+                uint16_t reg = read<uint16_t>();
+                uint16_t len = read<uint16_t>();
+                auto preset = _presetRegisters.front();
+                _presetRegisters.pop_front();
+                if (reg != preset.first) {
+                    throw std::runtime_error(
+                            fmt::format("Invalid register {:04x}, expected {:04x}", reg, preset.first));
+                }
+                if (len != preset.second) {
+                    throw std::runtime_error(
+                            fmt::format("Invalid lenght {}, expected {}", len, preset.second));
+                }
+                checkCRC();
             },
             0);
 }
@@ -99,4 +125,6 @@ void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t cou
     // extras: device address, function (all 1 byte), address, number of registers written, CRC (2 bytes)
     _commands.push_back(8);
     _commands.push_back(MPUCommands::CHECK_CRC);
+
+    _presetRegisters.push_back(std::pair<uint16_t, uint8_t>(address, count));
 }

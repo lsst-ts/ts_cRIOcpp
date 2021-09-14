@@ -97,6 +97,7 @@ private:
     uint8_t _mpu_address;
 
     std::list<uint16_t> _readRegisters;
+    std::list<std::pair<uint16_t, uint16_t>> _presetRegisters;
 
     std::map<uint16_t, uint16_t> _registers;
 };
