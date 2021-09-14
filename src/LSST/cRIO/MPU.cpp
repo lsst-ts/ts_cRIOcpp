@@ -21,6 +21,7 @@
  */
 
 #include <cRIO/MPU.h>
+#include <spdlog/spdlog.h>
 
 using namespace LSST::cRIO;
 
@@ -49,4 +50,44 @@ void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout
     // extras: device address, function, length (all 1 byte), CRC (2 bytes) = 5 total
     _commands.push_back(5 + count * 2);
     _commands.push_back(MPUCommands::CHECK_CRC);
+
+    for (uint16_t add = address; add < address + count; add++) {
+        _readRegisters.push_back(add);
+    }
+}
+
+void MPU::processResponse(uint8_t *buf, size_t len) {
+    for (size_t i = 0; i < len; i++) {
+        if (buf[i] != _mpu_address) {
+            throw std::runtime_error(
+                    fmt::format("Invalid ModBus address {}, expected {}", buf[i], _mpu_address));
+        }
+        i++;
+        if (i >= len) {
+            throw std::runtime_error("Empty response");
+        }
+
+        switch (buf[i]) {
+            case 3:
+                if (buf[i + 1] >= len - i) {
+                    throw std::runtime_error(fmt::format(
+                            "Insufficient response length: {}, expected at least {}", len - i, buf[i + 1]));
+                }
+                _processRegisters(buf + i + 1);
+                i += 1 + buf[i + 1];
+                break;
+            default:
+                throw std::runtime_error(fmt::format("Unsupported function: {}", buf[i]));
+        }
+    }
+}
+
+void MPU::_processRegisters(uint8_t *buf) {
+    for (size_t i = 0; i < buf[0]; i += 2) {
+        if (_readRegisters.empty()) {
+            throw std::runtime_error("Too big response");
+        }
+        _registers[_readRegisters.front()] = be16toh(*(reinterpret_cast<uint16_t *>(buf + 1 + i)));
+        _readRegisters.pop_front();
+    }
 }

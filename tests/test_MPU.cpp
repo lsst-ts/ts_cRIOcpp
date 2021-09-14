@@ -47,4 +47,20 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
     REQUIRE(commands[11] == 101);
     REQUIRE(commands[12] == MPUCommands::READ);
     REQUIRE(commands[13] == 25);
+
+    std::vector<uint8_t> res = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8, 9,
+                                10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+
+    REQUIRE_NOTHROW(mpu.processResponse(res.data(), res.size()));
+
+    REQUIRE(mpu.getRegister(3) == 0x0102);
+    REQUIRE(mpu.getRegister(4) == 0x0304);
+    REQUIRE(mpu.getRegister(5) == 0x0506);
+    REQUIRE(mpu.getRegister(6) == 0x0708);
+    REQUIRE(mpu.getRegister(7) == 0x090a);
+    REQUIRE(mpu.getRegister(8) == 0x0b0c);
+    REQUIRE(mpu.getRegister(9) == 0x0d0e);
+    REQUIRE(mpu.getRegister(10) == 0x0f10);
+    REQUIRE(mpu.getRegister(11) == 0x1112);
+    REQUIRE(mpu.getRegister(12) == 0x1314);
 }

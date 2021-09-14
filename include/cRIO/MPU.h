@@ -25,6 +25,8 @@
 
 #include <cRIO/ModbusBuffer.h>
 
+#include <list>
+#include <map>
 #include <vector>
 #include <cstdint>
 
@@ -100,11 +102,27 @@ public:
      *
      * @return current command buffer
      */
-    uint16_t* getCommands() { return _commands.data(); }
+    uint16_t *getCommands() { return _commands.data(); }
+
+    /**
+     * Process ModBus response. Throws std::runtime_error on error (missing response,..).
+     *
+     * @param buf response buffer
+     * @param len response buffer length
+     */
+    void processResponse(uint8_t *buf, size_t len);
+
+    uint16_t getRegister(uint16_t address) { return _registers.at(address); }
 
 private:
     std::vector<uint16_t> _commands;
     uint8_t _mpu_address;
+
+    std::list<uint16_t> _readRegisters;
+
+    std::map<uint16_t, uint16_t> _registers;
+
+    void _processRegisters(uint8_t *buf);
 };
 
 }  // namespace cRIO
