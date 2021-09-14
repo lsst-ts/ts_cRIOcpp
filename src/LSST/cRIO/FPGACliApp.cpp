@@ -36,6 +36,8 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
 
     addCommand("close", std::bind(&FPGACliApp::closeFPGA, this, std::placeholders::_1), "", NEED_FPGA, NULL,
                "Close FPGA connection");
+    addCommand("info", std::bind(&FPGACliApp::info, this, std::placeholders::_1), "s?", NEED_FPGA,
+               "<address>..", "Print ILC info");
     addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
                NEED_FPGA, "<firmware hex file> <ILC...>", "Program ILC with new firmware.");
     addCommand("help", std::bind(&FPGACliApp::helpCommands, this, std::placeholders::_1), "", 0, NULL,
