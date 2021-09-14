@@ -87,11 +87,15 @@ TEST_CASE("Test MPU preset holding registers", "[MPU]") {
     REQUIRE(commands[10] == 0x02);
     REQUIRE(commands[11] == 0x03);
     REQUIRE(commands[12] == 0x04);
-    // REQUIRE(commands[13] == 0x04);
-    // REQUIRE(commands[14] == 0x04);
+    REQUIRE(commands[13] == 0xED);
+    REQUIRE(commands[14] == 0x3A);
     REQUIRE(commands[15] == MPUCommands::WAIT_MS);
     REQUIRE(commands[16] == 102);
     REQUIRE(commands[17] == MPUCommands::READ);
     REQUIRE(commands[18] == 8);
     REQUIRE(commands[19] == MPUCommands::CHECK_CRC);
+
+    std::vector<uint8_t> res = {17, 16, 0x17, 0x18, 0, 2, 0xC6, 0xEB};
+
+    // REQUIRE_NOTHROW(mpu.processResponse(res.data(), res.size()));
 }

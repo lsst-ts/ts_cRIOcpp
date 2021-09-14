@@ -26,7 +26,6 @@
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/IntelHex.h>
 
-#include <functional>
 #include <map>
 
 namespace LSST {
@@ -39,14 +38,6 @@ namespace cRIO {
  *
  * Functions timeouts (for writing on command line as RxWait) is specified in
  * calls to callFunction.
- *
- * Replies received from ILCs shall be processed with ILC::processResponse()
- * method. Virtual processXX methods are called to process received data.
- * Relations between functions and processing methods are established with
- * ILC::addResponse().
- *
- * When processing data, the class guarantee that every non-broadcast call
- * generates reply at correct order - see ILC::processResponse() for details.
  *
  * Provides function to write and read cRIO FIFO (FPGA) Modbus buffers. Modbus
  * serial bus is serviced inside FPGA with
@@ -167,77 +158,6 @@ public:
      */
     void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
 
-    /**
-     * Add response callbacks. Both function code and error response code shall
-     * be specified.
-     *
-     * @param func callback for this function code
-     * @param action action to call when the response is found. Passed address
-     * as sole parameter. Should read response (as length of the response data
-     * is specified by function) and check CRC (see ModbusBuffer::read and
-     * ModbusBuffer::checkCRC)
-     * @param errorResponse error response code
-     * @param errorAction action to call when error is found. If no action is
-     * specified, raises ILC::Exception. Th action receives two parameters,
-     * address and error code. CRC checking is done in processResponse. This
-     * method shall not manipulate the buffer (e.g. shall not call
-     * ModbusBuffer::read or ModbusBuffer::checkCRC).
-     *
-     * @see checkCached
-     */
-    void addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,
-                     std::function<void(uint8_t, uint8_t)> errorAction = nullptr);
-
-    /**
-     * Process received data. Reads function code, check CRC, check that the
-     * function was called in request (using _commanded buffer) and calls
-     * method to process data. Repeat until all data are processed.
-     *
-     * @note Can be called multiple times. Please call ModbusBuffer::checkCommandedEmpty
-     * after all data are processed.
-     *
-     * @param response response includes response code (0x9) and start bit (need to >> 1 && 0xFF to get the
-     * Modbus data)
-     * @param length data length
-     *
-     * @throw std::runtime_error subclass on any detected error
-     *
-     * @see ModbusBuffer::checkCommandedEmpty()
-     */
-    void processResponse(uint16_t* response, size_t length);
-
-    /**
-     * Thrown when an unknown response function is received. As unknown function
-     * response means unknown message length and hence unknown CRC position and
-     * start of a new frame, the preferred handling when such error is seen is to
-     * flush response buffer and send ILC's queries again.
-     */
-    class UnknownResponse : public std::runtime_error {
-    public:
-        /**
-         * Constructed with data available during response.
-         *
-         * @param address ILC address
-         * @param func ILC function. Response for this function is unknown at the moment.
-         */
-        UnknownResponse(uint8_t address, uint8_t func);
-    };
-
-    /**
-     * Thrown when ILC error response is received.
-     */
-    class Exception : public std::runtime_error {
-    public:
-        /**
-         * The class is constructed when an ILC's error response is received.
-         *
-         * @param address ILC address
-         * @param func ILC (error) function received
-         * @param exception exception code
-         */
-        Exception(uint8_t address, uint8_t func, uint8_t exception);
-    };
-
 protected:
     /**
      * Return data item to write to buffer. Updates CRC counter.
@@ -256,18 +176,6 @@ protected:
      * @return byte written by the instruction. Start bit is removed.
      */
     virtual uint8_t readInstructionByte();
-
-    /**
-     * Called before responses are processed (before processXX methods are
-     * called).
-     */
-    virtual void preProcess(){};
-
-    /**
-     * Called after responses are processed (after processXX methods are
-     * called).
-     */
-    virtual void postProcess(){};
 
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for
@@ -413,9 +321,6 @@ protected:
 private:
     uint16_t _data_prefix;
     uint8_t _bus;
-
-    std::map<uint8_t, std::function<void(uint8_t)>> _actions;
-    std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
 
     uint8_t _broadcastCounter;
     unsigned int _timestampShift;
