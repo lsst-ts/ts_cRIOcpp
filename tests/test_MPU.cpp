@@ -49,8 +49,8 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
     REQUIRE(commands[13] == 25);
     REQUIRE(commands[14] == MPUCommands::CHECK_CRC);
 
-    std::vector<uint8_t> res = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8, 9,
-                                10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
+    std::vector<uint16_t> res = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8, 9,
+                                 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20};
 
     REQUIRE_NOTHROW(mpu.processResponse(res.data(), res.size()));
 
@@ -95,7 +95,7 @@ TEST_CASE("Test MPU preset holding registers", "[MPU]") {
     REQUIRE(commands[18] == 8);
     REQUIRE(commands[19] == MPUCommands::CHECK_CRC);
 
-    std::vector<uint8_t> res = {17, 16, 0x17, 0x18, 0, 2, 0xC6, 0xEB};
+    std::vector<uint16_t> res = {17, 16, 0x17, 0x18, 0, 2, 0xC6, 0xEB};
 
     // REQUIRE_NOTHROW(mpu.processResponse(res.data(), res.size()));
 }

@@ -25,39 +25,31 @@
 
 using namespace LSST::cRIO;
 
-void MPUBuffer::readHoldingRegisters(uint8_t mpu_address, uint16_t address, uint16_t count) {
-    callFunction(mpu_address, 3, 0, address, count);
+MPU::MPU(uint8_t mpu_address) : _mpu_address(mpu_address) {
+    addResponse(
+            3,
+            [this](uint8_t address) {
+                if (address != _mpu_address) {
+                }
+                uint8_t len = read<uint8_t>();
+                for (size_t i = 0; i < len; i += 2) {
+                    if (_readRegisters.empty()) {
+                        throw std::runtime_error("Too big response");
+                    }
+                    _registers[_readRegisters.front()] = read<uint16_t>();
+                    _readRegisters.pop_front();
+                }
+            },
+            0);
 }
-
-void MPUBuffer::presetHoldingRegisters(uint8_t mpu_address, uint16_t address, uint16_t *values,
-                                       uint8_t count) {
-    write(mpu_address);
-    write<uint8_t>(16);
-    write(address);
-    write<uint16_t>(count);
-    write<uint8_t>(count * 2);
-
-    for (uint8_t i = 0; i < count; i++) {
-        write<uint16_t>(values[i]);
-    }
-
-    writeCRC();
-    writeEndOfFrame();
-    writeWaitForRx(0);
-
-    pushCommanded(mpu_address, 16);
-}
-
-MPU::MPU(uint8_t mpu_address) : _mpu_address(mpu_address) {}
 
 void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout) {
-    MPUBuffer buffer;
-    buffer.readHoldingRegisters(_mpu_address, address, count);
+    callFunction(_mpu_address, 3, 0, address, count);
 
     // write request
     _commands.push_back(MPUCommands::WRITE);
-    _commands.push_back(buffer.getLength());
-    for (auto b : buffer.getBufferVector()) {
+    _commands.push_back(getLength());
+    for (auto b : getBufferVector()) {
         _commands.push_back(b);
     }
 
@@ -76,13 +68,26 @@ void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout
 }
 
 void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint16_t timeout) {
-    MPUBuffer buffer;
-    buffer.presetHoldingRegisters(_mpu_address, address, values, count);
+    write(_mpu_address);
+    write<uint8_t>(16);
+    write(address);
+    write<uint16_t>(count);
+    write<uint8_t>(count * 2);
+
+    for (uint8_t i = 0; i < count; i++) {
+        write<uint16_t>(values[i]);
+    }
+
+    writeCRC();
+    writeEndOfFrame();
+    writeWaitForRx(0);
+
+    pushCommanded(_mpu_address, 16);
 
     // write request
     _commands.push_back(MPUCommands::WRITE);
-    _commands.push_back(buffer.getLength());
-    for (auto b : buffer.getBufferVector()) {
+    _commands.push_back(getLength());
+    for (auto b : getBufferVector()) {
         _commands.push_back(b);
     }
 
@@ -94,40 +99,4 @@ void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t cou
     // extras: device address, function (all 1 byte), address, number of registers written, CRC (2 bytes)
     _commands.push_back(8);
     _commands.push_back(MPUCommands::CHECK_CRC);
-}
-
-void MPU::processResponse(uint8_t *buf, size_t len) {
-    for (size_t i = 0; i < len; i++) {
-        if (buf[i] != _mpu_address) {
-            throw std::runtime_error(
-                    fmt::format("Invalid ModBus address {}, expected {}", buf[i], _mpu_address));
-        }
-        i++;
-        if (i >= len) {
-            throw std::runtime_error("Empty response");
-        }
-
-        switch (buf[i]) {
-            case 3:
-                if (buf[i + 1] >= len - i) {
-                    throw std::runtime_error(fmt::format(
-                            "Insufficient response length: {}, expected at least {}", len - i, buf[i + 1]));
-                }
-                _processRegisters(buf + i + 1);
-                i += 1 + buf[i + 1];
-                break;
-            default:
-                throw std::runtime_error(fmt::format("Unsupported function: {}", buf[i]));
-        }
-    }
-}
-
-void MPU::_processRegisters(uint8_t *buf) {
-    for (size_t i = 0; i < buf[0]; i += 2) {
-        if (_readRegisters.empty()) {
-            throw std::runtime_error("Too big response");
-        }
-        _registers[_readRegisters.front()] = be16toh(*(reinterpret_cast<uint16_t *>(buf + 1 + i)));
-        _readRegisters.pop_front();
-    }
 }

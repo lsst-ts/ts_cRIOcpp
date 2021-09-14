@@ -54,34 +54,10 @@ const static uint8_t EXIT = 255;
 }  // namespace MPUCommands
 
 /**
- * Helper class. Forms MPU buffer, which should be included in commands send to
- * MPU.
- */
-class MPUBuffer : public ModbusBuffer {
-public:
-    void writeEndOfFrame() override {}
-    void writeWaitForRx(uint32_t timeoutMicros) override {}
-    void writeRxEndFrame() override {}
-
-    void readEndOfFrame() override {}
-
-    /**
-     * Writes buffer to readout register content.
-     *
-     * @param mpu_address
-     * @param address
-     * @param count
-     */
-    void readHoldingRegisters(uint8_t mpu_address, uint16_t address, uint16_t count = 1);
-
-    void presetHoldingRegisters(uint8_t mpu_address, uint16_t address, uint16_t *values, uint8_t count);
-};
-
-/**
  * The Modbus Processing Unit class. Prepares buffer with commands to send to
  * FPGA, read responses & telemetry values.
  */
-class MPU {
+class MPU : public ModbusBuffer {
 public:
     /**
      * Contruct MPU class.
@@ -89,6 +65,12 @@ public:
      * @param mpu_address MPU ModBus address
      */
     MPU(uint8_t mpu_address);
+
+    void writeEndOfFrame() override {}
+    void writeWaitForRx(uint32_t timeoutMicros) override {}
+    void writeRxEndFrame() override {}
+
+    void readEndOfFrame() override {}
 
     /**
      * Reads holding register(s).
@@ -108,14 +90,6 @@ public:
      */
     uint16_t *getCommands() { return _commands.data(); }
 
-    /**
-     * Process ModBus response. Throws std::runtime_error on error (missing response,..).
-     *
-     * @param buf response buffer
-     * @param len response buffer length
-     */
-    void processResponse(uint8_t *buf, size_t len);
-
     uint16_t getRegister(uint16_t address) { return _registers.at(address); }
 
 private:
@@ -125,8 +99,6 @@ private:
     std::list<uint16_t> _readRegisters;
 
     std::map<uint16_t, uint16_t> _registers;
-
-    void _processRegisters(uint8_t *buf);
 };
 
 }  // namespace cRIO
