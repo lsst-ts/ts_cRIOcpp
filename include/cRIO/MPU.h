@@ -73,6 +73,8 @@ public:
      * @param count
      */
     void readHoldingRegisters(uint8_t mpu_address, uint16_t address, uint16_t count = 1);
+
+    void presetHoldingRegisters(uint8_t mpu_address, uint16_t address, uint16_t *values, uint8_t count);
 };
 
 /**
@@ -96,6 +98,8 @@ public:
      * @param timeout timeout for register readout (in ms)
      */
     void readHoldingRegisters(uint16_t address, uint16_t count = 1, uint8_t timeout = 100);
+
+    void presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint16_t timeout = 100);
 
     /**
      * Returns commands buffer.
