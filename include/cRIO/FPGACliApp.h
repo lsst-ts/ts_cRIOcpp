@@ -22,6 +22,8 @@
 #include <cRIO/FPGA.h>
 #include <cRIO/PrintILC.h>
 
+#include <functional>
+
 namespace LSST {
 namespace cRIO {
 
@@ -84,17 +86,17 @@ protected:
 
     void addILC(std::shared_ptr<PrintILC> ilc) { _ilcs.push_back(ilc); }
 
+    void clearILCs() {
+        for (auto ilcp : _ilcs) {
+            ilcp->clear();
+        }
+    }
+
 private:
     FPGA* _fpga;
     std::vector<std::shared_ptr<PrintILC>> _ilcs;
 
     bool _autoOpen;
-
-    void _clearILCs() {
-        for (auto ilcp : _ilcs) {
-            ilcp->clear();
-        }
-    }
 };
 
 }  // namespace cRIO

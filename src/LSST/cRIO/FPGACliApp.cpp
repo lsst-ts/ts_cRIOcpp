@@ -74,7 +74,7 @@ int FPGACliApp::closeFPGA(command_vec cmds) {
 }
 
 int FPGACliApp::info(command_vec cmds) {
-    _clearILCs();
+    clearILCs();
 
     ILCUnits units = getILCs(cmds);
 
