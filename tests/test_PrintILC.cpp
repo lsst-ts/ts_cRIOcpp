@@ -27,6 +27,7 @@
 #include <cRIO/IntelHex.h>
 #include <cRIO/ILC.h>
 #include <cRIO/PrintILC.h>
+#include <cRIO/SimulatedILC.h>
 
 using namespace LSST::cRIO;
 
@@ -78,7 +79,7 @@ protected:
     void processVerifyUserApplication(uint8_t address, uint16_t status) override;
 
 private:
-    TestILC _response;
+    SimulatedILC _response;
 
     void _simulateModbus(uint16_t* data, size_t length);
     void _ackFunction(uint8_t address, uint8_t func);
@@ -89,9 +90,7 @@ private:
 };
 
 TestFPGA::TestFPGA()
-        : FPGA(fpgaType::SS), PrintILC(1), _response(1), _U16ResponseStatus(IDLE), _pages(nullptr) {
-    _response.simulateResponse(true);
-}
+        : FPGA(fpgaType::SS), PrintILC(1), _response(), _U16ResponseStatus(IDLE), _pages(nullptr) {}
 
 void TestFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     uint16_t* d = data;

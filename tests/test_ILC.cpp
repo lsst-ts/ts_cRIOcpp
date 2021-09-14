@@ -264,58 +264,6 @@ TEST_CASE("WriteSGL", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(ilc.checkCRC());
 }
 
-TEST_CASE("Simulate response", "[ILC]") {
-    TestILC ilc;
-    ilc.simulateResponse(true);
-
-    ilc.write<float>(0.123);
-    ilc.write(-6758.1234f);
-    ilc.writeCRC();
-
-    uint16_t* buf = ilc.getBuffer();
-
-    REQUIRE(buf[0] == 0x927a);
-    REQUIRE(buf[1] == 0x93f6);
-    REQUIRE(buf[2] == 0x93ce);
-    REQUIRE(buf[3] == 0x92da);
-
-    REQUIRE(buf[4] == 0x938a);
-    REQUIRE(buf[5] == 0x93a6);
-    REQUIRE(buf[6] == 0x9260);
-    REQUIRE(buf[7] == 0x93fa);
-
-    ilc.reset();
-
-    REQUIRE(ilc.read<float>() == 0.123f);
-    REQUIRE(ilc.read<float>() == -6758.1234f);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-
-    ilc.simulateResponse(false);
-    ilc.clear();
-
-    ilc.write<float>(0.123);
-    ilc.write(-6758.1234f);
-    ilc.writeCRC();
-
-    buf = ilc.getBuffer();
-
-    REQUIRE(buf[0] == 0x127a);
-    REQUIRE(buf[1] == 0x13f6);
-    REQUIRE(buf[2] == 0x13ce);
-    REQUIRE(buf[3] == 0x12da);
-
-    REQUIRE(buf[4] == 0x138a);
-    REQUIRE(buf[5] == 0x13a6);
-    REQUIRE(buf[6] == 0x1260);
-    REQUIRE(buf[7] == 0x13fa);
-
-    ilc.reset();
-
-    REQUIRE(ilc.read<float>() == 0.123f);
-    REQUIRE(ilc.read<float>() == -6758.1234f);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-}
-
 TEST_CASE("Parse response", "[ILC]") {
     TestILC ilc1;
     TestILC ilc2;

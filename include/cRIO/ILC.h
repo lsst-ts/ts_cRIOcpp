@@ -74,9 +74,6 @@ public:
 
     void writeRxEndFrame() override;
 
-    void writeFPGATimestamp(uint64_t timestamp);
-    void writeRxTimestamp(uint64_t timestamp);
-
     void readEndOfFrame() override;
 
     /**
@@ -159,23 +156,9 @@ public:
     void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
 
 protected:
-    /**
-     * Return data item to write to buffer. Updates CRC counter.
-     *
-     * @param data data to write.
-     *
-     * @return 16bit for command queue.
-     */
-    virtual uint16_t getByteInstruction(uint8_t data);
+    uint16_t getByteInstruction(uint8_t data) override;
 
-    /**
-     * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
-     *
-     * @throw EndOfBuffer if asking for instruction after end of the buffer
-     *
-     * @return byte written by the instruction. Start bit is removed.
-     */
-    virtual uint8_t readInstructionByte();
+    uint8_t readInstructionByte() override;
 
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for
@@ -319,7 +302,6 @@ protected:
     bool responseMatchCached(uint8_t address, uint8_t func);
 
 private:
-    uint16_t _data_prefix;
     uint8_t _bus;
 
     uint8_t _broadcastCounter;

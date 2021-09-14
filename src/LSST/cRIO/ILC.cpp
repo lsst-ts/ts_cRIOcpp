@@ -29,7 +29,6 @@ namespace LSST {
 namespace cRIO {
 
 ILC::ILC(uint8_t bus) {
-    _data_prefix = FIFO::TX_MASK;
     _bus = bus;
     _broadcastCounter = 0;
     _alwaysTrigger = false;
@@ -114,20 +113,6 @@ void ILC::writeWaitForRx(uint32_t timeoutMicros) {
 
 void ILC::writeRxEndFrame() { pushBuffer(FIFO::RX_ENDFRAME); }
 
-void ILC::writeFPGATimestamp(uint64_t timestamp) {
-    for (int i = 0; i < 4; i++) {
-        pushBuffer(timestamp & 0xFFFF);
-        timestamp >>= 16;
-    }
-}
-
-void ILC::writeRxTimestamp(uint64_t timestamp) {
-    for (int i = 0; i < 8; i++) {
-        pushBuffer(FIFO::RX_TIMESTAMP | (timestamp & 0xFF));
-        timestamp >>= 8;
-    }
-}
-
 void ILC::readEndOfFrame() {
     if (getCurrentBuffer() != FIFO::TX_FRAMEEND) {
         throw std::runtime_error(fmt::format("Expected end of frame, finds {:04x} (@ offset {})",
@@ -155,14 +140,6 @@ uint32_t ILC::readWaitForRx() {
     return ret;
 }
 
-void ILC::simulateResponse(bool simulate) {
-    if (simulate) {
-        _data_prefix = FIFO::RX_MASK;
-    } else {
-        _data_prefix = FIFO::TX_MASK;
-    }
-}
-
 uint8_t ILC::nextBroadcastCounter() {
     _broadcastCounter++;
     if (_broadcastCounter > 15) {
@@ -173,7 +150,7 @@ uint8_t ILC::nextBroadcastCounter() {
 
 uint16_t ILC::getByteInstruction(uint8_t data) {
     processDataCRC(data);
-    return _data_prefix | ((static_cast<uint16_t>(data)) << 1);
+    return FIFO::TX_MASK | ((static_cast<uint16_t>(data)) << 1);
 }
 
 uint8_t ILC::readInstructionByte() {
