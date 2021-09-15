@@ -29,7 +29,7 @@
 using namespace LSST::cRIO;
 
 FPGACliApp::FPGACliApp(const char* name, const char* description)
-        : CliApp(name, description), _fpga(nullptr), _ilcs(5), _autoOpen(true) {
+        : CliApp(name, description), _fpga(nullptr), _ilcs(), _autoOpen(true) {
     addArgument('d', "increase debug level");
     addArgument('h', "print this help");
     addArgument('O', "don't auto open (and run) FPGA");
