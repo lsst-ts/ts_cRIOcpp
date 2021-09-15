@@ -25,7 +25,7 @@
 
 using namespace LSST::cRIO;
 
-MPU::MPU(uint8_t mpu_address) : _mpu_address(mpu_address) {
+MPU::MPU(uint8_t bus, uint8_t mpu_address) : _bus(bus), _mpu_address(mpu_address), _contains_read(false) {
     addResponse(
             3,
             [this](uint8_t address) {
@@ -84,6 +84,7 @@ void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout
 
     // read response
     _commands.push_back(MPUCommands::READ);
+    _contains_read = true;
     // extras: device address, function, length (all 1 byte), CRC (2 bytes) = 5 total
     _commands.push_back(5 + count * 2);
     _commands.push_back(MPUCommands::CHECK_CRC);

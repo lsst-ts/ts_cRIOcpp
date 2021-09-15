@@ -54,19 +54,20 @@ class TestFPGA : public FPGA, public PrintILC {
 public:
     TestFPGA();
 
-    void initialize() override{};
-    void open() override{};
-    void close() override{};
-    void finalize() override{};
+    void initialize() override {}
+    void open() override {}
+    void close() override {}
+    void finalize() override {}
+    uint16_t getTxCommand(uint8_t bus) override { return FPGAAddress::MODBUS_A_TX; }
+    uint16_t getRxCommand(uint8_t bus) override { return FPGAAddress::MODBUS_A_RX; }
+    uint32_t getIrq(uint8_t bus) override { return 1; }
+    void writeMPUFIFO(MPU&) override {}
+    void readMPUFIFO(MPU&) override {}
     void writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void waitOnIrqs(uint32_t irqs, uint32_t timeout, uint32_t* triggered = NULL) override {}
     void ackIrqs(uint32_t irqs) override {}
-
-    uint16_t getTxCommand(uint8_t bus) override { return FPGAAddress::MODBUS_A_TX; }
-    uint16_t getRxCommand(uint8_t bus) override { return FPGAAddress::MODBUS_A_RX; }
-    uint32_t getIrq(uint8_t bus) override { return 1; }
 
     void setPages(uint8_t* pages) { _pages = pages; }
 

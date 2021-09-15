@@ -28,7 +28,7 @@
 using namespace LSST::cRIO;
 
 TEST_CASE("Test MPU read holding registers", "[MPU]") {
-    MPU mpu(12);
+    MPU mpu(1, 12);
     mpu.readHoldingRegisters(3, 10, 101);
 
     uint16_t* commands = mpu.getCommands();
@@ -67,7 +67,7 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
 }
 
 TEST_CASE("Test MPU preset holding registers", "[MPU]") {
-    MPU mpu(17);
+    MPU mpu(5, 17);
 
     std::vector<uint16_t> regs = {0x0102, 0x0304};
     mpu.presetHoldingRegisters(0x1718, regs.data(), regs.size(), 102);

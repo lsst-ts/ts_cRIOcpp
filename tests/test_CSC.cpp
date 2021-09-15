@@ -45,6 +45,8 @@ public:
     uint16_t getTxCommand(uint8_t) override { return 0; }
     uint16_t getRxCommand(uint8_t) override { return 0; }
     uint32_t getIrq(uint8_t) override { return 0; }
+    void writeMPUFIFO(MPU&) override {}
+    void readMPUFIFO(MPU&) override {}
     void writeCommandFIFO(uint16_t*, size_t, uint32_t) override {}
     void writeRequestFIFO(uint16_t*, size_t, uint32_t) override {}
     void readU16ResponseFIFO(uint16_t*, size_t, uint32_t) override {}

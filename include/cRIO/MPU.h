@@ -62,9 +62,19 @@ public:
     /**
      * Contruct MPU class.
      *
+     * @param bus MPU bus number (internal FPGA identifier)
      * @param mpu_address MPU ModBus address
      */
-    MPU(uint8_t mpu_address);
+    MPU(uint8_t bus, uint8_t mpu_address);
+
+    /**
+     * Returns bus number (internal FPGA identifier).
+     *
+     * @return MPU bus number
+     */
+    uint8_t getBus() { return _bus; }
+
+    bool containsRead() { return _contains_read; }
 
     void writeEndOfFrame() override {}
     void writeWaitForRx(uint32_t timeoutMicros) override {}
@@ -94,7 +104,10 @@ public:
 
 private:
     std::vector<uint16_t> _commands;
+    uint8_t _bus;
     uint8_t _mpu_address;
+
+    bool _contains_read;
 
     std::list<uint16_t> _readRegisters;
     std::list<std::pair<uint16_t, uint16_t>> _presetRegisters;
