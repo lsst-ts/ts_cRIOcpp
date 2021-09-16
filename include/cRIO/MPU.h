@@ -67,6 +67,11 @@ public:
      */
     MPU(uint8_t bus, uint8_t mpu_address);
 
+    void clearCommanded() {
+        clear();
+        _commands.clear();
+    }
+
     /**
      * Returns bus number (internal FPGA identifier).
      *

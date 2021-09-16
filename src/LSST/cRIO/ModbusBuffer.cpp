@@ -41,10 +41,12 @@ void ModbusBuffer::reset() {
     _records.clear();
 }
 
-void ModbusBuffer::clear() {
+void ModbusBuffer::clear(bool onlyBuffers) {
     _buffer.clear();
     std::queue<std::pair<uint8_t, uint8_t>> emptyQ;
-    _commanded.swap(emptyQ);
+    if (onlyBuffers == false) {
+        _commanded.swap(emptyQ);
+    }
     reset();
 }
 

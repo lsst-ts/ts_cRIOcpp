@@ -126,7 +126,7 @@ public:
     /**
      * Clears modbus buffer.
      */
-    void clear();
+    void clear(bool onlyBuffers = false);
 
     bool endOfBuffer();
     bool endOfFrame();
