@@ -100,6 +100,8 @@ public:
      */
     uint16_t *getCommands() { return _commands.data(); }
 
+    std::vector<uint16_t> getCommandVector() { return _commands; }
+
     uint16_t getRegister(uint16_t address) { return _registers[address]; }
 
 private:
