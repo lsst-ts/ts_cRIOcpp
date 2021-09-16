@@ -96,6 +96,14 @@ public:
      */
     void readHoldingRegisters(uint16_t address, uint16_t count = 1, uint8_t timeout = 100);
 
+    /**
+     * Sets modbus holding registers.
+     *
+     * @param address register address
+     * @param values register values
+     * @param count number of registers to write
+     * @param timeout timeout (in ms)
+     */
     void presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint16_t timeout = 100);
 
     /**
