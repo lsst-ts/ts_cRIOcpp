@@ -100,7 +100,7 @@ public:
      */
     uint16_t *getCommands() { return _commands.data(); }
 
-    uint16_t getRegister(uint16_t address) { return _registers.at(address); }
+    uint16_t getRegister(uint16_t address) { return _registers[address]; }
 
 private:
     std::vector<uint16_t> _commands;

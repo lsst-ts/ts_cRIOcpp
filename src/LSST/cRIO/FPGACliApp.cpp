@@ -172,3 +172,22 @@ int FPGACliApp::processCommand(Command* cmd, const command_vec& args) {
     }
     return CliApp::processCommand(cmd, args);
 }
+
+std::shared_ptr<MPU> FPGACliApp::getMPU(std::string name) {
+    std::shared_ptr<MPU> ret = NULL;
+    for (auto m : _mpu) {
+        if (strncmp(name.c_str(), m.first.c_str(), name.length()) == 0) {
+            if (ret) {
+                return NULL;
+            }
+            ret = m.second;
+        }
+    }
+    return ret;
+}
+
+void FPGACliApp::printMPU() {
+    for (auto m : _mpu) {
+        std::cerr << "  * " << m.first << std::endl;
+    }
+}

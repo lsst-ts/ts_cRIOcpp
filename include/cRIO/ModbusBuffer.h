@@ -101,7 +101,7 @@ public:
     /**
      * Returns buffer memory.  Calls to write* methods can result in
      * reallocation of the buffer memory, trying to read from getBuffer if that
-     * happens results in undefined behaviour.
+     * happens results in undefined behavior.
      *
      * @return uint16_t FIFO buffer
      */

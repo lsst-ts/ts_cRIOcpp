@@ -86,6 +86,12 @@ protected:
 
     void addILC(std::shared_ptr<PrintILC> ilc) { _ilcs.push_back(ilc); }
 
+    void addMPU(const char* name, std::shared_ptr<MPU> mpu) { _mpu.emplace(name, mpu); }
+
+    void printMPU();
+
+    std::shared_ptr<MPU> getMPU(std::string name);
+
     void clearILCs() {
         for (auto ilcp : _ilcs) {
             ilcp->clear();
@@ -95,6 +101,7 @@ protected:
 private:
     FPGA* _fpga;
     std::vector<std::shared_ptr<PrintILC>> _ilcs;
+    std::map<std::string, std::shared_ptr<MPU>> _mpu;
 
     bool _autoOpen;
 };
