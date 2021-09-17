@@ -372,7 +372,7 @@ int verifyArguments(const command_vec& cmds, const char* args) {
             case 'H':
             case 'h':
                 if (!verifyHex(cmds[an].c_str())) {
-                    std::cerr << "Expecting hex umber, received " << cmds[an] << std::endl;
+                    std::cerr << "Expecting hex number, received " << cmds[an] << std::endl;
                     return -1;
                 }
 
