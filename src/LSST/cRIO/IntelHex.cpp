@@ -62,12 +62,6 @@ void IntelHex::load(std::istream &inputStream) {
                             fmt::format("Invalid extension size - expected 2, got {}", hexLine.data.size()));
                 }
                 extensionData = *(reinterpret_cast<uint16_t *>(hexLine.data.data())) > 0;
-                if (hexLine.Data.size() != 2) {
-                    throw LoadError(
-                            _lineNo, 0xFFFF,
-                            fmt::format("Invalid extension size - expected 2, got {}", hexLine.data.size()));
-                }
-                extensionData = *(reinterpret_cast<uint16_t *>(hexLine.Data.data())) > 0;
                 break;
             case IntelRecordType::EndOfFile:
                 return;

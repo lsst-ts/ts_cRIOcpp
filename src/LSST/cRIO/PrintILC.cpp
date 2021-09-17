@@ -124,15 +124,6 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     fpga->ilcCommands(*this);
     clear();
 
-    uint16_t dataCRC;
-    uint16_t startAddress;
-    uint16_t dataLength;
-
-    _writeHex(fpga, address, hex, dataCRC, startAddress, dataLength);
-
-    writeApplicationStats(address, dataCRC, startAddress, dataLength);
-    writeVerifyApplication(address);
-
     changeILCMode(address, ILCMode::Standby);
     fpga->ilcCommands(*this);
     clear();
