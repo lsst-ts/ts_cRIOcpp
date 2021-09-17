@@ -48,8 +48,8 @@ const static uint8_t OUTPUT = 6;
 const static uint8_t WRITE = 20;
 const static uint8_t TELEMETRY_BYTE = 30;
 const static uint8_t TELEMETRY_16 = 31;
-const static uint8_t TELEMETRY_32 = 30;
-const static uint8_t TELEMETRY_64 = 30;
+const static uint8_t TELEMETRY_32 = 32;
+const static uint8_t TELEMETRY_64 = 33;
 const static uint8_t EXIT = 255;
 }  // namespace MPUCommands
 
