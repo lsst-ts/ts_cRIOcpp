@@ -32,7 +32,7 @@ public:
     SimulatedILC(uint16_t* buffer, size_t length) : ModbusBuffer(buffer, length) {}
 
     void readEndOfFrame() override {}
-    void writeEndOfFrame() override { pushBuffer(FIFO::RX_ENDFRAME); }
+    void writeEndOfFrame() override {}
     void writeWaitForRx(uint32_t timeoutMicros) override {}
     void writeRxEndFrame() override {}
 

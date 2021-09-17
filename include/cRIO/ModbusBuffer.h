@@ -244,14 +244,6 @@ public:
      * @param data
      * @param len
      */
-    uint32_t readWaitForRx();
-
-    /**
-     * Write uint8_t buffer to modbus, updates CRC.
-     *
-     * @param data
-     * @param len
-     */
     void writeBuffer(uint8_t* data, size_t len);
 
     /**
@@ -321,6 +313,74 @@ public:
     void checkCommandedEmpty();
 
     /**
+     * Add response callbacks. Both function code and error response code shall
+     * be specified.
+     *
+     * @param func callback for this function code
+     * @param action action to call when the response is found. Passed address
+     * as sole parameter. Should read response (as length of the response data
+     * is specified by function) and check CRC (see ModbusBuffer::read and
+     * ModbusBuffer::checkCRC)
+     * @param errorResponse error response code
+     * @param errorAction action to call when error is found. If no action is
+     * specified, raises ModbusBuffer::Exception. Th action receives two parameters,
+     * address and error code. CRC checking is done in processResponse. This
+     * method shall not manipulate the buffer (e.g. shall not call
+     * ModbusBuffer::read or ModbusBuffer::checkCRC).
+     *
+     * @see checkCached
+     */
+    void addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,
+                     std::function<void(uint8_t, uint8_t)> errorAction = nullptr);
+
+    /**
+     * Process received data. Reads function code, check CRC, check that the
+     * function was called in request (using _commanded buffer) and calls
+     * method to process data. Repeat until all data are processed.
+     *
+     * @note Can be called multiple times. Please call ModbusBuffer::checkCommandedEmpty
+     * after all data are processed.
+     *
+     * @param response response includes response code (0x9) and start bit (need to >> 1 && 0xFF to get the
+     * Modbus data)
+     * @param length data length
+     *
+     * @throw std::runtime_error subclass on any detected error
+     *
+     * @see ModbusBuffer::checkCommandedEmpty()
+     */
+    void processResponse(uint16_t* response, size_t length);
+
+    /**
+     * Called before responses are processed (before processXX methods are
+     * called).
+     */
+    virtual void preProcess(){};
+
+    /**
+     * Called after responses are processed (after processXX methods are
+     * called).
+     */
+    virtual void postProcess(){};
+
+    /**
+     * Thrown when an unknown response function is received. As unknown function
+     * response means unknown message length and hence unknown CRC position and
+     * start of a new frame, the preferred handling when such error is seen is to
+     * flush response buffer and send the queries again.
+     */
+    class UnknownResponse : public std::runtime_error {
+    public:
+        /**
+         * Constructed with data available during response.
+         *
+         * @param address ModBus address
+         * @param func ModBus function. Response for this function is unknown at the moment.
+         */
+        UnknownResponse(uint8_t address, uint8_t func);
+    };
+
+    /**
      * Class to calculate CRC. Example usage:
      *
      * @code{.cpp}
@@ -362,6 +422,21 @@ public:
 
     private:
         uint16_t _crcCounter;
+    };
+
+    /**
+     * Thrown when ModBus error response is received.
+     */
+    class Exception : public std::runtime_error {
+    public:
+        /**
+         * The class is constructed when an Modbus's error response is received.
+         *
+         * @param address Modbus address
+         * @param func Modbus (error) function received
+         * @param exception exception code
+         */
+        Exception(uint8_t address, uint8_t func, uint8_t exception);
     };
 
     /**
@@ -500,27 +575,13 @@ protected:
 
 private:
     std::vector<uint16_t> _buffer;
-    uint32_t _index;
-    CRC _crc;
-    uint16_t _data_prefix;
-
-    std::queue<std::pair<uint8_t, uint8_t>> _commanded;
-
-    void _processDataCRC(uint8_t data);
 
     /**
-     * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
-     *
-     * @throw EndOfBuffer if asking for instruction after end of the buffer
-     *
-     * @return byte written by the instruction. Start bit is removed.
+     * Current indes in the buffer.
      */
-    uint8_t _readInstructionByte() {
-        if (endOfBuffer()) {
-            throw EndOfBuffer();
-        }
-        return (uint8_t)((_buffer[_index++] >> 1) & 0xFF);
-    }
+    size_t _index;
+
+    CRC _crc;
 
     std::queue<std::pair<uint8_t, uint8_t>> _commanded;
 

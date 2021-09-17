@@ -79,8 +79,6 @@ public:
      */
     uint8_t getBus() { return _bus; }
 
-    void setAddress(uint8_t address) { _mpu_address = address; }
-
     bool containsRead() { return _contains_read; }
 
     void writeEndOfFrame() override {}
@@ -89,8 +87,6 @@ public:
 
     void readEndOfFrame() override {}
 
-    void readInputStatus(uint16_t address, uint16_t count = 1, uint8_t timeout = 100);
-
     /**
      * Reads holding register(s).
      *
@@ -98,16 +94,7 @@ public:
      * @param count number of registers to read
      * @param timeout timeout for register readout (in ms)
      */
-    void readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout = 100);
-
-    /**
-     * Write single register.
-     *
-     * @param address register address
-     * @param value register value
-     * @param timeout timeout (in ms)
-     */
-    void presetHoldingRegister(uint16_t address, uint16_t value, uint8_t timeout = 100);
+    void readHoldingRegisters(uint16_t address, uint16_t count = 1, uint8_t timeout = 100);
 
     /**
      * Sets modbus holding registers.
@@ -117,33 +104,29 @@ public:
      * @param count number of registers to write
      * @param timeout timeout (in ms)
      */
-    void presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint8_t timeout = 100);
+    void presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint16_t timeout = 100);
 
     /**
      * Returns commands buffer.
      *
      * @return current command buffer
      */
-    uint8_t *getCommands() { return _commands.data(); }
+    uint16_t *getCommands() { return _commands.data(); }
 
-    std::vector<uint8_t> getCommandVector() { return _commands; }
+    std::vector<uint16_t> getCommandVector() { return _commands; }
 
-    bool getInputStatus(uint16_t address) { return _inputStatus.at(address); }
-    uint16_t getRegister(uint16_t address) { return _registers.at(address); }
+    uint16_t getRegister(uint16_t address) { return _registers[address]; }
 
 private:
-    std::vector<uint8_t> _commands;
+    std::vector<uint16_t> _commands;
     uint8_t _bus;
     uint8_t _mpu_address;
 
     bool _contains_read;
 
-    std::list<std::pair<uint16_t, uint16_t>> _readInputStatus;
     std::list<uint16_t> _readRegisters;
-    std::list<std::pair<uint16_t, uint16_t>> _presetRegister;
     std::list<std::pair<uint16_t, uint16_t>> _presetRegisters;
 
-    std::map<uint16_t, bool> _inputStatus;
     std::map<uint16_t, uint16_t> _registers;
 };
 

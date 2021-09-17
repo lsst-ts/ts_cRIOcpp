@@ -150,18 +150,6 @@ uint8_t ILC::nextBroadcastCounter() {
     return _broadcastCounter;
 }
 
-void ILC::changeILCMode(uint8_t address, uint16_t mode) {
-    uint32_t timeout = 335;
-    try {
-        if ((getLastMode(address) == ILCMode::Standby && mode == ILCMode::FirmwareUpdate) ||
-            (getLastMode(address) == ILCMode::FirmwareUpdate && mode == ILCMode::Standby)) {
-            timeout = 100000;
-        }
-    } catch (std::out_of_range &err) {
-    }
-    callFunction(address, 65, timeout, mode);
-}
-
 uint16_t ILC::getByteInstruction(uint8_t data) {
     processDataCRC(data);
     return FIFO::TX_MASK | ((static_cast<uint16_t>(data)) << 1);
@@ -172,23 +160,6 @@ uint8_t ILC::readInstructionByte() {
         throw EndOfBuffer();
     }
     return (uint8_t)((getCurrentBufferAndInc() >> 1) & 0xFF);
-}
-
-const char *ILC::getModeStr(uint8_t mode) {
-    switch (mode) {
-        case ILCMode::Standby:
-            return "Standby";
-        case ILCMode::Disabled:
-            return "Disabled";
-        case ILCMode::Enabled:
-            return "Enabled";
-        case ILCMode::FirmwareUpdate:
-            return "Firmware Updade";
-        case ILCMode::Fault:
-            return "Fault";
-        default:
-            return "unknow";
-    }
 }
 
 bool ILC::responseMatchCached(uint8_t address, uint8_t func) {

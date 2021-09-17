@@ -111,7 +111,7 @@ TEST_CASE("Construct filled buffer", "[ILC]") {
     REQUIRE(ilc.read<uint8_t>() == 0x01);
     REQUIRE(ilc.read<uint8_t>() == 0x02);
     REQUIRE(ilc.read<uint8_t>() == 0xff);
-    REQUIRE_THROWS_AS(ilc.read<uint8_t>(), ModbusBuffer::EndOfBuffer);
+    REQUIRE_THROWS_AS(ilc.read<uint8_t>(), ModbusBuffer::EndOfBuffer&);
 }
 
 TEST_CASE("Generic functions", "[ILC]") {

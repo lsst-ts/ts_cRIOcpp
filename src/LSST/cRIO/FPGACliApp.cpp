@@ -29,13 +29,15 @@
 using namespace LSST::cRIO;
 
 FPGACliApp::FPGACliApp(const char* name, const char* description)
-        : CliApp(name, description), _fpga(nullptr), _ilcs(5), _autoOpen(true) {
+        : CliApp(name, description), _fpga(nullptr), _ilcs(), _autoOpen(true) {
     addArgument('d', "increase debug level");
     addArgument('h', "print this help");
     addArgument('O', "don't auto open (and run) FPGA");
 
     addCommand("close", std::bind(&FPGACliApp::closeFPGA, this, std::placeholders::_1), "", NEED_FPGA, NULL,
                "Close FPGA connection");
+    addCommand("info", std::bind(&FPGACliApp::info, this, std::placeholders::_1), "s?", NEED_FPGA,
+               "<address>..", "Print ILC info");
     addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
                NEED_FPGA, "<firmware hex file> <ILC...>", "Program ILC with new firmware.");
     addCommand("help", std::bind(&FPGACliApp::helpCommands, this, std::placeholders::_1), "", 0, NULL,
@@ -74,7 +76,7 @@ int FPGACliApp::closeFPGA(command_vec cmds) {
 }
 
 int FPGACliApp::info(command_vec cmds) {
-    _clearILCs();
+    clearILCs();
 
     ILCUnits units = getILCs(cmds);
 
@@ -169,4 +171,23 @@ int FPGACliApp::processCommand(Command* cmd, const command_vec& args) {
         return -1;
     }
     return CliApp::processCommand(cmd, args);
+}
+
+std::shared_ptr<MPU> FPGACliApp::getMPU(std::string name) {
+    std::shared_ptr<MPU> ret = NULL;
+    for (auto m : _mpu) {
+        if (strncmp(name.c_str(), m.first.c_str(), name.length()) == 0) {
+            if (ret) {
+                return NULL;
+            }
+            ret = m.second;
+        }
+    }
+    return ret;
+}
+
+void FPGACliApp::printMPU() {
+    for (auto m : _mpu) {
+        std::cerr << "  * " << m.first << std::endl;
+    }
 }
