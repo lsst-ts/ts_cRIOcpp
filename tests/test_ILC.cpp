@@ -103,6 +103,17 @@ protected:
     void processResetServer(uint8_t address) override { lastReset = address; }
 };
 
+TEST_CASE("Construct filled buffer", "[ILC]") {
+    uint16_t buf[3] = {0x1202, 0x1204, 0x13fe};
+    TestILC ilc;
+    ilc.setBuffer(buf, 3);
+
+    REQUIRE(ilc.read<uint8_t>() == 0x01);
+    REQUIRE(ilc.read<uint8_t>() == 0x02);
+    REQUIRE(ilc.read<uint8_t>() == 0xff);
+    REQUIRE_THROWS_AS(ilc.read<uint8_t>(), ModbusBuffer::EndOfBuffer&);
+}
+
 TEST_CASE("Generic functions", "[ILC]") {
     TestILC ilc;
 
@@ -129,6 +140,128 @@ TEST_CASE("Generic functions", "[ILC]") {
     REQUIRE_NOTHROW(ilc.checkCRC());
     REQUIRE_NOTHROW(ilc.readEndOfFrame());
     REQUIRE(ilc.readWaitForRx() == 87000);
+}
+
+TEST_CASE("CalculateCRC", "[ILC]") {
+    TestILC ilc;
+    // address
+    ilc.write<uint8_t>(123);
+    ilc.write<uint8_t>(17);
+    ilc.writeCRC();
+    ilc.writeEndOfFrame();
+
+    uint16_t* buf = ilc.getBuffer();
+
+    REQUIRE(buf[2] == (0x1200 | (0xe3 << 1)));
+    REQUIRE(buf[3] == (0x1200 | (0x4c << 1)));
+}
+
+TEST_CASE("CalculateLongCRC", "[ILC]") {
+    std::vector<uint8_t> data = {0x81, 0x11, 0x10, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAA, 0xFF,
+                                 0xBB, 0xCC, 0xDD, 0xEE, 0x11, 0x53, 0x74, 0x61, 0x72};
+
+    TestILC ilc;
+    for (auto d : data) ilc.write(d);
+
+    ilc.writeCRC();
+    ilc.writeEndOfFrame();
+
+    REQUIRE(ilc.getLength() == 22);
+
+    uint16_t* buf = ilc.getBuffer();
+
+    REQUIRE(buf[19] == (0x1200 | (0xA7 << 1)));
+    REQUIRE(buf[20] == (0x1200 | (0x9F << 1)));
+}
+
+TEST_CASE("WriteUxx", "[ILC]") {
+    TestILC ilc;
+    ilc.write<uint8_t>(0x12);
+    ilc.write<uint16_t>(0x3456);
+    ilc.write<uint32_t>(0x7890abcd);
+    ilc.write<uint64_t>(0xAAbbCCddEEff00);
+
+    ilc.writeCRC();
+
+    uint16_t* buf = ilc.getBuffer();
+
+    // bytes are written left shifted by 1, and masked with 0x12
+
+    REQUIRE(buf[0] == 0x1224);
+    REQUIRE(buf[1] == 0x1268);
+    REQUIRE(buf[2] == 0x12ac);
+    REQUIRE(buf[3] == 0x12f0);
+    REQUIRE(buf[4] == 0x1320);
+    REQUIRE(buf[5] == 0x1356);
+    REQUIRE(buf[6] == 0x139a);
+
+    ilc.reset();
+
+    REQUIRE(ilc.read<uint8_t>() == 0x12);
+    REQUIRE(ilc.read<uint16_t>() == 0x3456);
+    REQUIRE(ilc.read<uint32_t>() == 0x7890abcd);
+    REQUIRE(ilc.read<uint64_t>() == 0xAAbbCCddEEff00);
+
+    REQUIRE_NOTHROW(ilc.checkCRC());
+}
+
+TEST_CASE("WriteIxx", "[ILC]") {
+    TestILC ilc;
+    ilc.write<int8_t>(0x12);
+    ilc.write<int16_t>(0x3456);
+    ilc.write<int32_t>(0x7890abcd);
+    ilc.write<int32_t>(0xf890abcd);
+    ilc.writeCRC();
+
+    uint16_t* buf = ilc.getBuffer();
+
+    // bytes are written left shifted by 1, and masked with 0x12
+
+    REQUIRE(buf[0] == 0x1224);
+    REQUIRE(buf[1] == 0x1268);
+    REQUIRE(buf[2] == 0x12ac);
+    REQUIRE(buf[3] == 0x12f0);
+    REQUIRE(buf[4] == 0x1320);
+    REQUIRE(buf[5] == 0x1356);
+    REQUIRE(buf[6] == 0x139a);
+    REQUIRE(buf[7] == 0x13f0);
+    REQUIRE(buf[8] == 0x1320);
+    REQUIRE(buf[9] == 0x1356);
+    REQUIRE(buf[10] == 0x139a);
+
+    ilc.reset();
+
+    REQUIRE(ilc.read<uint8_t>() == 0x12);
+    REQUIRE(ilc.read<uint16_t>() == 0x3456);
+    REQUIRE(ilc.read<uint32_t>() == 0x7890abcd);
+    REQUIRE(ilc.read<uint32_t>() == 0xf890abcd);
+
+    REQUIRE_NOTHROW(ilc.checkCRC());
+}
+
+TEST_CASE("WriteSGL", "[ModbusBuffer]") {
+    TestILC ilc;
+    ilc.write<float>(0.123);
+    ilc.write(-6758.1234f);
+    ilc.writeCRC();
+
+    uint16_t* buf = ilc.getBuffer();
+
+    REQUIRE(buf[0] == 0x127a);
+    REQUIRE(buf[1] == 0x13f6);
+    REQUIRE(buf[2] == 0x13ce);
+    REQUIRE(buf[3] == 0x12da);
+
+    REQUIRE(buf[4] == 0x138a);
+    REQUIRE(buf[5] == 0x13a6);
+    REQUIRE(buf[6] == 0x1260);
+    REQUIRE(buf[7] == 0x13fa);
+
+    ilc.reset();
+
+    REQUIRE(ilc.read<float>() == 0.123f);
+    REQUIRE(ilc.read<float>() == -6758.1234f);
+    REQUIRE_NOTHROW(ilc.checkCRC());
 }
 
 TEST_CASE("Parse response", "[ILC]") {

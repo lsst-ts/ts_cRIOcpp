@@ -27,6 +27,7 @@
 #include <stdint.h>
 
 #include "ILC.h"
+#include "MPU.h"
 
 namespace LSST {
 namespace cRIO {
@@ -125,6 +126,16 @@ public:
      */
     void ilcCommands(ILC& ilc);
 
+    void mpuCommands(MPU& mpu);
+
+    /**
+     * Commands FPGA to write to MPU commands buffer.
+     *
+     * @param mpu
+     */
+    virtual void writeMPUFIFO(MPU& mpu) = 0;
+    virtual void readMPUFIFO(MPU& mpu) = 0;
+
     /**
      * Writes buffer to command FIFO. Command FIFO is processed in
      * CommandMultiplexer Vi.
@@ -136,7 +147,7 @@ public:
      *
      * @param timeoutInMs timeout for write operation. 0 for no timeout
      * (throw exception when data cannot be written), -1 for no timeout (waits
-     * indefintely for FIFO availability).
+     * indefinitely for FIFO availability).
      *
      * @throw NiError on NI error
      */

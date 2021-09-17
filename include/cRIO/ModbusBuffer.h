@@ -22,6 +22,8 @@
 #define CRIO_MODBUSBUFFER_H_
 
 #include <cRIO/DataTypes.h>
+#include <functional>
+#include <map>
 #include <queue>
 #include <string>
 #include <stdexcept>
@@ -53,31 +55,21 @@ const static uint16_t RX_MASK = 0x9200;
 }  // namespace FIFO
 
 /**
- * Utility class for Modbus buffer management. Provides function to write and
- * read cRIO FIFO (FPGA) Modbus buffers. Modbus serial bus is serviced inside
- * FPGA with
- * [Common_FPGA_Modbus](https://github.com/lsst-ts/Common_FPGA_Modbus) module.
- *
- * 8bit data are stored as 16bit values. Real data are left shifted by 1. Last
- * bit (0, transmitted first) is start bit, always 0 for ILC communication.
- * First data bit (transmitted last) is stop bit, shall be 1. So uint8_t data d
- * needs to be written as:
- *
- * (0x1200 | (d << 1))
- * (TX_MASK | (d << 1))
- *
- * and response from FPGA ResponseFIFOs is coming with 0x9200 prefix, so:
- *
- * (0x9200 | (d << 1))
- * (RX_MASK | (d << 1))
- *
- * Please see ModbusBuffer::simulateReponse() for details of how to change
- * prefix.
+ * Utility class for Modbus buffer management.
  *
  * This class doesn't handle subnet. Doesn't handle FPGA FIFO read/writes -
  * that's responsibility of FPGA. ModbusBuffer handles only serialization & de
  * serialization of FPGA's FIFO data. Also this class handles CRC calculation,
  * writes (in output buffers) and checks (for input buffers).
+ *
+ * Replies received from ModBus shall be processed with ModbusBuffer::processResponse()
+ * method. Virtual processXX methods are called to process received data.
+ * Relations between functions and processing methods are established with
+ * ModbusBuffer::addResponse().
+ *
+ * When processing data, the class guarantee that every non-broadcast call
+ * generates reply at correct order - see ModbusBuffer::processResponse() for details.
+ *
  *
  * This class also manages change detection. When recordChanges() is called,
  * all read data are (uint_8, uncoverted) are stored into separated buffer.
@@ -109,11 +101,13 @@ public:
     /**
      * Returns buffer memory.  Calls to write* methods can result in
      * reallocation of the buffer memory, trying to read from getBuffer if that
-     * happens results in undefined behaviour.
+     * happens results in undefined behavior.
      *
      * @return uint16_t FIFO buffer
      */
     uint16_t* getBuffer() { return _buffer.data(); }
+
+    const std::vector<uint16_t> getBufferVector() { return _buffer; }
 
     /**
      * Returns buffer length.
@@ -127,19 +121,15 @@ public:
      * internal CRC counter, so CRC will be recalculated during subsequent
      * reads.
      */
-    void reset();
+    virtual void reset();
 
     /**
      * Clears modbus buffer.
-     */
-    void clear();
-
-    /**
-     * Sets simulate mode.
      *
-     * @param simulate true if buffer shall product simulated replies
+     * @param onlyBuffers if true, clears only buffers - function history (used
+     * to make sure all queries are answered) isn't cleared. Defaults to false
      */
-    void simulateResponse(bool simulate);
+    void clear(bool onlyBuffers = false);
 
     bool endOfBuffer();
     bool endOfFrame();
@@ -179,7 +169,7 @@ public:
 
     /**
      * Template to read next data from message. Data length is specified with
-     * template type. Handles conversion from ILC's big endian (network order).
+     * template type. Handles conversion from ModBus/ILC's big endian (network order).
      *
      * Intended usage:
      *
@@ -239,16 +229,7 @@ public:
      *
      * @throw std::runtime_error if end of frame isn't next buffer entry
      */
-    void readEndOfFrame();
-
-    /**
-     * Returns wait for receive timeout.
-     *
-     * @return timeout in us (microseconds)
-     *
-     * @throw std::runtime_error if wait for rx delay command isn't present
-     */
-    uint32_t readWaitForRx();
+    virtual void readEndOfFrame() = 0;
 
     /**
      * Write uint8_t buffer to modbus, updates CRC.
@@ -294,22 +275,20 @@ public:
 
     /**
      * Writes end of the frame. Causes silence on transmitting bus, so
-     * commanded ILC can check CRC of the incomming message and starts to
-     * execute the commanded action.
+     * commanded ModBus can check CRC of the incomming message and starts to
+     * execute the commanded action. Should be overriden in children.
      */
-    void writeEndOfFrame();
+    virtual void writeEndOfFrame() = 0;
 
     /**
-     * Write FPGA Modbus command to wait for ILC response. If no response is received within timeout,
+     * Write FPGA Modbus command to wait for device response. If no response is
+     * received within timeout,
      *
      * @param timeoutMicros
      */
-    void writeWaitForRx(uint32_t timeoutMicros);
+    virtual void writeWaitForRx(uint32_t timeoutMicros) = 0;
 
-    void writeRxEndFrame();
-
-    void writeFPGATimestamp(uint64_t timestamp);
-    void writeRxTimestamp(uint64_t timestamp);
+    virtual void writeRxEndFrame() = 0;
 
     /**
      * Sets current read buffer
@@ -325,6 +304,74 @@ public:
      * @throw std::runtime_error if commands to be processed are still expected
      */
     void checkCommandedEmpty();
+
+    /**
+     * Add response callbacks. Both function code and error response code shall
+     * be specified.
+     *
+     * @param func callback for this function code
+     * @param action action to call when the response is found. Passed address
+     * as sole parameter. Should read response (as length of the response data
+     * is specified by function) and check CRC (see ModbusBuffer::read and
+     * ModbusBuffer::checkCRC)
+     * @param errorResponse error response code
+     * @param errorAction action to call when error is found. If no action is
+     * specified, raises ModbusBuffer::Exception. Th action receives two parameters,
+     * address and error code. CRC checking is done in processResponse. This
+     * method shall not manipulate the buffer (e.g. shall not call
+     * ModbusBuffer::read or ModbusBuffer::checkCRC).
+     *
+     * @see checkCached
+     */
+    void addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,
+                     std::function<void(uint8_t, uint8_t)> errorAction = nullptr);
+
+    /**
+     * Process received data. Reads function code, check CRC, check that the
+     * function was called in request (using _commanded buffer) and calls
+     * method to process data. Repeat until all data are processed.
+     *
+     * @note Can be called multiple times. Please call ModbusBuffer::checkCommandedEmpty
+     * after all data are processed.
+     *
+     * @param response response includes response code (0x9) and start bit (need to >> 1 && 0xFF to get the
+     * Modbus data)
+     * @param length data length
+     *
+     * @throw std::runtime_error subclass on any detected error
+     *
+     * @see ModbusBuffer::checkCommandedEmpty()
+     */
+    void processResponse(uint16_t* response, size_t length);
+
+    /**
+     * Called before responses are processed (before processXX methods are
+     * called).
+     */
+    virtual void preProcess(){};
+
+    /**
+     * Called after responses are processed (after processXX methods are
+     * called).
+     */
+    virtual void postProcess(){};
+
+    /**
+     * Thrown when an unknown response function is received. As unknown function
+     * response means unknown message length and hence unknown CRC position and
+     * start of a new frame, the preferred handling when such error is seen is to
+     * flush response buffer and send the queries again.
+     */
+    class UnknownResponse : public std::runtime_error {
+    public:
+        /**
+         * Constructed with data available during response.
+         *
+         * @param address ModBus address
+         * @param func ModBus function. Response for this function is unknown at the moment.
+         */
+        UnknownResponse(uint8_t address, uint8_t func);
+    };
 
     /**
      * Class to calculate CRC. Example usage:
@@ -371,6 +418,21 @@ public:
     };
 
     /**
+     * Thrown when ModBus error response is received.
+     */
+    class Exception : public std::runtime_error {
+    public:
+        /**
+         * The class is constructed when an Modbus's error response is received.
+         *
+         * @param address Modbus address
+         * @param func Modbus (error) function received
+         * @param exception exception code
+         */
+        Exception(uint8_t address, uint8_t func, uint8_t exception);
+    };
+
+    /**
      * Exception thrown when calculated CRC doesn't match received CRC.
      */
     class CRCError : public std::runtime_error {
@@ -391,13 +453,41 @@ public:
     };
 
 protected:
+    uint16_t getCurrentBuffer() { return _buffer[_index]; }
+    uint16_t getCurrentBufferAndInc() { return _buffer[_index++]; }
+    size_t getCurrentIndex() { return _index; }
+
+    void pushBuffer(uint16_t data) { _buffer.push_back(data); }
+    void incIndex() { _index++; }
+    void resetCRC() { _crc.reset(); }
+
+    /**
+     * Return data item to write to buffer. Updates CRC counter.
+     *
+     * @param data data to write.
+     *
+     * @return 16bit for command queue.
+     */
+    virtual uint16_t getByteInstruction(uint8_t data);
+
+    void processDataCRC(uint8_t data);
+
+    /**
+     * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
+     *
+     * @throw EndOfBuffer if asking for instruction after end of the buffer
+     *
+     * @return byte written by the instruction. Start bit is removed.
+     */
+    virtual uint8_t readInstructionByte();
+
     /**
      * Add to buffer Modbus function. Assumes subnet, data lengths and triggers are
      * send by FPGA class. If non-broadcast address is passed, stores address
      * and function into _commanded buffer.
      *
-     * @param address ILC address on subnet
-     * @param function ILC function to call
+     * @param address ModBus address on subnet
+     * @param function ModBus function to call
      * @param timeout function call timeout (excluding transfer times) in us (microseconds)
      */
     void callFunction(uint8_t address, uint8_t function, uint32_t timeout);
@@ -408,8 +498,8 @@ protected:
      * @see callFunction(uint8_t, uint8_t, uint32_t)
      *
      * @tparam dt parameter type
-     * @param address ILC address on subnet
-     * @param function ILC function to call
+     * @param address ModBus address on subnet
+     * @param function ModBus function to call
      * @param timeout function call timeout (excluding transfer time) in us (microseconds)
      * @param params function parameters
      */
@@ -430,11 +520,12 @@ protected:
      *
      * @param address broadcast address. Shall be 0, 148, 149 or 250. Not checked if in correct range
      * @param function function to call
-     * @param counter broadcast counter. ILC provides method to retrieve this
+     * @param counter broadcast counter. ModBus provides method to retrieve this
      * in unicast function to verify the broadcast was received and processed
      * @param delay delay in us (microseconds) for broadcast processing. Bus will remain silence for this
-     * number of us to allow ILC process the broadcast function
-     * @param data function parameters. Usually ILC's bus ID indexed array of values to pass to the ILCs
+     * number of us to allow ModBus process the broadcast function
+     * @param data function parameters. Usually device's bus ID indexed array
+     * of values to pass to the devices
      * @param dataLen number of parameters
      */
     void broadcastFunction(uint8_t address, uint8_t function, uint8_t counter, uint32_t delay, uint8_t* data,
@@ -443,8 +534,8 @@ protected:
     /**
      * Checks that received response matches expected response or no more receive commands are expected.
      *
-     * @param address ILC address on subnet. Use broadcast (0) to check for no more replies expected
-     * @param function ILC function code; if check is performed for error response, must equal to called
+     * @param address ModBus address on subnet. Use broadcast (0) to check for no more replies expected
+     * @param function ModBus function code; if check is performed for error response, must equal to called
      * function
      *
      * @throw UnmatchedFunction on error
@@ -477,36 +568,15 @@ protected:
 
 private:
     std::vector<uint16_t> _buffer;
-    uint32_t _index;
+
+    /**
+     * Current indes in the buffer.
+     */
+    size_t _index;
+
     CRC _crc;
-    uint16_t _data_prefix;
 
     std::queue<std::pair<uint8_t, uint8_t>> _commanded;
-
-    void _processDataCRC(uint8_t data);
-
-    /**
-     * Reads instruction byte from FPGA FIFO. Increases index after instruction is read.
-     *
-     * @throw EndOfBuffer if asking for instruction after end of the buffer
-     *
-     * @return byte written by the instruction. Start bit is removed.
-     */
-    uint8_t _readInstructionByte() {
-        if (endOfBuffer()) {
-            throw EndOfBuffer();
-        }
-        return (uint8_t)((_buffer[_index++] >> 1) & 0xFF);
-    }
-
-    /**
-     * Return data item to write to buffer. Updates CRC counter.
-     *
-     * @param data data to write.
-     *
-     * @return 16bit for command queue.
-     */
-    uint16_t _getByteInstruction(uint8_t data);
 
     void _functionArguments() {}
 
@@ -518,6 +588,9 @@ private:
 
     bool _recordChanges;
     std::vector<uint8_t> _records;
+
+    std::map<uint8_t, std::function<void(uint8_t)>> _actions;
+    std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
 };
 
 template <>

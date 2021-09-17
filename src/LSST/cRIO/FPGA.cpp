@@ -132,5 +132,13 @@ void FPGA::ilcCommands(ILC &ilc) {
     reportTime(beginTs, endTs);
 }
 
+void FPGA::mpuCommands(MPU &mpu) {
+    writeMPUFIFO(mpu);
+
+    if (mpu.containsRead()) {
+        readMPUFIFO(mpu);
+    }
+}
+
 }  // namespace cRIO
 }  // namespace LSST

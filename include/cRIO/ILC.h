@@ -26,7 +26,6 @@
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/IntelHex.h>
 
-#include <functional>
 #include <map>
 
 namespace LSST {
@@ -40,13 +39,25 @@ namespace cRIO {
  * Functions timeouts (for writing on command line as RxWait) is specified in
  * calls to callFunction.
  *
- * Replies received from ILCs shall be processed with ILC::processResponse()
- * method. Virtual processXX methods are called to process received data.
- * Relations between functions and processing methods are established with
- * ILC::addResponse().
+ * Provides function to write and read cRIO FIFO (FPGA) Modbus buffers. Modbus
+ * serial bus is serviced inside FPGA with
+ * [Common_FPGA_Modbus](https://github.com/lsst-ts/Common_FPGA_Modbus) module.
  *
- * When processing data, the class guarantee that every non-broadcast call
- * generates reply at correct order - see ILC::processResponse() for details.
+ * 8bit data are stored as 16bit values. Real data are left shifted by 1. Last
+ * bit (0, transmitted first) is start bit, always 0 for ILC communication.
+ * First data bit (transmitted last) is stop bit, shall be 1. So uint8_t data d
+ * needs to be written as:
+ *
+ * (0x1200 | (d << 1))
+ * (TX_MASK | (d << 1))
+ *
+ * and response from FPGA ResponseFIFOs is coming with 0x9200 prefix, so:
+ *
+ * (0x9200 | (d << 1))
+ * (RX_MASK | (d << 1))
+ *
+ * Please see ModbusBuffer::simulateReponse() for details of how to change
+ * prefix.
  */
 class ILC : public ModbusBuffer {
 public:
@@ -56,6 +67,30 @@ public:
      * @param bus ILC bus number (1..). Defaults to 1.
      */
     ILC(uint8_t bus = 1);
+
+    void writeEndOfFrame() override;
+
+    void writeWaitForRx(uint32_t timeoutMicros) override;
+
+    void writeRxEndFrame() override;
+
+    void readEndOfFrame() override;
+
+    /**
+     * Returns wait for receive timeout.
+     *
+     * @return timeout in us (microseconds)
+     *
+     * @throw std::runtime_error if wait for rx delay command isn't present
+     */
+    uint32_t readWaitForRx();
+
+    /**
+     * Sets simulate mode.
+     *
+     * @param simulate true if buffer shall product simulated replies
+     */
+    void simulateResponse(bool simulate);
 
     /**
      * Returns bus number. 1 based (1-5). 1=A,2=B,..5=E bus.
@@ -120,89 +155,10 @@ public:
      */
     void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
 
-    /**
-     * Add response callbacks. Both function code and error response code shall
-     * be specified.
-     *
-     * @param func callback for this function code
-     * @param action action to call when the response is found. Passed address
-     * as sole parameter. Should read response (as length of the response data
-     * is specified by function) and check CRC (see ModbusBuffer::read and
-     * ModbusBuffer::checkCRC)
-     * @param errorResponse error response code
-     * @param errorAction action to call when error is found. If no action is
-     * specified, raises ILC::Exception. Th action receives two parameters,
-     * address and error code. CRC checking is done in processResponse. This
-     * method shall not manipulate the buffer (e.g. shall not call
-     * ModbusBuffer::read or ModbusBuffer::checkCRC).
-     *
-     * @see checkCached
-     */
-    void addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,
-                     std::function<void(uint8_t, uint8_t)> errorAction = nullptr);
-
-    /**
-     * Process received data. Reads function code, check CRC, check that the
-     * function was called in request (using _commanded buffer) and calls
-     * method to process data. Repeat until all data are processed.
-     *
-     * @note Can be called multiple times. Please call ModbusBuffer::checkCommandedEmpty
-     * after all data are processed.
-     *
-     * @param response response includes response code (0x9) and start bit (need to >> 1 && 0xFF to get the
-     * Modbus data)
-     * @param length data length
-     *
-     * @throw std::runtime_error subclass on any detected error
-     *
-     * @see ModbusBuffer::checkCommandedEmpty()
-     */
-    void processResponse(uint16_t* response, size_t length);
-
-    /**
-     * Thrown when an unknown response function is received. As unknown function
-     * response means unknown message length and hence unknown CRC position and
-     * start of a new frame, the preferred handling when such error is seen is to
-     * flush response buffer and send ILC's queries again.
-     */
-    class UnknownResponse : public std::runtime_error {
-    public:
-        /**
-         * Constructed with data available during response.
-         *
-         * @param address ILC address
-         * @param func ILC function. Response for this function is unknown at the moment.
-         */
-        UnknownResponse(uint8_t address, uint8_t func);
-    };
-
-    /**
-     * Thrown when ILC error response is received.
-     */
-    class Exception : public std::runtime_error {
-    public:
-        /**
-         * The class is constructed when an ILC's error response is received.
-         *
-         * @param address ILC address
-         * @param func ILC (error) function received
-         * @param exception exception code
-         */
-        Exception(uint8_t address, uint8_t func, uint8_t exception);
-    };
-
 protected:
-    /**
-     * Called before responses are processed (before processXX methods are
-     * called).
-     */
-    virtual void preProcess(){};
+    uint16_t getByteInstruction(uint8_t data) override;
 
-    /**
-     * Called after responses are processed (after processXX methods are
-     * called).
-     */
-    virtual void postProcess(){};
+    uint8_t readInstructionByte() override;
 
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for
@@ -347,9 +303,6 @@ protected:
 
 private:
     uint8_t _bus;
-
-    std::map<uint8_t, std::function<void(uint8_t)>> _actions;
-    std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
 
     uint8_t _broadcastCounter;
     unsigned int _timestampShift;

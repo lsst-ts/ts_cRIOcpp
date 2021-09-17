@@ -104,59 +104,41 @@ ILC::ILC(uint8_t bus) {
             235);
 }
 
-void ILC::addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,
-                      std::function<void(uint8_t, uint8_t)> errorAction) {
-    _actions[func] = action;
-    _errorActions[errorResponse] =
-            std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>(func, errorAction);
+void ILC::writeEndOfFrame() { pushBuffer(FIFO::TX_FRAMEEND); }
+
+void ILC::writeWaitForRx(uint32_t timeoutMicros) {
+    pushBuffer(timeoutMicros > 0x0FFF ? ((0x0FFF & ((timeoutMicros / 1000) + 1)) | FIFO::TX_WAIT_LONG_RX)
+                                      : (timeoutMicros | FIFO::TX_WAIT_RX));
 }
 
-void ILC::processResponse(uint16_t *response, size_t length) {
-    preProcess();
+void ILC::writeRxEndFrame() { pushBuffer(FIFO::RX_ENDFRAME); }
 
-    setBuffer(response, length);
-
-    while (endOfBuffer() == false) {
-        uint8_t address = read<uint8_t>();
-        uint8_t func = read<uint8_t>();
-
-        // either function response was received, or error response. For error
-        // response, check if the function for which it is used was called.
-        if (_errorActions.find(func) == _errorActions.end()) {
-            checkCommanded(address, func);
-        } else {
-            checkCommanded(address, _errorActions[func].first);
-        }
-
-        try {
-            _actions.at(func)(address);
-        } catch (std::out_of_range &_ex) {
-            try {
-                auto errorAction = _errorActions.at(func);
-                uint8_t exception = read<uint8_t>();
-                checkCRC();
-                if (errorAction.second) {
-                    errorAction.second(address, exception);
-                } else {
-                    throw Exception(address, func, exception);
-                }
-            } catch (std::out_of_range &_ex2) {
-                throw UnknownResponse(address, func);
-            }
-        }
+void ILC::readEndOfFrame() {
+    if (getCurrentBuffer() != FIFO::TX_FRAMEEND) {
+        throw std::runtime_error(fmt::format("Expected end of frame, finds {:04x} (@ offset {})",
+                                             getCurrentBuffer(), getCurrentIndex()));
     }
-
-    postProcess();
+    incIndex();
+    resetCRC();
 }
 
-ILC::UnknownResponse::UnknownResponse(uint8_t address, uint8_t func)
-        : std::runtime_error(fmt::format("Unknown function {1} (0x{1:02x}) in ILC response for address {0}",
-                                         address, func)) {}
-
-ILC::Exception::Exception(uint8_t address, uint8_t func, uint8_t exception)
-        : std::runtime_error(
-                  fmt::format("ILC Exception {2} (ILC address {0}, ILC response function {1} (0x{1:02x}))",
-                              address, func, exception)) {}
+uint32_t ILC::readWaitForRx() {
+    uint16_t c = getCurrentBuffer() & 0xF000;
+    uint32_t ret = 0;
+    switch (c) {
+        case FIFO::TX_WAIT_RX:
+            ret = 0x0FFF & getCurrentBuffer();
+            break;
+        case FIFO::TX_WAIT_LONG_RX:
+            ret = (0x0FFF & getCurrentBuffer()) * 1000;
+            break;
+        default:
+            throw std::runtime_error(fmt::format("Expected wait for RX, finds {:04x} (@ offset {})",
+                                                 getCurrentBuffer(), getCurrentIndex()));
+    }
+    incIndex();
+    return ret;
+}
 
 uint8_t ILC::nextBroadcastCounter() {
     _broadcastCounter++;
@@ -164,6 +146,18 @@ uint8_t ILC::nextBroadcastCounter() {
         _broadcastCounter = 0;
     }
     return _broadcastCounter;
+}
+
+uint16_t ILC::getByteInstruction(uint8_t data) {
+    processDataCRC(data);
+    return FIFO::TX_MASK | ((static_cast<uint16_t>(data)) << 1);
+}
+
+uint8_t ILC::readInstructionByte() {
+    if (endOfBuffer()) {
+        throw EndOfBuffer();
+    }
+    return (uint8_t)((getCurrentBufferAndInc() >> 1) & 0xFF);
 }
 
 bool ILC::responseMatchCached(uint8_t address, uint8_t func) {

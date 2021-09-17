@@ -277,7 +277,11 @@ const void CliApp::printHexBuf(uint8_t* buf, size_t len, const char* prefix) {
 int verifyArguments(const command_vec& cmds, const char* args) {
     auto verifyDouble = [](const char* d) -> int {
         try {
-            std::stod(d);
+            size_t pos;
+            std::stod(d, &pos);
+            if (pos != strlen(d)) {
+                return false;
+            }
             return true;
         } catch (...) {
             return false;
@@ -286,7 +290,24 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
     auto verifyInteger = [](const char* i) -> int {
         try {
-            std::stoi(i);
+            size_t pos;
+            std::stoi(i, &pos, 0);
+            if (pos != strlen(i)) {
+                return false;
+            }
+            return true;
+        } catch (...) {
+            return false;
+        }
+    };
+
+    auto verifyHex = [](const char* h) -> int {
+        try {
+            size_t pos;
+            std::stoi(h, &pos, 16);
+            if (strlen(h) != pos) {
+                return false;
+            }
             return true;
         } catch (...) {
             return false;
@@ -295,14 +316,14 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
     auto verifyBool = [](const char* b) -> int {
         std::string s = strupper(b);
-        return (s == "TRUE" || s == "FALSE");
+        return (s == "TRUE" || s == "FALSE" || s == "0" || s == "1" || s == "ON" || s == "OFF");
     };
 
     size_t an = 0;
 
     for (const char* a = args; *a; a++, an++) {
         if (an >= cmds.size()) {
-            if (*a == 's' || *a == 'i' || *a == 'b' || *a == 'd' || *a == 'h' || *a == '?') {
+            if (*a == 'b' || *a == 'd' || *a == 'h' || *a == 'i' || *a == 's' || *a == '?') {
                 return an;
             }
 
@@ -312,8 +333,15 @@ int verifyArguments(const command_vec& cmds, const char* args) {
         }
 
         switch (*a) {
-            case '?':
-                return cmds.size();
+            case 'B':
+            case 'b':
+                if (!verifyBool(cmds[an].c_str())) {
+                    std::cerr << "Expecting boolean (true/false), received " << cmds[an] << std::endl;
+                    return -1;
+                }
+
+                break;
+
             case 'D':
             case 'd':
                 if (!verifyDouble(cmds[an].c_str())) {
@@ -341,10 +369,10 @@ int verifyArguments(const command_vec& cmds, const char* args) {
 
                 break;
 
-            case 'B':
-            case 'b':
-                if (!verifyBool(cmds[an].c_str())) {
-                    std::cerr << "Expecting boolean (true/false), received " << cmds[an] << std::endl;
+            case 'H':
+            case 'h':
+                if (!verifyHex(cmds[an].c_str())) {
+                    std::cerr << "Expecting hex number, received " << cmds[an] << std::endl;
                     return -1;
                 }
 
@@ -354,10 +382,18 @@ int verifyArguments(const command_vec& cmds, const char* args) {
             case 's':
                 break;
 
+            case '?':
+                return cmds.size();
+
             default:
                 std::cerr << "Invalid formatting character " << *a << std::endl;
                 return -1;
         }
+    }
+
+    if (an < cmds.size()) {
+        std::cerr << "Extra argument " << an << ": " << cmds[an] << std::endl;
+        return -1;
     }
 
     return an;
