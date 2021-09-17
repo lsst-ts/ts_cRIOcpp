@@ -125,6 +125,9 @@ public:
 
     /**
      * Clears modbus buffer.
+     *
+     * @param onlyBuffers if true, clears only buffers - function history (used
+     * to make sure all queries are answered) isn't cleared. Defaults to false
      */
     void clear(bool onlyBuffers = false);
 
