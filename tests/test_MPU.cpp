@@ -117,6 +117,9 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
 
     REQUIRE_NOTHROW(mpu.processResponse(res.data(), res.size()));
 
+    REQUIRE_THROWS(mpu.getRegister(1));
+    REQUIRE_THROWS(mpu.getRegister(2));
+
     REQUIRE(mpu.getRegister(3) == 0x0102);
     REQUIRE(mpu.getRegister(4) == 0x0304);
     REQUIRE(mpu.getRegister(5) == 0x0506);
@@ -127,6 +130,9 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
     REQUIRE(mpu.getRegister(10) == 0x0f10);
     REQUIRE(mpu.getRegister(11) == 0x1112);
     REQUIRE(mpu.getRegister(12) == 0x1314);
+
+    REQUIRE_THROWS(mpu.getRegister(13));
+    REQUIRE_THROWS(mpu.getRegister(14));
 }
 
 TEST_CASE("Test MPU preset holding register", "[MPU]") {
