@@ -97,6 +97,15 @@ public:
     void readHoldingRegisters(uint16_t address, uint16_t count = 1, uint8_t timeout = 100);
 
     /**
+     * Write single register.
+     *
+     * @param address register address
+     * @param value register value
+     * @param timeout timeout (in ms)
+     */
+    void presetHoldingRegister(uint16_t address, uint16_t value, uint16_t timeout = 100);
+
+    /**
      * Sets modbus holding registers.
      *
      * @param address register address
@@ -125,6 +134,7 @@ private:
     bool _contains_read;
 
     std::list<uint16_t> _readRegisters;
+    std::list<std::pair<uint16_t, uint16_t>> _presetRegister;
     std::list<std::pair<uint16_t, uint16_t>> _presetRegisters;
 
     std::map<uint16_t, uint16_t> _registers;
