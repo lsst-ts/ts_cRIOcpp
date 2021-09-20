@@ -78,8 +78,7 @@ node {
          }
     }
 
-//    if (BRANCH == "master" || BRANCH == "develop")
-    if (false)
+    if (BRANCH == "master" || BRANCH == "develop")
     {
         stage('Publish documentation')
         {
