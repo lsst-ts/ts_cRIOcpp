@@ -245,16 +245,15 @@ ModbusBuffer::CRCError::CRCError(uint16_t calculated, uint16_t received)
 
 ModbusBuffer::EndOfBuffer::EndOfBuffer() : std::runtime_error("End of buffer while reading response") {}
 
-ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t function)
-        : std::runtime_error(
-                  fmt::format("Received response {1} with address {0} without matching send function.",
-                              address, function)) {}
+ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func)
+        : std::runtime_error(fmt::format(
+                  "Received response {1} with address {0} without matching send function.", address, func)) {}
 
-ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t function, uint8_t expectedAddress,
+ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func, uint8_t expectedAddress,
                                                    uint8_t expectedFunction)
         : std::runtime_error(fmt::format("Invalid response received - expected {2} (0x{2:02x}) from {3}, got "
                                          "{1} (0x{1:02x}) from {0}",
-                                         address, function, expectedAddress, expectedFunction)) {}
+                                         func, address, expectedFunction, expectedAddress)) {}
 
 uint16_t ModbusBuffer::getByteInstruction(uint8_t data) {
     processDataCRC(data);
