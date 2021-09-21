@@ -251,29 +251,9 @@ ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func
 
 ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func, uint8_t expectedAddress,
                                                    uint8_t expectedFunction)
-        : std::runtime_error(fmt::format("Invalid response received - expected {0} (0x{0:02x}) from {1}, got "
-                                         "{2} (0x{2:02x}) from {3}",
-                                         expectedFunction, expectedAddress, func, address)) {}
-
-uint16_t ModbusBuffer::getByteInstruction(uint8_t data) {
-    processDataCRC(data);
-    return data;
-}
-
-void ModbusBuffer::processDataCRC(uint8_t data) {
-    if (_recordChanges) {
-        _records.push_back(data);
-    }
-
-    _crc.add(data);
-}
-
-uint8_t ModbusBuffer::readInstructionByte() {
-    if (endOfBuffer()) {
-        throw EndOfBuffer();
-    }
-    return (uint8_t)(_buffer[_index++]);
-}
+        : std::runtime_error(fmt::format("Invalid response received - expected {2} (0x{2:02x}) from {3}, got "
+                                         "{1} (0x{1:02x}) from {0}",
+                                         func, address, expectedFunction, expectedAddress)) {}
 
 uint16_t ModbusBuffer::getByteInstruction(uint8_t data) {
     processDataCRC(data);
