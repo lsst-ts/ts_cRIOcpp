@@ -94,7 +94,7 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
     MPU mpu(1, 12);
     mpu.readHoldingRegisters(3, 10, 101);
 
-    uint16_t* commands = mpu.getCommands();
+    uint8_t* commands = mpu.getCommands();
 
     REQUIRE(commands[0] == MPUCommands::WRITE);
     REQUIRE(commands[1] == 8);
@@ -169,7 +169,7 @@ TEST_CASE("Test MPU preset holding registers", "[MPU]") {
     std::vector<uint16_t> regs = {0x0102, 0x0304};
     mpu.presetHoldingRegisters(0x1718, regs.data(), regs.size(), 102);
 
-    uint16_t* commands = mpu.getCommands();
+    uint8_t* commands = mpu.getCommands();
 
     REQUIRE(commands[0] == MPUCommands::WRITE);
     REQUIRE(commands[1] == 9 + 2 * regs.size());
