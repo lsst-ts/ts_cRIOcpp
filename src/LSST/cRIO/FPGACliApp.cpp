@@ -38,6 +38,8 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
                "Close FPGA connection");
     addCommand("info", std::bind(&FPGACliApp::info, this, std::placeholders::_1), "s?", NEED_FPGA,
                "<address>..", "Print ILC info");
+    addCommand("status", std::bind(&FPGACliApp::status, this, std::placeholders::_1), "s?", NEED_FPGA,
+               "<address>..", "Print ILC status");
     addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
                NEED_FPGA, "<firmware hex file> <ILC...>", "Program ILC with new firmware.");
     addCommand("help", std::bind(&FPGACliApp::helpCommands, this, std::placeholders::_1), "", 0, NULL,
@@ -86,6 +88,28 @@ int FPGACliApp::info(command_vec cmds) {
 
     for (auto u : units) {
         u.first->reportServerID(u.second);
+    }
+
+    for (auto ilcp : _ilcs) {
+        if (ilcp->getLength() > 0) {
+            _fpga->ilcCommands(*ilcp);
+        }
+    }
+
+    return 0;
+}
+
+int FPGACliApp::status(command_vec cmds) {
+    clearILCs();
+
+    ILCUnits units = getILCs(cmds);
+
+    if (units.empty()) {
+        return -1;
+    }
+
+    for (auto u : units) {
+        u.first->reportServerStatus(u.second);
     }
 
     for (auto ilcp : _ilcs) {

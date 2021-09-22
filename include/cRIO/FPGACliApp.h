@@ -62,6 +62,7 @@ public:
     virtual int run(int argc, char* const argv[]);
 
     int info(command_vec cmds);
+    int status(command_vec cmds);
     int closeFPGA(command_vec cmds);
     int openFPGA(command_vec cmds);
     int programILC(command_vec cmds);
