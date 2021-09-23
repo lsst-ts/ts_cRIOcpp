@@ -40,6 +40,10 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
                "<address>..", "Print ILC info");
     addCommand("status", std::bind(&FPGACliApp::status, this, std::placeholders::_1), "s?", NEED_FPGA,
                "<address>..", "Print ILC status");
+    addCommand("standby", std::bind(&FPGACliApp::standby, this, std::placeholders::_1), "s?", NEED_FPGA,
+               "<address>..", "Change to standby mode");
+    addCommand("clear-faults", std::bind(&FPGACliApp::clearFaults, this, std::placeholders::_1), "s?", NEED_FPGA,
+               "<address>..", "Clear ILC faults");
     addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
                NEED_FPGA, "<firmware hex file> <ILC...>", "Program ILC with new firmware.");
     addCommand("help", std::bind(&FPGACliApp::helpCommands, this, std::placeholders::_1), "", 0, NULL,
@@ -110,6 +114,50 @@ int FPGACliApp::status(command_vec cmds) {
 
     for (auto u : units) {
         u.first->reportServerStatus(u.second);
+    }
+
+    for (auto ilcp : _ilcs) {
+        if (ilcp->getLength() > 0) {
+            _fpga->ilcCommands(*ilcp);
+        }
+    }
+
+    return 0;
+}
+
+int FPGACliApp::standby(command_vec cmds) {
+    clearILCs();
+
+    ILCUnits units = getILCs(cmds);
+
+    if (units.empty()) {
+        return -1;
+    }
+
+    for (auto u : units) {
+        u.first->changeILCMode(u.second, ILC::ILCMode::Standby);
+    }
+
+    for (auto ilcp : _ilcs) {
+        if (ilcp->getLength() > 0) {
+            _fpga->ilcCommands(*ilcp);
+        }
+    }
+
+    return 0;
+}
+
+int FPGACliApp::clearFaults(command_vec cmds) {
+    clearILCs();
+
+    ILCUnits units = getILCs(cmds);
+
+    if (units.empty()) {
+        return -1;
+    }
+
+    for (auto u : units) {
+        u.first->changeILCMode(u.second, ILC::ILCMode::ClearFaults);
     }
 
     for (auto ilcp : _ilcs) {

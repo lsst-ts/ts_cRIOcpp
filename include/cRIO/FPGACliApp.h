@@ -63,6 +63,8 @@ public:
 
     int info(command_vec cmds);
     int status(command_vec cmds);
+    int standby(command_vec cmds);
+    int clearFaults(command_vec cmds);
     int closeFPGA(command_vec cmds);
     int openFPGA(command_vec cmds);
     int programILC(command_vec cmds);
