@@ -91,7 +91,7 @@ double ModbusBuffer::readTimestamp() {
 
 void ModbusBuffer::checkCRC() {
     uint16_t crc;
-    uint16_t calCrc = _crc.get();
+    uint16_t calCrc = getCalcCrc();
     _recordChanges = false;
     readBuffer(&crc, 2);
     crc = le32toh(crc);
@@ -132,7 +132,7 @@ void ModbusBuffer::writeI24(int32_t data) {
 }
 
 void ModbusBuffer::writeCRC() {
-    uint16_t crc = _crc.get();
+    uint16_t crc = getCalcCrc();
     pushBuffer(getByteInstruction(crc & 0xFF));
     pushBuffer(getByteInstruction((crc >> 8) & 0xFF));
     _crc.reset();

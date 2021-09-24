@@ -22,6 +22,7 @@
 
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/PrintILC.h>
+#include <cRIO/SimulatedILC.h>
 
 #include <iomanip>
 #include <iostream>
@@ -67,25 +68,21 @@ PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0), _lastAddress(0) {
 
 void PrintILC::writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress,
                                      uint16_t dataLength) {
-    uint8_t buffer[12];
-    buffer[1] = (unsigned char)((dataCRC >> 8) & 0xFF);
-    buffer[0] = (unsigned char)(dataCRC & 0xFF);
-    buffer[2] = 0;
-    buffer[3] = 0;
-    buffer[5] = (unsigned char)((startAddress >> 8) & 0xFF);
-    buffer[4] = (unsigned char)(startAddress & 0xFF);
-    buffer[6] = 0;
-    buffer[7] = 0;
-    buffer[9] = (unsigned char)((dataLength >> 8) & 0xFF);
-    buffer[8] = (unsigned char)(dataLength & 0xFF);
-    buffer[10] = 0;
-    buffer[11] = 0;
+    SimulatedILC buf;
 
-    ModbusBuffer::CRC crc;
-    for (auto d : buffer) {
-        crc.add(d);
-    }
-    callFunction(address, 100, 500000, dataCRC, startAddress, dataLength, crc.get());
+    uint16_t v = htole16(dataCRC);
+    buf.writeBuffer(reinterpret_cast<uint8_t *>(&v), 2);
+    buf.write<uint16_t>(0);
+
+    v = htole16(startAddress);
+    buf.writeBuffer(reinterpret_cast<uint8_t *>(&v), 2);
+    buf.write<uint16_t>(0);
+
+    v = htole16(dataLength);
+    buf.writeBuffer(reinterpret_cast<uint8_t *>(&v), 2);
+    buf.write<uint16_t>(0);
+
+    callFunction(address, 100, 500000, dataCRC, startAddress, dataLength, buf.getCalcCrc());
 }
 
 void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length, uint8_t *data) {
