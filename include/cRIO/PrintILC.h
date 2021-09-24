@@ -57,7 +57,7 @@ public:
      *
      * @param address ILC address
      */
-    void eraseILApplication(uint8_t address) { callFunction(address, 101, 500000); }
+    void eraseILCApplication(uint8_t address) { callFunction(address, 101, 500000); }
 
     /**
      * Writes ILC firmware page. Calls functions 103. Please note that every
@@ -166,9 +166,9 @@ protected:
 
 private:
     int _printout;
+    ModbusBuffer::CRC _crc;
 
-    void _writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &dataCRC, uint16_t &startAddress,
-                   uint16_t &dataLength);
+    void _writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &startAddress, uint16_t &dataLength);
 };
 
 }  // namespace cRIO

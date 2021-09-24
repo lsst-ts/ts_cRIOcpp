@@ -116,13 +116,18 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     fpga->ilcCommands(*this);
     clear();
 
-    uint16_t dataCRC;
+    eraseILCApplication(address);
+    fpga->ilcCommands(*this);
+    clear();
+
     uint16_t startAddress;
     uint16_t dataLength;
 
-    _writeHex(fpga, address, hex, dataCRC, startAddress, dataLength);
+    _crc.reset();
 
-    writeApplicationStats(address, dataCRC, startAddress, dataLength);
+    _writeHex(fpga, address, hex, startAddress, dataLength);
+
+    writeApplicationStats(address, _crc.get(), startAddress, dataLength);
     fpga->ilcCommands(*this);
     clear();
 
@@ -232,8 +237,8 @@ void PrintILC::printSepline() {
     _printout++;
 }
 
-void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &dataCRC,
-                         uint16_t &startAddress, uint16_t &dataLength) {
+void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &startAddress,
+                         uint16_t &dataLength) {
     // align data to 256 bytes pages
     std::vector<uint8_t> data = hex.getData(startAddress);
 
@@ -244,11 +249,9 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &d
         data.push_back(((i % 4) == 3) ? 0x00 : 0xFF);
     }
 
-    ModbusBuffer::CRC crc;
     for (auto d : data) {
-        crc.add(d);
+        _crc.add(d);
     }
-    dataCRC = crc.get();
 
     dataLength = data.size();
 
