@@ -72,6 +72,7 @@ public:
     void setPages(uint8_t* pages) { _pages = pages; }
 
 protected:
+    void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) override;
     void processChangeILCMode(uint8_t address, uint16_t mode) override;
     void processWriteApplicationPage(uint8_t address) override { _ackFunction(address, 102); }
     void processVerifyUserApplication(uint8_t address, uint16_t status) override;
@@ -139,6 +140,16 @@ void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeo
     }
 }
 
+void TestFPGA::processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
+    _response.write(address);
+    _response.write<uint8_t>(18);
+    _response.write(mode);
+    _response.write(status);
+    _response.write(faults);
+
+    _response.writeCRC();
+}
+
 void TestFPGA::processChangeILCMode(uint8_t address, uint16_t mode) {
     _response.write(address);
     _response.write<uint8_t>(65);
@@ -176,6 +187,10 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
         REQUIRE(address == 8);
         uint8_t func = buf.read<uint8_t>();
         switch (func) {
+            case 18:
+                buf.checkCRC();
+                processServerStatus(address, ILCMode::Standby, 0, 0);
+                break;
             case 65:
                 currentMode = buf.read<uint16_t>();
                 buf.checkCRC();
@@ -183,13 +198,13 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
                 break;
             case 100: {
                 uint16_t dataCRC = buf.read<uint16_t>();
-                REQUIRE(dataCRC == 0xF411);
+                REQUIRE(dataCRC == 0x0495);
                 uint16_t startAddress = buf.read<uint16_t>();
                 REQUIRE(startAddress == 0);
                 uint16_t length = buf.read<uint16_t>();
-                REQUIRE(length == 256);
+                REQUIRE(length == 67);
                 uint16_t crc = buf.read<uint16_t>();
-                REQUIRE(crc == 0x0C87);
+                REQUIRE(crc == 0x3BAB);
                 buf.checkCRC();
                 _ackFunction(address, 100);
                 break;
