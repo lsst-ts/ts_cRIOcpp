@@ -122,15 +122,15 @@ public:
      *
      * @return current command buffer
      */
-    uint16_t *getCommands() { return _commands.data(); }
+    uint8_t *getCommands() { return _commands.data(); }
 
-    std::vector<uint16_t> getCommandVector() { return _commands; }
+    std::vector<uint8_t> getCommandVector() { return _commands; }
 
     bool getInputStatus(uint16_t address) { return _inputStatus.at(address); }
     uint16_t getRegister(uint16_t address) { return _registers.at(address); }
 
 private:
-    std::vector<uint16_t> _commands;
+    std::vector<uint8_t> _commands;
     uint8_t _bus;
     uint8_t _mpu_address;
 
