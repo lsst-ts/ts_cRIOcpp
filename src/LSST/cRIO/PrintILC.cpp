@@ -245,12 +245,13 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &s
     size_t mod = data.size() % 256;
     if (mod == 0) return;
 
-    for (int i = mod; i < 256; i++) {
-        data.push_back(((i % 4) == 3) ? 0x00 : 0xFF);
-    }
-
+    // CRC is calculated only from data, skips filling
     for (auto d : data) {
         _crc.add(d);
+    }
+
+    for (int i = mod; i < 256; i++) {
+        data.push_back(((i % 4) == 3) ? 0x00 : 0xFF);
     }
 
     dataLength = data.size();
