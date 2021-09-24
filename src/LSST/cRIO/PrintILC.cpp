@@ -107,8 +107,9 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
 
     switch (getLastMode(address)) {
         // those modes need fault first
-        case ILCMode::Disabled:
         case ILCMode::Enabled:
+            changeILCMode(address, ILCMode::Disabled);
+        case ILCMode::Disabled:
             changeILCMode(address, ILCMode::Standby);
             break;
         case ILC::ILCMode::Fault:
@@ -283,7 +284,7 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
         _crc.add(d);
     }
 
-    std::cout << "Writing pages:";
+    std::cout << "Writing pages ";
 
     _dataLength = data.size();
 
