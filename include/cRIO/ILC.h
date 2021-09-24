@@ -131,14 +131,12 @@ public:
      * 5.   | all ILCs     | Clear faults
      *
      * where all is Electromechanical (Hard-Point), Pneumatic, Thermal and
-     * Hadpoint Monitoring ILC. HM is Hardpoint Monitoring.
+     * Hardpoint Monitoring ILC. HM is Hardpoint Monitoring.
      *
      * @param address ILC address
      * @param mode new ILC mode - see above
      */
-    void changeILCMode(uint8_t address, uint16_t mode) {
-        callFunction(address, 65, mode == 3 ? 100000 : 335, mode);
-    }
+    void changeILCMode(uint8_t address, uint16_t mode);
 
     /**
      * Set temporary ILC address. ILC must be address-less (attached to address
@@ -161,6 +159,8 @@ protected:
     uint16_t getByteInstruction(uint8_t data) override;
 
     uint8_t readInstructionByte() override;
+
+    uint8_t getLastMode(uint8_t address) { return _lastMode.at(address); }
 
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for
@@ -311,6 +311,9 @@ private:
 
     bool _alwaysTrigger;
     std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t>>> _cachedResponse;
+
+    // last know ILC mode
+    std::map<uint8_t, uint8_t> _lastMode;
 };
 
 }  // namespace cRIO

@@ -69,6 +69,7 @@ ILC::ILC(uint8_t bus) {
                 uint16_t faults = read<uint16_t>();
                 checkCRC();
                 if (responseMatchCached(address, 18) == false) {
+                    _lastMode[address] = mode;
                     processServerStatus(address, mode, status, faults);
                 }
             },
@@ -81,6 +82,7 @@ ILC::ILC(uint8_t bus) {
                 uint16_t mode = read<uint16_t>();
                 checkCRC();
                 if (responseMatchCached(address, 65) == false) {
+                    _lastMode[address] = static_cast<uint8_t>(mode);
                     processChangeILCMode(address, mode);
                 }
             },
@@ -146,6 +148,15 @@ uint8_t ILC::nextBroadcastCounter() {
         _broadcastCounter = 0;
     }
     return _broadcastCounter;
+}
+
+void ILC::changeILCMode(uint8_t address, uint16_t mode) {
+    uint32_t timeout = 335;
+    if ((getLastMode(address) == ILCMode::Standby && mode == ILCMode::FirmwareUpdate) ||
+        (getLastMode(address) == ILCMode::FirmwareUpdate && mode == ILCMode::Standby)) {
+        timeout = 100000;
+    }
+    callFunction(address, 65, timeout, mode);
 }
 
 uint16_t ILC::getByteInstruction(uint8_t data) {

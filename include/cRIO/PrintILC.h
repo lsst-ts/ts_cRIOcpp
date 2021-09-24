@@ -170,8 +170,6 @@ private:
     uint16_t _startAddress;
     uint16_t _dataLength;
 
-    std::map<uint8_t, uint8_t> _lastMode;
-
     void _writeHex(FPGA *fpga, uint8_t address, IntelHex &hex);
 };
 
