@@ -161,6 +161,12 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     fpga->ilcCommands(*this);
     clear();
 
+    if (getLastMode(address) == ILC::Fault) {
+        changeILCMode(address, ILCMode::ClearFaults);
+        fpga->ilcCommands(*this);
+        clear();
+    }
+
     changeILCMode(address, ILCMode::Disabled);
     fpga->ilcCommands(*this);
     clear();
