@@ -68,12 +68,18 @@ PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0) {
 void PrintILC::writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress,
                                      uint16_t dataLength) {
     uint8_t buffer[12];
-    *(reinterpret_cast<uint16_t *>(buffer + 0)) = htons(dataCRC);
-    *(reinterpret_cast<uint16_t *>(buffer + 2)) = 0;
-    *(reinterpret_cast<uint16_t *>(buffer + 4)) = htons(startAddress);
-    *(reinterpret_cast<uint16_t *>(buffer + 6)) = 0;
-    *(reinterpret_cast<uint16_t *>(buffer + 8)) = htons(dataLength);
-    *(reinterpret_cast<uint16_t *>(buffer + 10)) = 0;
+    buffer[1] = (unsigned char)((dataCRC >> 8) & 0xFF);
+    buffer[0] = (unsigned char)(dataCRC & 0xFF);
+    buffer[2] = 0;
+    buffer[3] = 0;
+    buffer[5] = (unsigned char)((startAddress >> 8) & 0xFF);
+    buffer[4] = (unsigned char)(startAddress & 0xFF);
+    buffer[6] = 0;
+    buffer[7] = 0;
+    buffer[9] = (unsigned char)((dataLength >> 8) & 0xFF);
+    buffer[8] = (unsigned char)(dataLength & 0xFF);
+    buffer[10] = 0;
+    buffer[11] = 0;
 
     ModbusBuffer::CRC crc;
     for (auto d : buffer) {
@@ -120,14 +126,14 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     fpga->ilcCommands(*this);
     clear();
 
-    uint16_t startAddress;
-    uint16_t dataLength;
+    _startAddress = 0;
+    _dataLength = 0;
 
     _crc.reset();
 
-    _writeHex(fpga, address, hex, startAddress, dataLength);
+    _writeHex(fpga, address, hex);
 
-    writeApplicationStats(address, _crc.get(), startAddress, dataLength);
+    writeApplicationStats(address, _crc.get(), _startAddress, _dataLength);
     fpga->ilcCommands(*this);
     clear();
 
@@ -237,28 +243,29 @@ void PrintILC::printSepline() {
     _printout++;
 }
 
-void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &startAddress,
-                         uint16_t &dataLength) {
+void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
     // align data to 256 bytes pages
-    std::vector<uint8_t> data = hex.getData(startAddress);
+    std::vector<uint8_t> data = hex.getData(_startAddress);
 
     size_t mod = data.size() % 256;
-    if (mod == 0) return;
+    if (mod == 0) {
+        mod = 256;
+    }
 
     // CRC is calculated only from data, skips filling
     for (auto d : data) {
         _crc.add(d);
     }
 
+    _dataLength = data.size();
+
     for (int i = mod; i < 256; i++) {
         data.push_back(((i % 4) == 3) ? 0x00 : 0xFF);
     }
 
-    dataLength = data.size();
-
     uint8_t *startData = data.data();
     uint8_t *endData = data.data() + data.size();
-    uint16_t dataAddress = startAddress;
+    uint16_t dataAddress = _startAddress;
     while (startData < endData) {
         uint8_t page[192];
         int i = 0;

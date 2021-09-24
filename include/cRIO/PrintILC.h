@@ -167,8 +167,10 @@ protected:
 private:
     int _printout;
     ModbusBuffer::CRC _crc;
+    uint16_t _startAddress;
+    uint16_t _dataLength;
 
-    void _writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &startAddress, uint16_t &dataLength);
+    void _writeHex(FPGA *fpga, uint8_t address, IntelHex &hex);
 };
 
 }  // namespace cRIO
