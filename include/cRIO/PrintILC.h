@@ -166,6 +166,7 @@ protected:
 
 private:
     int _printout;
+    uint8_t _lastAddress;
     ModbusBuffer::CRC _crc;
     uint16_t _startAddress;
     uint16_t _dataLength;

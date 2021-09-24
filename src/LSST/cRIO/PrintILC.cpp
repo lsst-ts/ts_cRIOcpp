@@ -28,7 +28,7 @@
 
 using namespace LSST::cRIO;
 
-PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0) {
+PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0), _lastAddress(0) {
     setAlwaysTrigger(true);
 
     addResponse(
@@ -194,7 +194,7 @@ void PrintILC::processSetTempILCAddress(uint8_t address, uint8_t newAddress) {
 
 void PrintILC::processResetServer(uint8_t address) {
     printBusAddress(address);
-    std::cout << "Reseted." << std::endl;
+    std::cout << "Reseted " << static_cast<int>(address) << std::endl;
 }
 
 void PrintILC::processWriteApplicationStats(uint8_t address) {
@@ -209,7 +209,8 @@ void PrintILC::processEraseILCApplication(uint8_t address) {
 
 void PrintILC::processWriteApplicationPage(uint8_t address) {
     printBusAddress(address);
-    std::cout << "Page written." << std::endl;
+    std::cout << ".";
+    std::cout.flush();
 }
 
 void PrintILC::processVerifyUserApplication(uint8_t address, uint16_t status) {
@@ -240,10 +241,14 @@ void PrintILC::processVerifyUserApplication(uint8_t address, uint16_t status) {
 }
 
 void PrintILC::printBusAddress(uint8_t address) {
+    if (address == _lastAddress) {
+        return;
+    }
     printSepline();
     std::cout << "Bus: " << std::to_string(getBus()) << " (" << static_cast<char>('A' - 1 + getBus()) << ")"
               << std::endl
               << "Address: " << std::to_string(address) << std::endl;
+    _lastAddress = address;
 }
 
 void PrintILC::printSepline() {

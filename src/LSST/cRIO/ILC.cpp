@@ -152,9 +152,12 @@ uint8_t ILC::nextBroadcastCounter() {
 
 void ILC::changeILCMode(uint8_t address, uint16_t mode) {
     uint32_t timeout = 335;
-    if ((getLastMode(address) == ILCMode::Standby && mode == ILCMode::FirmwareUpdate) ||
-        (getLastMode(address) == ILCMode::FirmwareUpdate && mode == ILCMode::Standby)) {
-        timeout = 100000;
+    try {
+        if ((getLastMode(address) == ILCMode::Standby && mode == ILCMode::FirmwareUpdate) ||
+            (getLastMode(address) == ILCMode::FirmwareUpdate && mode == ILCMode::Standby)) {
+            timeout = 100000;
+        }
+    } catch (std::out_of_range &err) {
     }
     callFunction(address, 65, timeout, mode);
 }
