@@ -83,13 +83,18 @@ void TestFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout)
 void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     if (length == 1) {
         switch (_call) {
+            case 18:
+                data[0] = 22;
+                break;
             case 65:
                 data[0] = 18;
                 break;
             case 103:
                 data[0] = 19;
+                break;
             default:
                 data[0] = 17;
+                break;
         }
     } else {
         SimulatedILC buf;
@@ -99,6 +104,11 @@ void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeo
         buf.write<uint8_t>(_call);
 
         switch (_call) {
+            case 18:
+                buf.write<uint8_t>(3);
+                buf.write<uint16_t>(0);
+                buf.write<uint16_t>(0);
+                break;
             case 65:
                 buf.write<uint16_t>(0);
                 break;

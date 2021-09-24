@@ -104,19 +104,30 @@ void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint
 void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     clear();
 
-    printBusAddress(address);
-
-    changeILCMode(address, ILCMode::Disabled);
+    reportServerStatus(address);
     fpga->ilcCommands(*this);
     clear();
 
-    changeILCMode(address, ILCMode::Standby);
-    fpga->ilcCommands(*this);
-    clear();
+    switch (_lastMode.at(address)) {
+        case ILC::ILCMode::Fault:
+            changeILCMode(address, ILCMode::ClearFaults);
+            fpga->ilcCommands(*this);
+            clear();
+            break;
+        case ILCMode::Disabled:
+            changeILCMode(address, ILCMode::Standby);
+            fpga->ilcCommands(*this);
+            clear();
+            break;
+        default:
+            break;
+    }
 
-    changeILCMode(address, ILCMode::FirmwareUpdate);
-    fpga->ilcCommands(*this);
-    clear();
+    if (_lastMode.at(address) != ILC::FirmwareUpdate) {
+        changeILCMode(address, ILCMode::FirmwareUpdate);
+        fpga->ilcCommands(*this);
+        clear();
+    }
 
     changeILCMode(address, ILCMode::ClearFaults);
     fpga->ilcCommands(*this);
@@ -166,6 +177,7 @@ void PrintILC::processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAp
 }
 
 void PrintILC::processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
+    _lastMode[address] = mode;
     printBusAddress(address);
     std::cout << "Mode: " << std::to_string(mode) << std::endl
               << "Status: " << std::hex << std::setw(4) << std::setfill('0') << (status) << std::endl
@@ -173,6 +185,7 @@ void PrintILC::processServerStatus(uint8_t address, uint8_t mode, uint16_t statu
 }
 
 void PrintILC::processChangeILCMode(uint8_t address, uint16_t mode) {
+    _lastMode[address] = static_cast<uint8_t>(mode);
     printBusAddress(address);
     std::cout << "New mode: " << std::to_string(mode) << std::endl;
 }
