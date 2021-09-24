@@ -47,7 +47,12 @@ FPGA::FPGA(fpgaType type) {
 }
 
 void FPGA::ilcCommands(ILC &ilc) {
-    size_t requestLen = ilc.getLength() + 5;
+    size_t requestLen = ilc.getLength();
+    if (requestLen == 0) {
+        return;
+    }
+    requestLen += 5;
+
     uint16_t data[requestLen];
 
     uint8_t bus = ilc.getBus();

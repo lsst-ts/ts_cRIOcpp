@@ -109,15 +109,17 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
         // those modes need fault first
         case ILCMode::Disabled:
         case ILCMode::Enabled:
-            changeILCMode(address, ILCMode::Fault);
+            changeILCMode(address, ILCMode::Standby);
+            break;
         case ILC::ILCMode::Fault:
             changeILCMode(address, ILCMode::ClearFaults);
-            fpga->ilcCommands(*this);
-            clear();
             break;
         default:
             break;
     }
+
+    fpga->ilcCommands(*this);
+    clear();
 
     if (getLastMode(address) != ILC::FirmwareUpdate) {
         changeILCMode(address, ILCMode::FirmwareUpdate);
