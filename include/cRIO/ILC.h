@@ -136,7 +136,7 @@ public:
      * @param address ILC address
      * @param mode new ILC mode - see above
      */
-    void changeILCMode(uint8_t address, uint16_t mode);
+    void changeILCMode(uint8_t address, uint16_t mode) { callFunction(address, 65, mode == 3 ? 100000 : 335, mode); }
 
     /**
      * Set temporary ILC address. ILC must be address-less (attached to address

@@ -36,8 +36,16 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
 
     addCommand("close", std::bind(&FPGACliApp::closeFPGA, this, std::placeholders::_1), "", NEED_FPGA, NULL,
                "Close FPGA connection");
-    addCommand("info", std::bind(&FPGACliApp::info, this, std::placeholders::_1), "s?", NEED_FPGA,
-               "<address>..", "Print ILC info");
+    addILCCommand(
+            "info", [](ILCUnit u) { u.first->reportServerID(u.second); }, "Print ILC info");
+    addILCCommand(
+            "status", [](ILCUnit u) { u.first->reportServerStatus(u.second); }, "Print ILC status");
+    addILCCommand(
+            "standby", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::Standby); },
+            "Change to standby mode");
+    addILCCommand(
+            "clear-faults", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::ClearFaults); },
+            "Clear ILC faults");
     addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
                NEED_FPGA, "<firmware hex file> <ILC...>", "Program ILC with new firmware.");
     addCommand("help", std::bind(&FPGACliApp::helpCommands, this, std::placeholders::_1), "", 0, NULL,
@@ -72,28 +80,6 @@ int FPGACliApp::closeFPGA(command_vec cmds) {
     _fpga->close();
     delete _fpga;
     _fpga = nullptr;
-    return 0;
-}
-
-int FPGACliApp::info(command_vec cmds) {
-    clearILCs();
-
-    ILCUnits units = getILCs(cmds);
-
-    if (units.empty()) {
-        return -1;
-    }
-
-    for (auto u : units) {
-        u.first->reportServerID(u.second);
-    }
-
-    for (auto ilcp : _ilcs) {
-        if (ilcp->getLength() > 0) {
-            _fpga->ilcCommands(*ilcp);
-        }
-    }
-
     return 0;
 }
 
@@ -141,6 +127,33 @@ int FPGACliApp::verbose(command_vec cmds) {
             break;
     }
     return 0;
+}
+
+void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)> action, const char* help) {
+    addCommand(
+            command,
+            [action, this](command_vec cmds) -> int {
+                clearILCs();
+
+                ILCUnits units = getILCs(cmds);
+
+                if (units.empty()) {
+                    return -1;
+                }
+
+                for (auto u : units) {
+                    action(u);
+                }
+
+                for (auto ilcp : _ilcs) {
+                    if (ilcp->getLength() > 0) {
+                        _fpga->ilcCommands(*ilcp);
+                    }
+                }
+
+                return 0;
+            },
+            "s?", NEED_FPGA, "<address>...", help);
 }
 
 void FPGACliApp::processArg(int opt, char* optarg) {

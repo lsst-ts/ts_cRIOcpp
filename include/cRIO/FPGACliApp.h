@@ -61,13 +61,14 @@ public:
      */
     virtual int run(int argc, char* const argv[]);
 
-    int info(command_vec cmds);
     int closeFPGA(command_vec cmds);
     int openFPGA(command_vec cmds);
     int programILC(command_vec cmds);
     int verbose(command_vec cmds);
 
 protected:
+    void addILCCommand(const char* command, std::function<void(ILCUnit)> action, const char* help);
+
     void processArg(int opt, char* optarg) override;
     int processCommand(Command* cmd, const command_vec& args) override;
 
