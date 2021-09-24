@@ -272,6 +272,8 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
         _crc.add(d);
     }
 
+    std::cout << "Writing pages:";
+
     _dataLength = data.size();
 
     for (int i = mod; i < 256; i++) {
@@ -299,4 +301,6 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
         clear();
         dataAddress += 256;
     }
+
+    std::cout << std::endl;
 }
