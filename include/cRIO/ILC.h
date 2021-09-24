@@ -162,6 +162,8 @@ protected:
 
     uint8_t getLastMode(uint8_t address) { return _lastMode.at(address); }
 
+    const char *getModeStr(uint8_t mode);
+
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for
      * details.

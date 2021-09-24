@@ -183,14 +183,14 @@ void PrintILC::processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAp
 
 void PrintILC::processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
     printBusAddress(address);
-    std::cout << "Mode: " << std::to_string(mode) << std::endl
+    std::cout << "Mode: " << std::to_string(mode) << " - " << getModeStr(mode) << std::endl
               << "Status: " << std::hex << std::setw(4) << std::setfill('0') << (status) << std::endl
               << "Faults: " << std::hex << std::setw(4) << std::setfill('0') << (status) << std::endl;
 }
 
 void PrintILC::processChangeILCMode(uint8_t address, uint16_t mode) {
     printBusAddress(address);
-    std::cout << "New mode: " << std::to_string(mode) << std::endl;
+    std::cout << "New mode: " << std::to_string(mode) << " - " << getModeStr(mode) << std::endl;
 }
 
 void PrintILC::processSetTempILCAddress(uint8_t address, uint8_t newAddress) {

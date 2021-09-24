@@ -174,6 +174,23 @@ uint8_t ILC::readInstructionByte() {
     return (uint8_t)((getCurrentBufferAndInc() >> 1) & 0xFF);
 }
 
+const char *ILC::getModeStr(uint8_t mode) {
+    switch (mode) {
+        case ILCMode::Standby:
+            return "Standby";
+        case ILCMode::Disabled:
+            return "Disabled";
+        case ILCMode::Enabled:
+            return "Enabled";
+        case ILCMode::FirmwareUpdate:
+            return "Firmware Updade";
+        case ILCMode::Fault:
+            return "Fault";
+        default:
+            return "unknow";
+    }
+}
+
 bool ILC::responseMatchCached(uint8_t address, uint8_t func) {
     try {
         std::map<uint8_t, std::vector<uint8_t>> &fc = _cachedResponse.at(address);
