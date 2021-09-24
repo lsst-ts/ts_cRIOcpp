@@ -128,6 +128,12 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
         clear();
     }
 
+    if (getLastMode(address) == ILC::Fault) {
+        changeILCMode(address, ILCMode::ClearFaults);
+        fpga->ilcCommands(*this);
+        clear();
+    }
+
     if (getLastMode(address) != ILC::FirmwareUpdate) {
         throw std::runtime_error("Cannot transition to FirmwareUpdate mode");
     }
