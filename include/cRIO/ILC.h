@@ -136,7 +136,7 @@ public:
      * @param address ILC address
      * @param mode new ILC mode - see above
      */
-    void changeILCMode(uint8_t address, uint16_t mode) { callFunction(address, 65, mode == 3 ? 100000 : 335, mode); }
+    void changeILCMode(uint8_t address, uint16_t mode);
 
     /**
      * Set temporary ILC address. ILC must be address-less (attached to address
@@ -159,6 +159,10 @@ protected:
     uint16_t getByteInstruction(uint8_t data) override;
 
     uint8_t readInstructionByte() override;
+
+    uint8_t getLastMode(uint8_t address) { return _lastMode.at(address); }
+
+    const char *getModeStr(uint8_t mode);
 
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for

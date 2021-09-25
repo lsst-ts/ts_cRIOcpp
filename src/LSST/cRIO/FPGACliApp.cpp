@@ -44,6 +44,12 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
             "standby", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::Standby); },
             "Change to standby mode");
     addILCCommand(
+            "disable", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::Disabled); },
+            "Change to disabled mode");
+    addILCCommand(
+            "enable", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::Enabled); },
+            "Change to enabled mode");
+    addILCCommand(
             "clear-faults", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::ClearFaults); },
             "Clear ILC faults");
     addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
