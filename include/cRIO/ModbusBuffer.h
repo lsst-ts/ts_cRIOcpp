@@ -206,6 +206,13 @@ public:
     double readTimestamp();
 
     /**
+     * Returns current calculcated CRC.
+     *
+     * @return calculated CRC
+     */
+    uint16_t getCalcCrc() { return _crc.get(); }
+
+    /**
      * Check that accumulated data CRC matches readed CRC. Also stops recording
      * of changes, as CRC shall be at the end of buffer.
      *

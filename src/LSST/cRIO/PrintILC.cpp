@@ -22,13 +22,14 @@
 
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/PrintILC.h>
+#include <cRIO/SimulatedILC.h>
 
 #include <iomanip>
 #include <iostream>
 
 using namespace LSST::cRIO;
 
-PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0) {
+PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0), _lastAddress(0) {
     setAlwaysTrigger(true);
 
     addResponse(
@@ -67,19 +68,21 @@ PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0) {
 
 void PrintILC::writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress,
                                      uint16_t dataLength) {
-    uint8_t buffer[12];
-    *(reinterpret_cast<uint16_t *>(buffer + 0)) = htons(dataCRC);
-    *(reinterpret_cast<uint16_t *>(buffer + 2)) = 0;
-    *(reinterpret_cast<uint16_t *>(buffer + 4)) = htons(startAddress);
-    *(reinterpret_cast<uint16_t *>(buffer + 6)) = 0;
-    *(reinterpret_cast<uint16_t *>(buffer + 8)) = htons(dataLength);
-    *(reinterpret_cast<uint16_t *>(buffer + 10)) = 0;
+    SimulatedILC buf;
 
-    ModbusBuffer::CRC crc;
-    for (auto d : buffer) {
-        crc.add(d);
-    }
-    callFunction(address, 100, 500000, dataCRC, startAddress, dataLength, crc.get());
+    uint16_t v = htole16(dataCRC);
+    buf.writeBuffer(reinterpret_cast<uint8_t *>(&v), 2);
+    buf.write<uint16_t>(0);
+
+    v = htole16(startAddress);
+    buf.writeBuffer(reinterpret_cast<uint8_t *>(&v), 2);
+    buf.write<uint16_t>(0);
+
+    v = htole16(dataLength);
+    buf.writeBuffer(reinterpret_cast<uint8_t *>(&v), 2);
+    buf.write<uint16_t>(0);
+
+    callFunction(address, 100, 500000, dataCRC, startAddress, dataLength, buf.getCalcCrc());
 }
 
 void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length, uint8_t *data) {
@@ -98,31 +101,55 @@ void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint
 void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     clear();
 
-    printBusAddress(address);
-
-    changeILCMode(address, ILCMode::Disabled);
+    reportServerStatus(address);
     fpga->ilcCommands(*this);
     clear();
 
-    changeILCMode(address, ILCMode::Standby);
+    switch (getLastMode(address)) {
+        // those modes need fault first
+        case ILCMode::Enabled:
+            changeILCMode(address, ILCMode::Disabled);
+        case ILCMode::Disabled:
+            changeILCMode(address, ILCMode::Standby);
+            break;
+        case ILC::ILCMode::Fault:
+            changeILCMode(address, ILCMode::ClearFaults);
+            break;
+        default:
+            break;
+    }
+
     fpga->ilcCommands(*this);
     clear();
 
-    changeILCMode(address, ILCMode::FirmwareUpdate);
+    if (getLastMode(address) != ILC::FirmwareUpdate) {
+        changeILCMode(address, ILCMode::FirmwareUpdate);
+        fpga->ilcCommands(*this);
+        clear();
+    }
+
+    if (getLastMode(address) == ILC::Fault) {
+        changeILCMode(address, ILCMode::ClearFaults);
+        fpga->ilcCommands(*this);
+        clear();
+    }
+
+    if (getLastMode(address) != ILC::FirmwareUpdate) {
+        throw std::runtime_error("Cannot transition to FirmwareUpdate mode");
+    }
+
+    eraseILCApplication(address);
     fpga->ilcCommands(*this);
     clear();
 
-    changeILCMode(address, ILCMode::ClearFaults);
-    fpga->ilcCommands(*this);
-    clear();
+    _startAddress = 0;
+    _dataLength = 0;
 
-    uint16_t dataCRC;
-    uint16_t startAddress;
-    uint16_t dataLength;
+    _crc.reset();
 
-    _writeHex(fpga, address, hex, dataCRC, startAddress, dataLength);
+    _writeHex(fpga, address, hex);
 
-    writeApplicationStats(address, dataCRC, startAddress, dataLength);
+    writeApplicationStats(address, _crc.get(), _startAddress, _dataLength);
     fpga->ilcCommands(*this);
     clear();
 
@@ -133,6 +160,12 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     changeILCMode(address, ILCMode::Standby);
     fpga->ilcCommands(*this);
     clear();
+
+    if (getLastMode(address) == ILC::Fault) {
+        changeILCMode(address, ILCMode::ClearFaults);
+        fpga->ilcCommands(*this);
+        clear();
+    }
 
     changeILCMode(address, ILCMode::Disabled);
     fpga->ilcCommands(*this);
@@ -156,14 +189,14 @@ void PrintILC::processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAp
 
 void PrintILC::processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
     printBusAddress(address);
-    std::cout << "Mode: " << std::to_string(mode) << std::endl
+    std::cout << "Mode: " << std::to_string(mode) << " - " << getModeStr(mode) << std::endl
               << "Status: " << std::hex << std::setw(4) << std::setfill('0') << (status) << std::endl
               << "Faults: " << std::hex << std::setw(4) << std::setfill('0') << (status) << std::endl;
 }
 
 void PrintILC::processChangeILCMode(uint8_t address, uint16_t mode) {
     printBusAddress(address);
-    std::cout << "New mode: " << std::to_string(mode) << std::endl;
+    std::cout << "New mode: " << std::to_string(mode) << " - " << getModeStr(mode) << std::endl;
 }
 
 void PrintILC::processSetTempILCAddress(uint8_t address, uint8_t newAddress) {
@@ -173,7 +206,7 @@ void PrintILC::processSetTempILCAddress(uint8_t address, uint8_t newAddress) {
 
 void PrintILC::processResetServer(uint8_t address) {
     printBusAddress(address);
-    std::cout << "Reseted." << std::endl;
+    std::cout << "Reseted " << static_cast<int>(address) << std::endl;
 }
 
 void PrintILC::processWriteApplicationStats(uint8_t address) {
@@ -188,7 +221,8 @@ void PrintILC::processEraseILCApplication(uint8_t address) {
 
 void PrintILC::processWriteApplicationPage(uint8_t address) {
     printBusAddress(address);
-    std::cout << "Page written." << std::endl;
+    std::cout << ".";
+    std::cout.flush();
 }
 
 void PrintILC::processVerifyUserApplication(uint8_t address, uint16_t status) {
@@ -219,10 +253,14 @@ void PrintILC::processVerifyUserApplication(uint8_t address, uint16_t status) {
 }
 
 void PrintILC::printBusAddress(uint8_t address) {
+    if (address == _lastAddress) {
+        return;
+    }
     printSepline();
     std::cout << "Bus: " << std::to_string(getBus()) << " (" << static_cast<char>('A' - 1 + getBus()) << ")"
               << std::endl
               << "Address: " << std::to_string(address) << std::endl;
+    _lastAddress = address;
 }
 
 void PrintILC::printSepline() {
@@ -232,29 +270,31 @@ void PrintILC::printSepline() {
     _printout++;
 }
 
-void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &dataCRC,
-                         uint16_t &startAddress, uint16_t &dataLength) {
+void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
     // align data to 256 bytes pages
-    std::vector<uint8_t> data = hex.getData(startAddress);
+    std::vector<uint8_t> data = hex.getData(_startAddress);
 
     size_t mod = data.size() % 256;
-    if (mod == 0) return;
+    if (mod == 0) {
+        mod = 256;
+    }
+
+    // CRC is calculated only from data, skips filling
+    for (auto d : data) {
+        _crc.add(d);
+    }
+
+    std::cout << "Writing pages ";
+
+    _dataLength = data.size();
 
     for (int i = mod; i < 256; i++) {
         data.push_back(((i % 4) == 3) ? 0x00 : 0xFF);
     }
 
-    ModbusBuffer::CRC crc;
-    for (auto d : data) {
-        crc.add(d);
-    }
-    dataCRC = crc.get();
-
-    dataLength = data.size();
-
     uint8_t *startData = data.data();
     uint8_t *endData = data.data() + data.size();
-    uint16_t dataAddress = startAddress;
+    uint16_t dataAddress = _startAddress;
     while (startData < endData) {
         uint8_t page[192];
         int i = 0;
@@ -273,4 +313,6 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex, uint16_t &d
         clear();
         dataAddress += 256;
     }
+
+    std::cout << std::endl;
 }
