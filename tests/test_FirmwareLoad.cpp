@@ -29,8 +29,10 @@
 #include <cRIO/PrintILC.h>
 #include <cRIO/SimulatedILC.h>
 
+#include <fstream>
 #include <iostream>
 #include <iomanip>
+#include <sstream>
 
 using namespace LSST::cRIO;
 
@@ -46,6 +48,10 @@ public:
 class TestFPGA : public FPGA {
 public:
     TestFPGA() : FPGA(SS), _call(0) {}
+    ~TestFPGA() { _outStream.close(); }
+
+    void setOutFile(const char* filename) { _outStream.open(filename, std::ifstream::in); }
+
     void initialize() override {}
     void open() override {}
     void close() override {}
@@ -65,18 +71,13 @@ public:
 
 private:
     uint8_t _call;
+    std::ifstream _outStream;
+
+    void _printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp = false);
 };
 
-void _printBuffer(uint16_t* data, size_t length, const char* prefix) {
-    std::cerr << prefix;
-    for (size_t i = 0; i < length; i++) {
-        std::cerr << " " << std::hex << std::setfill('0') << std::setw(4) << data[i];
-    }
-    std::cerr << std::endl;
-}
-
 void TestFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
-    _printBuffer(data, length, "C>");
+    _printBuffer(data, length, "C>", true);
     _call = 0xff & (data[4] >> 1);
 }
 
@@ -134,11 +135,26 @@ void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeo
     _printBuffer(data, length, "R<");
 }
 
+void TestFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp) {
+    std::stringstream ss;
+    ss << prefix;
+    for (size_t i = 0; i < length; i++) {
+        ss << " " << std::hex << std::setfill('0') << std::setw(4) << data[i];
+    }
+    if (cmp) {
+        std::string l;
+        std::getline(_outStream, l);
+        REQUIRE(l == ss.str());
+    }
+    std::cout << ss.str() << std::endl;
+}
+
 TEST_CASE("Test load ILC", "[FirmwareLoad]") {
     IntelHex hex;
     hex.load("data/ILC-3.hex");
 
     TestILC tILC(1);
     TestFPGA testFPGA;
+    REQUIRE_NOTHROW(testFPGA.setOutFile("data/ILC-3.out"));
     REQUIRE_NOTHROW(tILC.programILC(&testFPGA, 18, hex));
 }
