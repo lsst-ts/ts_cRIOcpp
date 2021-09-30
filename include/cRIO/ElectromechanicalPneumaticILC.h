@@ -33,7 +33,7 @@ namespace cRIO {
  *
  * Replies received from ILCs shall be processed with ILC::processResponse method.
  */
-class ElectromechanicalPneumaticILC : public ILC {
+class ElectromechanicalPneumaticILC : public virtual ILC {
 public:
     /**
      * Populate responses for known ILC functions.
@@ -74,11 +74,11 @@ protected:
      * @param backupSensitivity[4] backup sensor n sensitivity
      */
     virtual void processCalibrationData(uint8_t address, float mainADCK[4], float mainOffset[4],
-                                        float mainSensitivity[4], float backupADCK[4],
-                                        float backupOffset[4], float backupSensitivity[4]) = 0;
+                                        float mainSensitivity[4], float backupADCK[4], float backupOffset[4],
+                                        float backupSensitivity[4]) = 0;
 };
 
 }  // namespace cRIO
 }  // namespace LSST
 
-#endif //! _cRIO_ElectromechanicalPneumaticILC_h
+#endif  //! _cRIO_ElectromechanicalPneumaticILC_h
