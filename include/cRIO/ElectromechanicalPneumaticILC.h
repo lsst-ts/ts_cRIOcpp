@@ -83,9 +83,6 @@ protected:
     virtual void processCalibrationData(uint8_t address, float mainADCK[4], float mainOffset[4],
                                         float mainSensitivity[4], float backupADCK[4], float backupOffset[4],
                                         float backupSensitivity[4]) = 0;
-
-    virtual void processMezzaninePressure(uint8_t address, float primaryPush, float primaryPull,
-                                          float secondaryPush, float secondaryPull) = 0;
 };
 
 }  // namespace cRIO
