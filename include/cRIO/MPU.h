@@ -72,6 +72,8 @@ public:
         _commands.clear();
     }
 
+    void setAddress(uint8_t address) { _mpu_address = address; }
+
     /**
      * Returns bus number (internal FPGA identifier).
      *

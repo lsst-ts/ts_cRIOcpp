@@ -165,7 +165,7 @@ void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout
     _contains_read = true;
     // extras: device address, function, length (all 1 byte), CRC (2 bytes) = 5 total
     _commands.push_back(5 + count * 2);
-    _commands.push_back(MPUCommands::CHECK_CRC);
+    _commands.push_back(MPUCommands::OUTPUT);
 
     for (uint16_t add = address; add < address + count; add++) {
         _readRegisters.push_back(add);
