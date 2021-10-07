@@ -52,6 +52,8 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
     addILCCommand(
             "clear-faults", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::ClearFaults); },
             "Clear ILC faults");
+    addILCCommand("reset", [](ILCUnit u) { u.first->resetServer(u.second); }, "Reset server");
+
     addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
                NEED_FPGA, "<firmware hex file> <ILC...>", "Program ILC with new firmware.");
     addCommand("help", std::bind(&FPGACliApp::helpCommands, this, std::placeholders::_1), "", 0, NULL,

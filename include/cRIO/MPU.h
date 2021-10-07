@@ -72,14 +72,14 @@ public:
         _commands.clear();
     }
 
-    void setAddress(uint8_t address) { _mpu_address = address; }
-
     /**
      * Returns bus number (internal FPGA identifier).
      *
      * @return MPU bus number
      */
     uint8_t getBus() { return _bus; }
+
+    void setAddress(uint8_t address) { _mpu_address = address; }
 
     bool containsRead() { return _contains_read; }
 
