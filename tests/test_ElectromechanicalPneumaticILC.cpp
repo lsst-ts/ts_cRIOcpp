@@ -77,6 +77,9 @@ protected:
         memcpy(responseBackupOffset, backupOffset, sizeof(responseBackupOffset));
         memcpy(responseBackupSensitivity, backupSensitivity, sizeof(responseBackupSensitivity));
     }
+
+    void processMezzaninePressure(uint8_t address, float primaryPush, float primaryPull, float secondaryPush, 
+                                  float secondaryPull) {}
 };
 
 TEST_CASE("Test set offset and sensitivity", "[ElectromechaniclPneumaticILC]") {
