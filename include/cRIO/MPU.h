@@ -79,6 +79,8 @@ public:
      */
     uint8_t getBus() { return _bus; }
 
+    void setAddress(uint8_t address) { _mpu_address = address; }
+
     bool containsRead() { return _contains_read; }
 
     void writeEndOfFrame() override {}

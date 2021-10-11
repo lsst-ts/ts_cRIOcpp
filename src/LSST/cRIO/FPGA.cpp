@@ -141,6 +141,7 @@ void FPGA::mpuCommands(MPU &mpu) {
     writeMPUFIFO(mpu);
 
     if (mpu.containsRead()) {
+        std::this_thread::sleep_for(500ms);
         readMPUFIFO(mpu);
     }
 }
