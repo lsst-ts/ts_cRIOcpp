@@ -61,6 +61,13 @@ public:
      */
     void reportCalibrationData(uint8_t address) { callFunction(address, 110, 1800); }
 
+    /**
+     * Read ILC mezzanine pressure. ILC command code 119 (0x77).
+     *
+     * @param address ILC address
+     */
+    void reportMezzaninePressure(uint8_t address) { callFunction(address, 119, 1800); }
+
 protected:
     /**
      * Called when response from call to command 110 (0x6E) is read.
@@ -76,6 +83,9 @@ protected:
     virtual void processCalibrationData(uint8_t address, float mainADCK[4], float mainOffset[4],
                                         float mainSensitivity[4], float backupADCK[4], float backupOffset[4],
                                         float backupSensitivity[4]) = 0;
+
+    virtual void processMezzaninePressure(uint8_t address, float primaryPush, float primaryPull,
+                                          float secondaryPush, float secondaryPull) = 0;
 };
 
 }  // namespace cRIO
