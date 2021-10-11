@@ -110,7 +110,8 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
     REQUIRE(commands[11] == 101);
     REQUIRE(commands[12] == MPUCommands::READ);
     REQUIRE(commands[13] == 25);
-    REQUIRE(commands[14] == MPUCommands::CHECK_CRC);
+    REQUIRE(commands[14] == MPUCommands::OUTPUT);
+    REQUIRE(commands[15] == MPUCommands::STOP);
 
     std::vector<uint16_t> res = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
                                  11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
