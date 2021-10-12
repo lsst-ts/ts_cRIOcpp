@@ -61,6 +61,8 @@ public:
      */
     virtual int run(int argc, char* const argv[]);
 
+    int timeit(command_vec cmds);
+
     int closeFPGA(command_vec cmds);
     int openFPGA(command_vec cmds);
     int programILC(command_vec cmds);
@@ -105,6 +107,7 @@ private:
     std::map<std::string, std::shared_ptr<MPU>> _mpu;
 
     bool _autoOpen;
+    bool _timeIt;
 };
 
 }  // namespace cRIO
