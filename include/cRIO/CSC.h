@@ -66,6 +66,11 @@ public:
      */
     void stop() { _keep_running = false; }
 
+    /**
+     * Returns configuration root.
+     */
+    const char* getConfigRoot() { return _configRoot; }
+
 protected:
     virtual void processArg(int opt, char* optarg);
 
