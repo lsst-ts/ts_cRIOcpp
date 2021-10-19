@@ -23,7 +23,7 @@
 
 #include <cRIO/Limit.h>
 #include <cRIO/DataTypes.h>
-#include <cRIO/SettingsPath.h>
+#include <cRIO/Settings/Path.h>
 #include <boost/tokenizer.hpp>
 #include <boost/lexical_cast.hpp>
 #include <boost/algorithm/string.hpp>
@@ -48,7 +48,7 @@ void TableLoader::loadTable(int rowsToSkip, int columnsToSkip, int columnsToKeep
                             const std::string& filename) {
     typedef boost::tokenizer<boost::escaped_list_separator<char> > tokenizer;
 
-    std::string fullPath = SettingsPath::getFilePath(filename);
+    std::string fullPath = Settings::Path::getFilePath(filename);
     std::ifstream inputStream(fullPath.c_str());
     if (!inputStream.is_open()) {
         throw std::runtime_error("Cannot open " + fullPath + ": " + strerror(errno));
