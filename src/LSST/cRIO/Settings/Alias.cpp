@@ -57,5 +57,5 @@ std::pair<std::string, std::string> Alias::getAlias(std::string label) {
 
 std::string Alias::getPath(std::string label) {
     auto a = getAlias(label);
-    return "/Sets/" + a.first + "/" + a.second + "/";
+    return "Sets/" + a.first + "/" + a.second + "/";
 }
