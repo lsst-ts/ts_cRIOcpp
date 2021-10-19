@@ -35,13 +35,13 @@ TEST_CASE("Test Alias", "[Alias]") {
 
     REQUIRE(a.first == "Default");
     REQUIRE(a.second == "1.2");
-    REQUIRE(alias.getPath("Default") == "/Sets/Default/1.2/");
+    REQUIRE(alias.getPath("Default") == "Sets/Default/1.2/");
 
     REQUIRE_NOTHROW(a = alias.getAlias("Experimental"));
 
     REQUIRE(a.first == "Exp");
     REQUIRE(a.second == "2.13");
-    REQUIRE(alias.getPath("Experimental") == "/Sets/Exp/2.13/");
+    REQUIRE(alias.getPath("Experimental") == "Sets/Exp/2.13/");
 
     REQUIRE_THROWS(alias.getAlias("Test"));
 }
