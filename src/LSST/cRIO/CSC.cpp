@@ -41,7 +41,7 @@ using namespace LSST::cRIO;
 CSC::CSC(const char* name, const char* description) : Application(name, description) {
     _debugLevelSAL = 0;
     _keep_running = true;
-    _configRoot = getenv("PWD");
+    _configRoot = std::string("/var/lib/") + name;
     _startPipe[0] = _startPipe[1] = -1;
 
     enabledSinks = Sinks::SAL;

@@ -30,7 +30,7 @@ using namespace LSST::cRIO::Settings;
 void Alias::load(const std::string& filename) {
     _aliases.clear();
 
-    SPDLOG_DEBUG("Loading aliased from {}", filename);
+    SPDLOG_DEBUG("Loading aliases from {}", filename);
 
     try {
         YAML::Node doc = YAML::LoadFile(filename);

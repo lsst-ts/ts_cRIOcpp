@@ -69,7 +69,7 @@ public:
     /**
      * Returns configuration root.
      */
-    const char* getConfigRoot() { return _configRoot; }
+    std::string getConfigRoot() { return _configRoot; }
 
 protected:
     virtual void processArg(int opt, char* optarg);
@@ -106,7 +106,7 @@ protected:
 private:
     std::string _name;
 
-    const char* _configRoot;
+    std::string _configRoot;
 
     int _debugLevelSAL;
     bool _keep_running;
