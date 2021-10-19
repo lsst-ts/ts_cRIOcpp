@@ -32,11 +32,47 @@ namespace LSST {
 namespace cRIO {
 namespace Settings {
 
+/**
+ * Loads settings. Provides functions to query settings. Aliases are used to
+ * resolve configuration name passed in start command.
+ *
+ * Aliases are used for path to configuration set.
+ *
+ * Alias file is a YAML file with tags marking alias sets, containing Set: and
+ * Version: elements. See example below:
+ *
+ * @code
+ * Default:
+ *   Set: "Default"
+ *   Version: 1.2
+ *
+ * @endcode
+ */
 class Alias {
 public:
+    /**
+     * Loads application settings.
+     *
+     * @param filename aliases filename
+     */
     void load(const std::string& filename);
 
+    /**
+     * Returns pair of (set,version)
+     *
+     * @param label alias label
+     *
+     * @return pair of (set,version)
+     */
     std::pair<std::string, std::string> getAlias(std::string label);
+
+    /**
+     * Returns path for aliases.
+     *
+     * @param label alias label
+     *
+     * @return string with path to configuration files
+     */
     std::string getPath(std::string label);
 
 private:
