@@ -24,23 +24,16 @@ node {
     def SALUSER_HOME = "/home/saluser"
     def BRANCH = (env.CHANGE_BRANCH != null) ? env.CHANGE_BRANCH : env.BRANCH_NAME
 
-    stage('Cloning Dockerfile')
-    {
-        dir("ts_Dockerfiles") {
-            git branch: (BRANCH == "master" ? "master" : "develop"), url: 'https://github.com/lsst-ts/ts_Dockerfiles'
-        }
-    }
-
-    stage('Building dev container')
-    {
-        M1M3sim = docker.build("lsstts/mtm1m3_sim:" + env.BRANCH_NAME.replace("/", "_"), (params.noCache ? "--no-cache " : " ") + "--target lsstts-cpp-dev --build-arg XML_BRANCH=HEAD ts_Dockerfiles/mtm1m3_sim")
-    }
-
     stage('Cloning sources')
     {
         dir("ts_cRIOcpp") {
             checkout scm
         }
+    }
+
+    stage('Building dev container')
+    {
+        M1M3sim = docker.build("lsstts/criocpp:" + env.BRANCH_NAME.replace("/", "_"), (params.noCache ? "--no-cache " : " ") + "ts_cRIOcpp")
     }
 
     stage("Running tests")
@@ -56,8 +49,12 @@ node {
                  sh """
                     source $SALUSER_HOME/.setup_salobj.sh
     
-                    export PATH=\$CONDA_PREFIX/bin:$PATH
                     cd $WORKSPACE/ts_cRIOcpp
+
+                    export PATH=\$CONDA_PREFIX/bin:$PATH
+                    export LIBS="-L\$CONDA_PREFIX/lib" 
+                    export CPP_FLAGS="-I\$CONDA_PREFIX/include"
+                    export PKG_CONFIG_PATH="\$CONDA_PREFIX/lib/pkgconfig"
                     make
                     make junit
                  """

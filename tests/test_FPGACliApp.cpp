@@ -21,7 +21,7 @@
  */
 
 #define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch/catch.hpp>
 
 #include <cRIO/PrintILC.h>
 #include <cRIO/FPGACliApp.h>
