@@ -1,4 +1,6 @@
 /*
+ * Singleton for configuration location.
+ *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
  * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
@@ -18,34 +20,29 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/SettingsPath.h>
-#include <spdlog/spdlog.h>
+#ifndef __cRIO_Settings_Path__
+#define __cRIO_Settings_Path__
+
+#include <cRIO/Singleton.h>
+#include <string>
 
 namespace LSST {
 namespace cRIO {
+namespace Settings {
 
-void SettingsPath::setRootPath(std::string rootPath) {
-    SPDLOG_DEBUG("SettingReader: setRootPath(\"{}\")", rootPath);
+class Path final : public Singleton<Path> {
+public:
+    Path(token) : _rootPath("UNDEFINED") {}
 
-    auto test_dir = [rootPath](std::string dir) {
-        struct stat dirstat;
-        if (stat(dir.c_str(), &dirstat)) {
-            throw std::runtime_error("Directory " + rootPath + "doesn't exist: " + strerror(errno));
-        }
-        if (!(dirstat.st_mode & (S_IFLNK | S_IFDIR))) {
-            throw std::runtime_error(rootPath + " isn't directory or link");
-        }
-    };
+    static void setRootPath(std::string rootPath);
+    static std::string getFilePath(std::string filename);
 
-    test_dir(rootPath);
+private:
+    std::string _rootPath;
+};
 
-    instance()._rootPath = rootPath;
-}
-
-std::string SettingsPath::getFilePath(std::string filename) {
-    if (filename[0] == '/') return filename;
-    return instance()._rootPath + "/" + filename;
-}
-
+}  // namespace Settings
 }  // namespace cRIO
 }  // namespace LSST
+
+#endif  // ! __cRIO_Settings_Path__

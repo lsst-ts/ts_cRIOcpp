@@ -66,6 +66,11 @@ public:
      */
     void stop() { _keep_running = false; }
 
+    /**
+     * Returns configuration root.
+     */
+    std::string getConfigRoot() { return _configRoot; }
+
 protected:
     virtual void processArg(int opt, char* optarg);
 
@@ -101,7 +106,7 @@ protected:
 private:
     std::string _name;
 
-    const char* _configRoot;
+    std::string _configRoot;
 
     int _debugLevelSAL;
     bool _keep_running;

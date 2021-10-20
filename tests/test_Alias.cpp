@@ -1,5 +1,5 @@
 /*
- * Singleton for configuration location.
+ * This file is part of LSST cRIOcpp test suite. Tests ILC generic functions.
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -20,27 +20,33 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __cRIO_SettingsPath__
-#define __cRIO_SettingsPath__
+#define CATCH_CONFIG_MAIN
+#include <catch/catch.hpp>
 
-#include "Singleton.h"
-#include <string>
+#include <cRIO/Settings/Alias.h>
 
-namespace LSST {
-namespace cRIO {
+using namespace LSST::cRIO::Settings;
 
-class SettingsPath final : public Singleton<SettingsPath> {
-public:
-    SettingsPath(token) : _rootPath("UNDEFINED") {}
+TEST_CASE("Test Alias", "[Alias]") {
+    Alias alias;
+    REQUIRE_NOTHROW(alias.load("data/AliasGood.yaml"));
 
-    static void setRootPath(std::string rootPath);
-    static std::string getFilePath(std::string filename);
+    auto a = alias.getAlias("Default");
 
-private:
-    std::string _rootPath;
-};
+    REQUIRE(a.first == "Default");
+    REQUIRE(a.second == "1.2");
+    REQUIRE(alias.getPath("Default") == "Sets/Default/1.2/");
 
-}  // namespace cRIO
-}  // namespace LSST
+    REQUIRE_NOTHROW(a = alias.getAlias("Experimental"));
 
-#endif  // ! __cRIO_SettingsPath__
+    REQUIRE(a.first == "Exp");
+    REQUIRE(a.second == "2.13");
+    REQUIRE(alias.getPath("Experimental") == "Sets/Exp/2.13/");
+
+    REQUIRE_THROWS(alias.getAlias("Test"));
+}
+
+TEST_CASE("Throws on bad file", "[Alias]") {
+    Alias alias;
+    REQUIRE_THROWS(alias.load("data/test.yaml"));
+}
