@@ -24,16 +24,19 @@
 #include "cRIO/FPGACliApp.h"
 #include "cRIO/IntelHex.h"
 
+#include <iomanip>
 #include <iostream>
 
 using namespace LSST::cRIO;
 
 FPGACliApp::FPGACliApp(const char* name, const char* description)
-        : CliApp(name, description), _fpga(nullptr), _ilcs(), _autoOpen(true) {
+        : CliApp(name, description), _fpga(nullptr), _ilcs(), _autoOpen(true), _timeIt(false) {
     addArgument('d', "increase debug level");
     addArgument('h', "print this help");
     addArgument('O', "don't auto open (and run) FPGA");
 
+    addCommand("@timeit", std::bind(&FPGACliApp::timeit, this, std::placeholders::_1), "b", 0, "[flag]",
+               "Sets timing flag");
     addCommand("close", std::bind(&FPGACliApp::closeFPGA, this, std::placeholders::_1), "", NEED_FPGA, NULL,
                "Close FPGA connection");
     addILCCommand(
@@ -83,6 +86,18 @@ int FPGACliApp::run(int argc, char* const argv[]) {
     }
 
     return processCmdVector(cmds);
+}
+
+int FPGACliApp::timeit(command_vec cmds) {
+    if (cmds.size() == 1) {
+        _timeIt = onOff(cmds[0]);
+    }
+    if (_timeIt) {
+        std::cout << "Will time executed commands." << std::endl;
+    } else {
+        std::cout << "Commands will not be timed." << std::endl;
+    }
+    return 0;
 }
 
 int FPGACliApp::closeFPGA(command_vec cmds) {
@@ -192,7 +207,19 @@ int FPGACliApp::processCommand(Command* cmd, const command_vec& args) {
                   << std::endl;
         return -1;
     }
-    return CliApp::processCommand(cmd, args);
+
+    auto start = std::chrono::steady_clock::now();
+
+    int ret = CliApp::processCommand(cmd, args);
+
+    auto end = std::chrono::steady_clock::now();
+
+    if (_timeIt) {
+        std::chrono::duration<double> diff = end - start;
+        std::cout << "Took " << std::setprecision(3) << (diff.count() * 1000.0) << " ms" << std::endl;
+    }
+
+    return ret;
 }
 
 std::shared_ptr<MPU> FPGACliApp::getMPU(std::string name) {
