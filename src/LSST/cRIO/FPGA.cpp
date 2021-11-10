@@ -79,7 +79,7 @@ void FPGA::ilcCommands(ILC &ilc) {
     uint16_t responseLen;
 
     readU16ResponseFIFO(&responseLen, 1, 20);
-    if (responseLen <= 4) {
+    if (responseLen < 4) {
         if (responseLen > 0) {
             uint16_t buffer[responseLen];
             readU16ResponseFIFO(buffer, responseLen, 10);
