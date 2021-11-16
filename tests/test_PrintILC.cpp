@@ -218,6 +218,7 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
 
             case 102: {
                 uint16_t startAddress = buf.read<uint16_t>();
+                REQUIRE(startAddress == 0);
                 uint16_t length = buf.read<uint16_t>();
                 REQUIRE(length == 192);
                 uint8_t fw[192];
