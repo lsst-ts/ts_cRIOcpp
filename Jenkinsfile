@@ -47,14 +47,10 @@ node {
                  """
                  }
                  sh """
-                    source $SALUSER_HOME/.setup_salobj.sh
+                    source $SALUSER_HOME/.crio_setup.sh
     
                     cd $WORKSPACE/ts_cRIOcpp
 
-                    export PATH=\$CONDA_PREFIX/bin:$PATH
-                    export LIBS="-L\$CONDA_PREFIX/lib" 
-                    export CPP_FLAGS="-I\$CONDA_PREFIX/include"
-                    export PKG_CONFIG_PATH="\$CONDA_PREFIX/lib/pkgconfig"
                     make
                     make junit
                  """
