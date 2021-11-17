@@ -12,7 +12,7 @@ jobs:
     - name: Install dependencies
       run: |
         yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-        yum install -y make boost-devel catch-devel readline-devel
+        yum install -y make boost-devel catch-devel readline-devel yaml-cpp-devel
     - name: Checkout
       uses: actions/checkout@v2
     - name: make junit
@@ -32,7 +32,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update -y
-        sudo apt install -y make g++ libboost-dev catch libreadline-dev
+        sudo apt install -y make g++ libboost-dev catch libreadline-dev libyaml-cpp-dev
     - name: Checkout
       uses: actions/checkout@v2
     - name: make junit

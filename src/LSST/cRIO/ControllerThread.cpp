@@ -30,7 +30,9 @@ using namespace std::chrono_literals;
 namespace LSST {
 namespace cRIO {
 
-ControllerThread::ControllerThread(token) { SPDLOG_DEBUG("ControllerThread: ControllerThread()"); }
+ControllerThread::ControllerThread(token) : _exitRequested(false) {
+    SPDLOG_DEBUG("ControllerThread: ControllerThread()");
+}
 
 ControllerThread::~ControllerThread() { _clear(); }
 

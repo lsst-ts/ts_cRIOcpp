@@ -1,4 +1,6 @@
 /*
+ * This file is part of LSST cRIOcpp test suite. Tests ILC generic functions.
+ *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
  * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
@@ -18,34 +20,33 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/SettingsPath.h>
-#include <spdlog/spdlog.h>
+#define CATCH_CONFIG_MAIN
+#include <catch2/catch.hpp>
 
-namespace LSST {
-namespace cRIO {
+#include <cRIO/Settings/Alias.h>
 
-void SettingsPath::setRootPath(std::string rootPath) {
-    SPDLOG_DEBUG("SettingReader: setRootPath(\"{}\")", rootPath);
+using namespace LSST::cRIO::Settings;
 
-    auto test_dir = [rootPath](std::string dir) {
-        struct stat dirstat;
-        if (stat(dir.c_str(), &dirstat)) {
-            throw std::runtime_error("Directory " + rootPath + "doesn't exist: " + strerror(errno));
-        }
-        if (!(dirstat.st_mode & (S_IFLNK | S_IFDIR))) {
-            throw std::runtime_error(rootPath + " isn't directory or link");
-        }
-    };
+TEST_CASE("Test Alias", "[Alias]") {
+    Alias alias;
+    REQUIRE_NOTHROW(alias.load("data/AliasGood.yaml"));
 
-    test_dir(rootPath);
+    auto a = alias.getAlias("Default");
 
-    instance()._rootPath = rootPath;
+    REQUIRE(a.first == "Default");
+    REQUIRE(a.second == "1.2");
+    REQUIRE(alias.getPath("Default") == "Sets/Default/1.2/");
+
+    REQUIRE_NOTHROW(a = alias.getAlias("Experimental"));
+
+    REQUIRE(a.first == "Exp");
+    REQUIRE(a.second == "2.13");
+    REQUIRE(alias.getPath("Experimental") == "Sets/Exp/2.13/");
+
+    REQUIRE_THROWS(alias.getAlias("Test"));
 }
 
-std::string SettingsPath::getFilePath(std::string filename) {
-    if (filename[0] == '/') return filename;
-    return instance()._rootPath + "/" + filename;
+TEST_CASE("Throws on bad file", "[Alias]") {
+    Alias alias;
+    REQUIRE_THROWS(alias.load("data/test.yaml"));
 }
-
-}  // namespace cRIO
-}  // namespace LSST

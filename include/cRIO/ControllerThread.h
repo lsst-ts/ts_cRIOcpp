@@ -53,6 +53,10 @@ public:
      */
     void enqueue(Command* command);
 
+    static void setExitRequested() { instance()._exitRequested = true; }
+
+    static bool exitRequested() { return instance()._exitRequested; }
+
 protected:
     void run() override;
 
@@ -62,6 +66,7 @@ private:
     void _execute(Command* command);
 
     std::queue<Command*> _queue;
+    bool _exitRequested;
 };
 
 }  // namespace cRIO

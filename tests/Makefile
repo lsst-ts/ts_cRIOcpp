@@ -4,8 +4,8 @@ all: compile
 
 .PHONY: FORCE compile run junit clean
 
-TEST_REQ_READLINE := test_CliApp
-TEST_SRCS := $(shell ls test_*.cpp 2>/dev/null | grep -v test_CliApp)
+TEST_REQ_READLINE := test_CliApp test_FPGACliApp
+TEST_SRCS := $(shell ls test_*.cpp 2>/dev/null | grep -v test_CliApp | grep -v test_FPGACliApp)
 BINARIES := $(patsubst %.cpp,%,$(TEST_SRCS))
 ALL_BINARIES := $(BINARIES) $(TEST_REQ_READLINE)
 DEPS := $(patsubst %.cpp,%.cpp.d,$(TEST_SRCS))

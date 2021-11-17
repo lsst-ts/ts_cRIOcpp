@@ -45,10 +45,22 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
                                backupSensitivity);
     };
 
+    auto pressureData = [this](uint8_t address) {
+        float primaryPush, primaryPull, secondaryPush, secondaryPull;
+        primaryPush = read<float>();
+        primaryPull = read<float>();
+        secondaryPull = read<float>();
+        secondaryPush = read<float>();
+        checkCRC();
+        processMezzaninePressure(address, primaryPush, primaryPull, secondaryPush, secondaryPull);
+    };
+
     addResponse(
             81, [this](uint8_t address) { checkCRC(); }, 235);
 
     addResponse(110, calibrationData, 238);
+
+    addResponse(119, pressureData, 247);
 }
 
 }  // namespace cRIO

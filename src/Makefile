@@ -14,7 +14,7 @@ ifneq ($(MAKECMDGOALS),clean)
   -include ${CPP_DEPS}
 endif
 
-CPPFLAGS := -I. \
+CPP_FLAGS += -I. \
 	-I"../include" \
 	-I"." \
 	-I"/usr/include" \
@@ -22,9 +22,7 @@ CPPFLAGS := -I. \
 
 libcRIOcpp.a: $(OBJS)
 	@echo '[AR ] $@'
-	${co}$(AR) r $@ $^
-	@echo '[RLB] $@'
-	${co}ranlib $@
+	${co}$(AR) rs $@ $^
 
 clean:
 	@$(foreach file,$(OBJS) $(CPP_DEPS) libcRIOcpp.a $(shell find -name '*.d'), echo '[RM ] ${file}'; $(RM) -r $(file);)
@@ -32,8 +30,8 @@ clean:
 # file targets
 %.cpp.o: %.cpp.d
 	@echo '[CPP] $(patsubst %.d,%,$<)'
-	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPPFLAGS) -c -fmessage-length=0 -o $@ $(patsubst %.d,%,$<)
+	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) -c -fmessage-length=0 -o $@ $(patsubst %.d,%,$<)
 
 %.cpp.d: %.cpp
 	@echo '[DPP] $<'
-	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPPFLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'
+	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'

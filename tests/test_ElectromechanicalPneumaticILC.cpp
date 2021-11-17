@@ -21,7 +21,7 @@
  */
 
 #define CATCH_CONFIG_MAIN
-#include <catch/catch.hpp>
+#include <catch2/catch.hpp>
 
 #include <memory>
 #include <cmath>
@@ -68,7 +68,7 @@ protected:
 
     void processCalibrationData(uint8_t address, float mainADCK[4], float mainOffset[4],
                                 float mainSensitivity[4], float backupADCK[4], float backupOffset[4],
-                                float backupSensitivity[4]) {
+                                float backupSensitivity[4]) override {
         memcpy(responseMainADCK, mainADCK, sizeof(responseMainADCK));
         memcpy(responseMainOffset, mainOffset, sizeof(responseMainOffset));
         memcpy(responseMainSensitivity, mainSensitivity, sizeof(responseMainSensitivity));
@@ -77,7 +77,20 @@ protected:
         memcpy(responseBackupOffset, backupOffset, sizeof(responseBackupOffset));
         memcpy(responseBackupSensitivity, backupSensitivity, sizeof(responseBackupSensitivity));
     }
+
+    void processMezzaninePressure(uint8_t address, float primaryPush, float primaryPull, float secondaryPush,
+                                  float secondaryPull) override;
 };
+
+void TestElectromechanicalPneumaticILC::processMezzaninePressure(uint8_t address, float primaryPush,
+                                                                 float primaryPull, float secondaryPush,
+                                                                 float secondaryPull) {
+    REQUIRE(address == 18);
+    REQUIRE(primaryPush == 3.141592f);
+    REQUIRE(primaryPull == 1.3456f);
+    REQUIRE(secondaryPush == -3.1468f);
+    REQUIRE(secondaryPull == -127.657f);
+}
 
 TEST_CASE("Test set offset and sensitivity", "[ElectromechaniclPneumaticILC]") {
     TestElectromechanicalPneumaticILC ilc;
@@ -140,4 +153,30 @@ TEST_CASE("Test parsing of calibration data", "[ElectromechaniclPneumaticILC]") 
     check4(2021.5788, ilc.responseBackupADCK);
     check4(789564687.4545, ilc.responseBackupOffset);
     check4(-478967.445456, ilc.responseBackupSensitivity);
+}
+
+TEST_CASE("Test parsing of pressure data", "[ElectromechaniclPneumaticILC]") {
+    TestElectromechanicalPneumaticILC ilc, response;
+
+    ilc.reportMezzaninePressure(18);
+
+    ilc.reset();
+
+    REQUIRE(ilc.read<uint8_t>() == 18);
+    REQUIRE(ilc.read<uint8_t>() == 119);
+    REQUIRE_NOTHROW(ilc.checkCRC());
+    REQUIRE_NOTHROW(ilc.readEndOfFrame());
+    REQUIRE(ilc.readWaitForRx() == 1800);
+
+    response.write<uint8_t>(18);
+    response.write<uint8_t>(119);
+
+    response.write<float>(3.141592f);
+    response.write<float>(1.3456f);
+    response.write<float>(-127.657f);
+    response.write<float>(-3.1468f);
+
+    response.writeCRC();
+
+    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
 }

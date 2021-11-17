@@ -1,4 +1,6 @@
 /*
+ * Singleton for configuration location.
+ *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
  * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
@@ -18,20 +20,29 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cRIO/XMLDocLoad.h"
-#include <stdexcept>
+#ifndef __cRIO_Settings_Path__
+#define __cRIO_Settings_Path__
 
-using namespace pugi;
+#include <cRIO/Singleton.h>
+#include <string>
 
 namespace LSST {
 namespace cRIO {
+namespace Settings {
 
-void XMLDocLoad(const std::string &filename, xml_document &doc) {
-    xml_parse_result res = doc.load_file(filename.c_str());
-    if (res.status != pugi::xml_parse_status::status_ok) {
-        throw std::runtime_error("Cannot load " + filename + ": " + res.description());
-    }
-}
+class Path final : public Singleton<Path> {
+public:
+    Path(token) : _rootPath("UNDEFINED") {}
 
+    static void setRootPath(std::string rootPath);
+    static std::string getFilePath(std::string filename);
+
+private:
+    std::string _rootPath;
+};
+
+}  // namespace Settings
 }  // namespace cRIO
 }  // namespace LSST
+
+#endif  // ! __cRIO_Settings_Path__

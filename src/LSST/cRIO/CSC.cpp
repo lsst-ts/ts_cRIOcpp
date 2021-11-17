@@ -22,6 +22,7 @@
  */
 
 #include <cRIO/CSC.h>
+#include <cRIO/ControllerThread.h>
 
 #include <spdlog/async.h>
 #include <spdlog/sinks/daily_file_sink.h>
@@ -33,15 +34,14 @@
 #include <fstream>
 #include <grp.h>
 #include <pwd.h>
-#include <signal.h>
+#include <csignal>
 
 using namespace LSST::cRIO;
 
-CSC::CSC(std::string name, const char* description) : Application(description) {
-    setName(name);
+CSC::CSC(const char* name, const char* description) : Application(name, description) {
     _debugLevelSAL = 0;
     _keep_running = true;
-    _configRoot = getenv("PWD");
+    _configRoot = std::string("/var/lib/") + name;
     _startPipe[0] = _startPipe[1] = -1;
 
     enabledSinks = Sinks::SAL;
@@ -57,7 +57,15 @@ CSC::CSC(std::string name, const char* description) : Application(description) {
 
 CSC::~CSC() {}
 
+void sigHandler(int sig) {
+    SPDLOG_INFO("Exiting on signal {}", sig);
+    ControllerThread::setExitRequested();
+}
+
 int CSC::run(FPGA* fpga) {
+    std::signal(SIGINT, &sigHandler);
+    std::signal(SIGTERM, &sigHandler);
+
     int ret_d = _daemonize();
 
     if (ret_d != -1) {
@@ -77,6 +85,7 @@ int CSC::run(FPGA* fpga) {
         if (rl == 0) break;
     }
 
+    stopAllThreads();
     done();
 
     fpga->close();

@@ -1,5 +1,5 @@
 /*
- * Singleton for configuration location.
+ * MPU simulator.
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -20,27 +20,21 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __cRIO_SettingsPath__
-#define __cRIO_SettingsPath__
+#ifndef CRIO_SIMULATEDMPU_H_
+#define CRIO_SIMULATEDMPU_H_
 
-#include "Singleton.h"
-#include <string>
+#include <cRIO/MPU.h>
 
 namespace LSST {
 namespace cRIO {
 
-class SettingsPath final : public Singleton<SettingsPath> {
+class SimulatedMPU : public MPU {
 public:
-    SettingsPath(token) : _rootPath("UNDEFINED") {}
-
-    static void setRootPath(std::string rootPath);
-    static std::string getFilePath(std::string filename);
-
-private:
-    std::string _rootPath;
+    SimulatedMPU() : MPU(0, 0) {}
+    SimulatedMPU(uint16_t* buffer, size_t length) : MPU(0, 0) { setBuffer(buffer, length); }
 };
 
 }  // namespace cRIO
 }  // namespace LSST
 
-#endif  // ! __cRIO_SettingsPath__
+#endif  // CRIO_SIMULATEDMPU_H_

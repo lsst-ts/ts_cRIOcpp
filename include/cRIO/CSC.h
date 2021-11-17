@@ -35,11 +35,15 @@ namespace cRIO {
 
 /**
  * Application class for Commandable SAL Component (CSC). Allows running
- * application as daemon, handles generic SAL commands.
+ * application as daemon, handles generic SAL commands. When CSC is started as
+ * daemon, a pipe is opened between controlling parent and child attempting to
+ * run as daemon. A message specifying that daemon startes or failed is send on
+ * pipe by child and read by the parent. See daemonOK() and daemonFailed(const
+ * char*) for details.
  */
 class CSC : public Application {
 public:
-    CSC(std::string name, const char* description);
+    CSC(const char* name, const char* description);
     virtual ~CSC();
 
     /**
@@ -50,15 +54,34 @@ public:
      */
     int run(FPGA* fpga);
 
+    /**
+     * Returns current SAL debug level.
+     *
+     * @return current SAL debug level
+     */
     int getDebugLevelSAL() { return _debugLevelSAL; }
 
-    const char* _configRoot;
+    /**
+     * Stops CSC.
+     */
+    void stop() { _keep_running = false; }
+
+    /**
+     * Returns configuration root.
+     */
+    std::string getConfigRoot() { return _configRoot; }
 
 protected:
     virtual void processArg(int opt, char* optarg);
 
+    /**
+     * Initialize CSC. Called after daemonization, with correct PID.
+     */
     virtual void init() {}
 
+    /**
+     * Destroy CSC. Called after main loop finishes.
+     */
     virtual void done() {}
 
     /**
@@ -68,11 +91,22 @@ protected:
      */
     virtual int runLoop() = 0;
 
+    /**
+     * Informs controlling parent that daemon was started and is running.
+     */
     void daemonOK();
+
+    /**
+     * Informs controlling parent that daemon failed to run.
+     *
+     * @param msg message with details why daemon failed to start
+     */
     void daemonFailed(const char* msg);
 
 private:
     std::string _name;
+
+    std::string _configRoot;
 
     int _debugLevelSAL;
     bool _keep_running;

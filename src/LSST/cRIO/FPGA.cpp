@@ -47,7 +47,12 @@ FPGA::FPGA(fpgaType type) {
 }
 
 void FPGA::ilcCommands(ILC &ilc) {
-    size_t requestLen = ilc.getLength() + 5;
+    size_t requestLen = ilc.getLength();
+    if (requestLen == 0) {
+        return;
+    }
+    requestLen += 5;
+
     uint16_t data[requestLen];
 
     uint8_t bus = ilc.getBus();
@@ -74,7 +79,7 @@ void FPGA::ilcCommands(ILC &ilc) {
     uint16_t responseLen;
 
     readU16ResponseFIFO(&responseLen, 1, 20);
-    if (responseLen <= 4) {
+    if (responseLen < 4) {
         if (responseLen > 0) {
             uint16_t buffer[responseLen];
             readU16ResponseFIFO(buffer, responseLen, 10);
@@ -130,6 +135,15 @@ void FPGA::ilcCommands(ILC &ilc) {
     ilc.checkCommandedEmpty();
 
     reportTime(beginTs, endTs);
+}
+
+void FPGA::mpuCommands(MPU &mpu) {
+    writeMPUFIFO(mpu);
+
+    if (mpu.containsRead()) {
+        std::this_thread::sleep_for(500ms);
+        readMPUFIFO(mpu);
+    }
 }
 
 }  // namespace cRIO
