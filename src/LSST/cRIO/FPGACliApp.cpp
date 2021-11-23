@@ -159,9 +159,10 @@ int FPGACliApp::verbose(command_vec cmds) {
 }
 
 void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)> action, const char* help) {
+    bool disableDisabled = strcmp(command, "@enable") == 0;
     addCommand(
             command,
-            [action, this](command_vec cmds) -> int {
+            [action, disableDisabled, this](command_vec cmds) -> int {
                 clearILCs();
 
                 ILCUnits units = getILCs(cmds);
@@ -172,7 +173,7 @@ void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)>
 
                 for (auto u : units) {
                     auto it = std::find(_disabledILCs.begin(), _disabledILCs.end(), u);
-                    if (it == _disabledILCs.end()) {
+                    if (it == _disabledILCs.end() || disableDisabled) {
                         action(u);
                     } else {
                         std::cout << "ILC " << static_cast<int>(u.first->getBus()) << "/"

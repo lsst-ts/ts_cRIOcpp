@@ -122,11 +122,11 @@ TEST_CASE("Test disable/enable ILC", "[CliApp]") {
     testRuns = 0;
     disabledCount = 0;
     REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"@enable", "0/2"}));
-    REQUIRE(testRuns == 1);
+    REQUIRE(testRuns == 0);
 
     disabled.clear();
 
     REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"test"}));
-    REQUIRE(testRuns == 5);
+    REQUIRE(testRuns == 4);
     REQUIRE(disabledCount == 0);
 }
