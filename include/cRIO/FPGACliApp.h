@@ -101,10 +101,15 @@ protected:
         }
     }
 
+    void disableILC(ILCUnit u);
+    void enableILC(ILCUnit u);
+
 private:
     FPGA* _fpga;
     std::vector<std::shared_ptr<PrintILC>> _ilcs;
     std::map<std::string, std::shared_ptr<MPU>> _mpu;
+
+    ILCUnits _disabledILCs;
 
     bool _autoOpen;
     bool _timeIt;

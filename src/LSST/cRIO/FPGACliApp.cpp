@@ -39,6 +39,11 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
                "Sets timing flag");
     addCommand("close", std::bind(&FPGACliApp::closeFPGA, this, std::placeholders::_1), "", NEED_FPGA, NULL,
                "Close FPGA connection");
+
+    addILCCommand("@disable", std::bind(&FPGACliApp::disableILC, this, std::placeholders::_1),
+                  "Temporary disable given ILC in * commands");
+    addILCCommand("@enable", std::bind(&FPGACliApp::enableILC, this, std::placeholders::_1),
+                  "Re-enable given ILC in * commands");
     addILCCommand(
             "info", [](ILCUnit u) { u.first->reportServerID(u.second); }, "Print ILC info");
     addILCCommand(
@@ -166,7 +171,13 @@ void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)>
                 }
 
                 for (auto u : units) {
-                    action(u);
+                    auto it = std::find(_disabledILCs.begin(), _disabledILCs.end(), u);
+                    if (it == _disabledILCs.end()) {
+                        action(u);
+                    } else {
+                        std::cout << "ILC " << static_cast<int>(u.first->getBus()) << "/"
+                                  << static_cast<int>(u.second) << " disabled." << std::endl;
+                    }
                 }
 
                 for (auto ilcp : _ilcs) {
@@ -233,6 +244,18 @@ std::shared_ptr<MPU> FPGACliApp::getMPU(std::string name) {
         }
     }
     return ret;
+}
+
+void FPGACliApp::disableILC(ILCUnit u) { _disabledILCs.push_back(u); }
+
+void FPGACliApp::enableILC(ILCUnit u) {
+    auto it = std::find(_disabledILCs.begin(), _disabledILCs.end(), u);
+    if (it == _disabledILCs.end()) {
+        std::cerr << "No such ILC: " << static_cast<int>(u.first->getBus()) << "/"
+                  << static_cast<int>(u.second) << std::endl;
+        return;
+    }
+    _disabledILCs.erase(it);
 }
 
 void FPGACliApp::printMPU() {
