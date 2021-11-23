@@ -29,21 +29,57 @@
 
 using namespace LSST::cRIO;
 
+int testRuns = 0;
+
+std::vector<std::pair<int, int>> disabled;
+
+void testAction(ILCUnit u) {
+    REQUIRE(!(u.first->getBus() == 1 && u.second == 20));
+    REQUIRE(!(u.first->getBus() == 4 && u.second == 2));
+
+    for (auto d : disabled) {
+        REQUIRE(u.first->getBus() != d.first);
+        REQUIRE(u.second != d.second);
+        testRuns++;
+    }
+
+    testRuns++;
+}
+
 class AClass : public FPGACliApp {
 public:
     AClass(const char* name, const char* description) : FPGACliApp(name, description) {
         addILC(std::make_shared<PrintILC>(1));
         addILC(std::make_shared<PrintILC>(4));
+
+        addILCCommand("test", &testAction, "Test ILC calls");
     }
 
     FPGA* newFPGA(const char* dir) override { return NULL; }
-    ILCUnits getILCs(command_vec arguments) override {
-        ILCUnits units;
-        return units;
-    }
+    ILCUnits getILCs(command_vec arguments) override;
 
     void test();
 };
+
+ILCUnits AClass::getILCs(command_vec arguments) {
+    ILCUnits units;
+
+    if (arguments.size() == 0) {
+        units.push_back(ILCUnit(getILC(0), 2));
+        units.push_back(ILCUnit(getILC(0), 3));
+
+        units.push_back(ILCUnit(getILC(1), 10));
+        units.push_back(ILCUnit(getILC(1), 11));
+        return units;
+    }
+
+    for (auto a : arguments) {
+        auto del = a.find("/");
+        units.push_back(ILCUnit(getILC(stoi(a.substr(0, del))), stoi(a.substr(del + 1))));
+    }
+
+    return units;
+}
 
 void AClass::test() {
     REQUIRE(getILC(0)->getBus() == 1);
@@ -54,4 +90,24 @@ TEST_CASE("Test CliApp", "[CliApp]") {
     AClass cli("name", "description");
 
     cli.test();
+}
+
+TEST_CASE("Test getILCs", "[CliApp]") {
+    AClass cli("name", "description");
+
+    auto ilcs = cli.getILCs(command_vec{});
+    REQUIRE(ilcs.size() == 4);
+}
+
+TEST_CASE("Test disable/enable ILC", "[CliApp]") {
+    AClass cli("name", "description");
+
+    REQUIRE(testRuns == 0);
+    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"test"}));
+    REQUIRE(testRuns == 1);
+
+    disabled.push_back(std::pair<int, int>(1, 2));
+    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"@disable", "0/2"}));
+    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"test"}));
+    REQUIRE(testRuns == 3);
 }
