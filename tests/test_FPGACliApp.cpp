@@ -27,9 +27,12 @@
 #include <cRIO/FPGACliApp.h>
 #include <iostream>
 
+#include "TestFPGA.h"
+
 using namespace LSST::cRIO;
 
 int testRuns = 0;
+int disabledCount = 0;
 
 std::vector<std::pair<int, int>> disabled;
 
@@ -38,9 +41,8 @@ void testAction(ILCUnit u) {
     REQUIRE(!(u.first->getBus() == 4 && u.second == 2));
 
     for (auto d : disabled) {
-        REQUIRE(u.first->getBus() != d.first);
-        REQUIRE(u.second != d.second);
-        testRuns++;
+        REQUIRE(!(u.first->getBus() == d.first && u.second == d.second));
+        disabledCount++;
     }
 
     testRuns++;
@@ -55,7 +57,7 @@ public:
         addILCCommand("test", &testAction, "Test ILC calls");
     }
 
-    FPGA* newFPGA(const char* dir) override { return NULL; }
+    FPGA* newFPGA(const char* dir) override { return new TestFPGA(); }
     ILCUnits getILCs(command_vec arguments) override;
 
     void test();
@@ -102,12 +104,29 @@ TEST_CASE("Test getILCs", "[CliApp]") {
 TEST_CASE("Test disable/enable ILC", "[CliApp]") {
     AClass cli("name", "description");
 
+    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"open"}));
+
     REQUIRE(testRuns == 0);
-    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"test"}));
+    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"test", "0/2"}));
     REQUIRE(testRuns == 1);
 
     disabled.push_back(std::pair<int, int>(1, 2));
     REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"@disable", "0/2"}));
+    REQUIRE(testRuns == 1);
+
+    REQUIRE(disabledCount == 0);
     REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"test"}));
-    REQUIRE(testRuns == 3);
+    REQUIRE(testRuns == 4);
+    REQUIRE(disabledCount == 3);
+
+    testRuns = 0;
+    disabledCount = 0;
+    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"@enable", "0/2"}));
+    REQUIRE(testRuns == 1);
+
+    disabled.clear();
+
+    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"test"}));
+    REQUIRE(testRuns == 5);
+    REQUIRE(disabledCount == 0);
 }
