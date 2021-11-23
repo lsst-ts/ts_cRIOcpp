@@ -88,45 +88,109 @@ void AClass::test() {
     REQUIRE(getILC(1)->getBus() == 4);
 }
 
-TEST_CASE("Test CliApp", "[CliApp]") {
+TEST_CASE("Test CliApp", "[FPGACliApp]") {
     AClass cli("name", "description");
 
     cli.test();
 }
 
-TEST_CASE("Test getILCs", "[CliApp]") {
+TEST_CASE("Test getILCs", "[FPGACliApp]") {
     AClass cli("name", "description");
 
     auto ilcs = cli.getILCs(command_vec{});
     REQUIRE(ilcs.size() == 4);
 }
 
-TEST_CASE("Test disable/enable ILC", "[CliApp]") {
+TEST_CASE("Test disable/enable ILC", "[FPGACliApp]") {
     AClass cli("name", "description");
 
-    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"open"}));
+    REQUIRE_NOTHROW(cli.processCmdVector({"open"}));
 
     REQUIRE(testRuns == 0);
-    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"test", "0/2"}));
+    REQUIRE_NOTHROW(cli.processCmdVector({"test", "0/2"}));
     REQUIRE(testRuns == 1);
 
     disabled.push_back(std::pair<int, int>(1, 2));
-    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"@disable", "0/2"}));
+    REQUIRE_NOTHROW(cli.processCmdVector({"@disable", "0/2"}));
     REQUIRE(testRuns == 1);
 
     REQUIRE(disabledCount == 0);
-    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"test"}));
+    REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
     REQUIRE(testRuns == 4);
     REQUIRE(disabledCount == 3);
 
     testRuns = 0;
     disabledCount = 0;
-    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"@enable", "0/2"}));
+    REQUIRE_NOTHROW(cli.processCmdVector({"@enable", "0/2"}));
     REQUIRE(testRuns == 0);
 
     disabled.clear();
 
-    REQUIRE_NOTHROW(cli.processCmdVector(command_vec{"test"}));
+    REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
+    REQUIRE(testRuns == 4);
+    REQUIRE(disabledCount == 0);
+}
+
+TEST_CASE("Tests multiple disable/enable", "[FPGACliApp]") {
+    AClass cli("name", "description");
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"open"}));
+
+    testRuns = 0;
+    disabledCount = 0;
+
+    disabled.push_back(std::pair<int, int>(4, 10));
+    REQUIRE_NOTHROW(cli.processCmdVector({"@disable", "1/10"}));
+    REQUIRE(testRuns == 0);
+    REQUIRE(disabledCount == 0);
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
+    REQUIRE(testRuns == 3);
+    REQUIRE(disabledCount == 3);
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"@disable", "0/2"}));
+
+    testRuns = 0;
+    disabledCount = 0;
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
+    REQUIRE(testRuns == 2);
+    REQUIRE(disabledCount == 2);
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"@disable", "0/3"}));
+
+    testRuns = 0;
+    disabledCount = 0;
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
+    REQUIRE(testRuns == 1);
+    REQUIRE(disabledCount == 1);
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"@disable", "1/11"}));
+
+    testRuns = 0;
+    disabledCount = 0;
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
+    REQUIRE(testRuns == 0);
+    REQUIRE(disabledCount == 0);
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"@enable", "1/11"}));
+
+    testRuns = 0;
+    disabledCount = 0;
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
+    REQUIRE(testRuns == 1);
+    REQUIRE(disabledCount == 1);
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"@enable"}));
+
+    testRuns = 0;
+    disabledCount = 0;
+    disabled.clear();
+
+    REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
     REQUIRE(testRuns == 4);
     REQUIRE(disabledCount == 0);
 }

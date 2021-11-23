@@ -23,6 +23,7 @@
 #include <cRIO/PrintILC.h>
 
 #include <functional>
+#include <ostream>
 
 namespace LSST {
 namespace cRIO {
@@ -31,6 +32,11 @@ constexpr int NEED_FPGA = 0x01;
 
 typedef std::pair<std::shared_ptr<PrintILC>, uint8_t> ILCUnit;
 typedef std::list<ILCUnit> ILCUnits;
+
+/**
+ * Prints ILCUnit bus address and ILC address.
+ */
+std::ostream& operator<<(std::ostream& stream, ILCUnit const& u);
 
 /**
  * Class for Command Line Client applications requiring access to FPGA.
@@ -103,6 +109,7 @@ protected:
 
     void disableILC(ILCUnit u);
     void enableILC(ILCUnit u);
+    void printDisabled();
 
 private:
     FPGA* _fpga;

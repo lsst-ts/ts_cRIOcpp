@@ -29,6 +29,11 @@
 
 using namespace LSST::cRIO;
 
+std::ostream& LSST::cRIO::operator<<(std::ostream& stream, ILCUnit const& u) {
+    stream << static_cast<int>(u.first->getBus()) << "/" << static_cast<int>(u.second);
+    return stream;
+}
+
 FPGACliApp::FPGACliApp(const char* name, const char* description)
         : CliApp(name, description), _fpga(nullptr), _ilcs(), _autoOpen(true), _timeIt(false) {
     addArgument('d', "increase debug level");
@@ -176,8 +181,7 @@ void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)>
                     if (it == _disabledILCs.end() || disableDisabled) {
                         action(u);
                     } else {
-                        std::cout << "ILC " << static_cast<int>(u.first->getBus()) << "/"
-                                  << static_cast<int>(u.second) << " disabled." << std::endl;
+                        std::cout << "ILC " << u << " disabled." << std::endl;
                     }
                 }
 
@@ -247,16 +251,33 @@ std::shared_ptr<MPU> FPGACliApp::getMPU(std::string name) {
     return ret;
 }
 
-void FPGACliApp::disableILC(ILCUnit u) { _disabledILCs.push_back(u); }
+void FPGACliApp::disableILC(ILCUnit u) {
+    _disabledILCs.push_back(u);
+    printDisabled();
+}
 
 void FPGACliApp::enableILC(ILCUnit u) {
     auto it = std::find(_disabledILCs.begin(), _disabledILCs.end(), u);
     if (it == _disabledILCs.end()) {
-        std::cerr << "No such ILC: " << static_cast<int>(u.first->getBus()) << "/"
-                  << static_cast<int>(u.second) << std::endl;
+        std::cerr << "No such ILC: " << u << std::endl;
         return;
     }
     _disabledILCs.erase(it);
+    printDisabled();
+}
+
+void FPGACliApp::printDisabled() {
+    if (_disabledILCs.empty()) {
+        std::cout << "All ILC enabled." << std::endl;
+        return;
+    }
+    std::cout << "Disabled ILC" << (_disabledILCs.size() > 1 ? "s: " : ": ");
+    size_t i = 0;
+    for (auto it = _disabledILCs.begin(); it != _disabledILCs.end(); it++, i++) {
+        if (it != _disabledILCs.begin()) std::cout << (i == _disabledILCs.size() - 1 ? " and " : ", ");
+        std::cout << *it;
+    }
+    std::cout << "." << std::endl;
 }
 
 void FPGACliApp::printMPU() {
