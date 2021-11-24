@@ -71,7 +71,7 @@ protected:
 
     /**
      * Condition variable for outside notifications. Notified when keepRunning
-     * changed to false. Can used in subclasses.
+     * changed to false. Can be used in subclasses.
      */
     std::condition_variable runCondition;
 
