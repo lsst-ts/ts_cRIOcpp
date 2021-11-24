@@ -34,13 +34,29 @@ protected:
         std::unique_lock<std::mutex> lock(runMutex);
         while (keepRunning) {
             runCondition.wait(lock);
-            std::this_thread::sleep_for(100ms);
+            std::this_thread::sleep_for(1ms);
         }
     }
 };
 
 TEST_CASE("Test thread join without stop", "[Thread]") {
     TestThread thread;
+    REQUIRE_NOTHROW(thread.join());
+
+    REQUIRE(true);
+}
+
+TEST_CASE("Test thread join and stop", "[Thread]") {
+    TestThread thread;
+    REQUIRE_NOTHROW(thread.join());
+    REQUIRE_NOTHROW(thread.stop());
+
+    REQUIRE(true);
+}
+
+TEST_CASE("Test thread stop and join", "[Thread]") {
+    TestThread thread;
+    REQUIRE_NOTHROW(thread.stop());
     REQUIRE_NOTHROW(thread.join());
 
     REQUIRE(true);
