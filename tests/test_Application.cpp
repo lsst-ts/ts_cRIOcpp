@@ -90,6 +90,27 @@ TEST_CASE("Test Thread management - stopping thread", "[Application]") {
     REQUIRE(app.runningThreads() == 2);
 
     t1_1->stop();
+    REQUIRE(app.runningThreads() == 2);
+
+    t1_1->join();
+    REQUIRE(app.runningThreads() == 1);
+
+    app.stopAllThreads();
+    REQUIRE(app.runningThreads() == 0);
+}
+
+TEST_CASE("Test Thread management - joining thread", "[Application]") {
+    AClass app("stop_threads", "test threading");
+
+    auto t1_1 = new Thread1();
+    auto t1_2 = new Thread1();
+
+    app.addThread(t1_1);
+    app.addThread(t1_2);
+
+    REQUIRE(app.runningThreads() == 2);
+
+    t1_1->join();
     REQUIRE(app.runningThreads() == 1);
 
     app.stopAllThreads();
