@@ -36,7 +36,7 @@ public:
     void execute() override { tv++; }
 };
 
-TEST_CASE("Run ControllerThread and join it", "[ControllerThread]") {
+TEST_CASE("Run ControllerThread and stop it", "[ControllerThread]") {
     tv = 0;
     REQUIRE(tv == 0);
 
@@ -51,7 +51,7 @@ TEST_CASE("Run ControllerThread and join it", "[ControllerThread]") {
     std::this_thread::sleep_for(1ms);
 
     // stop controller thread
-    ControllerThread::instance().join();
+    ControllerThread::instance().stop();
 
     REQUIRE(tv == 1);
 }

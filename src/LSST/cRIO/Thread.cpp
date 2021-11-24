@@ -42,10 +42,6 @@ void Thread::stop() {
         keepRunning = false;
     }
     runCondition.notify_one();
-}
-
-void Thread::join() {
-    stop();
     if (_thread) {
         _thread->join();
         delete _thread;

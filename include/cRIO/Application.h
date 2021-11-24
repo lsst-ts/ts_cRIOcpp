@@ -174,11 +174,6 @@ public:
     void stopAllThreads();
 
     /**
-     * Stops and join all running threads.
-     */
-    void joinAllThreads();
-
-    /**
      * Prints application help.
      */
     virtual void printAppHelp();

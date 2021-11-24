@@ -34,22 +34,19 @@ namespace cRIO {
 class Thread {
 public:
     Thread();
-    virtual ~Thread() { join(); }
+    virtual ~Thread() { stop(); }
 
     /**
      * Starts the thread. Starts new thread running the loop.
+     *
+     * @throw runtime_error when thread was already started
      */
     void start();
 
     /**
-     * Stops thread run.
+     * Stops and join thread.
      */
     void stop();
-
-    /**
-     * Join running thread. Waits for thread exits.
-     */
-    void join();
 
     /**
      * Returns true if thread is joinable (~is running).

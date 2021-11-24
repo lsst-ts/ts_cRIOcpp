@@ -43,27 +43,22 @@ TEST_CASE("Test thread join without stop", "[Thread]") {
     TestThread thread;
     thread.start();
 
-    REQUIRE_NOTHROW(thread.join());
-
-    REQUIRE(true);
-}
-
-TEST_CASE("Test thread join and stop", "[Thread]") {
-    TestThread thread;
-    thread.start();
-
-    REQUIRE_NOTHROW(thread.join());
     REQUIRE_NOTHROW(thread.stop());
 
     REQUIRE(true);
 }
 
-TEST_CASE("Test thread stop and join", "[Thread]") {
-    TestThread thread;
-    thread.start();
+TEST_CASE("Test thread destructor", "[Thread]") {
+    TestThread* thread = new TestThread();
+    thread->start();
 
-    REQUIRE_NOTHROW(thread.stop());
-    REQUIRE_NOTHROW(thread.join());
+    REQUIRE_NOTHROW(delete thread);
+}
 
-    REQUIRE(true);
+TEST_CASE("Test thread stop and destructor", "[Thread]") {
+    TestThread* thread = new TestThread();
+    thread->start();
+
+    REQUIRE_NOTHROW(thread->stop());
+    REQUIRE_NOTHROW(delete thread);
 }

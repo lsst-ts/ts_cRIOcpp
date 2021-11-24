@@ -39,7 +39,7 @@ namespace cRIO {
 
 using namespace std;
 
-Application::~Application() { joinAllThreads(); }
+Application::~Application() { stopAllThreads(); }
 
 void Application::addArgument(const char arg, const char* help, const char modifier) {
     _arguments.push_back(Argument(arg, help, modifier));
@@ -114,14 +114,6 @@ void Application::stopAllThreads() {
     std::lock_guard<std::mutex> lockG(_threadsMutex);
     for (auto t : _threads) {
         t->stop();
-    }
-    _threads.clear();
-}
-
-void Application::joinAllThreads() {
-    std::lock_guard<std::mutex> lockG(_threadsMutex);
-    for (auto t : _threads) {
-        t->join();
         delete t;
     }
     _threads.clear();
