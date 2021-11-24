@@ -101,14 +101,33 @@ protected:
 
     std::shared_ptr<MPU> getMPU(std::string name);
 
+    /**
+     * Clears ILC buffers. Shall be called before new instructions are added to
+     * the buffer.
+     */
     void clearILCs() {
         for (auto ilcp : _ilcs) {
             ilcp->clear();
         }
     }
 
+    /**
+     * Disable given ILC.
+     *
+     * @param u ILC unit to disable.
+     */
     void disableILC(ILCUnit u);
+
+    /**
+     * Enables given ILC.
+     *
+     * @param u ILC unit to enable.
+     */
     void enableILC(ILCUnit u);
+
+    /**
+     * Prints actually disabled ILCs.
+     */
     void printDisabled();
 
 private:
