@@ -51,7 +51,7 @@ TEST_CASE("Run ControllerThread and join it", "[ControllerThread]") {
     std::this_thread::sleep_for(1ms);
 
     // stop controller thread
-    ControllerThread::instance().stop();
+    ControllerThread::instance().join();
 
     REQUIRE(tv == 1);
 }
