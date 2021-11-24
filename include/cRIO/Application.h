@@ -167,11 +167,16 @@ public:
     size_t runningThreads();
 
     /**
-     * Stops and join all running threads.
+     * Stops all running threads.
      *
      * @multithreading safe
      */
     void stopAllThreads();
+
+    /**
+     * Stops and join all running threads.
+     */
+    void joinAllThreads();
 
     /**
      * Prints application help.

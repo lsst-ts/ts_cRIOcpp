@@ -82,9 +82,6 @@ TEST_CASE("Test Application threading", "[Application]") {
     REQUIRE(app.runningThreads() == 2);
     app.stopAllThreads();
     REQUIRE(app.runningThreads() == 0);
-
-    delete t1_2;
-    delete t1_1;
 }
 
 TEST_CASE("Test Thread management - stopping thread", "[Application]") {
@@ -104,11 +101,8 @@ TEST_CASE("Test Thread management - stopping thread", "[Application]") {
     t1_1->join();
     REQUIRE(app.runningThreads() == 1);
 
-    app.stopAllThreads();
+    app.joinAllThreads();
     REQUIRE(app.runningThreads() == 0);
-
-    delete t1_2;
-    delete t1_1;
 }
 
 TEST_CASE("Test Thread management - joining thread", "[Application]") {
@@ -125,9 +119,6 @@ TEST_CASE("Test Thread management - joining thread", "[Application]") {
     t1_1->join();
     REQUIRE(app.runningThreads() == 1);
 
-    app.stopAllThreads();
+    app.joinAllThreads();
     REQUIRE(app.runningThreads() == 0);
-
-    delete t1_2;
-    delete t1_1;
 }
