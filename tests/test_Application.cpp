@@ -61,7 +61,13 @@ TEST_CASE("Test Application", "[Application]") {
 }
 
 class Thread1 : public Thread {
-    void run() override { std::this_thread::sleep_for(50ms); }
+    void run() override {
+        std::unique_lock<std::mutex> lock(runMutex);
+        while (keepRunning) {
+            runCondition.wait(lock);
+            std::this_thread::sleep_for(50ms);
+        }
+    }
 };
 
 TEST_CASE("Test Application threading", "[Application]") {
@@ -76,6 +82,9 @@ TEST_CASE("Test Application threading", "[Application]") {
     REQUIRE(app.runningThreads() == 2);
     app.stopAllThreads();
     REQUIRE(app.runningThreads() == 0);
+
+    delete t1_2;
+    delete t1_1;
 }
 
 TEST_CASE("Test Thread management - stopping thread", "[Application]") {
@@ -97,6 +106,9 @@ TEST_CASE("Test Thread management - stopping thread", "[Application]") {
 
     app.stopAllThreads();
     REQUIRE(app.runningThreads() == 0);
+
+    delete t1_2;
+    delete t1_1;
 }
 
 TEST_CASE("Test Thread management - joining thread", "[Application]") {
@@ -115,4 +127,7 @@ TEST_CASE("Test Thread management - joining thread", "[Application]") {
 
     app.stopAllThreads();
     REQUIRE(app.runningThreads() == 0);
+
+    delete t1_2;
+    delete t1_1;
 }
