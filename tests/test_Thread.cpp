@@ -41,6 +41,8 @@ protected:
 
 TEST_CASE("Test thread join without stop", "[Thread]") {
     TestThread thread;
+    thread.start();
+
     REQUIRE_NOTHROW(thread.join());
 
     REQUIRE(true);
@@ -48,6 +50,8 @@ TEST_CASE("Test thread join without stop", "[Thread]") {
 
 TEST_CASE("Test thread join and stop", "[Thread]") {
     TestThread thread;
+    thread.start();
+
     REQUIRE_NOTHROW(thread.join());
     REQUIRE_NOTHROW(thread.stop());
 
@@ -56,6 +60,8 @@ TEST_CASE("Test thread join and stop", "[Thread]") {
 
 TEST_CASE("Test thread stop and join", "[Thread]") {
     TestThread thread;
+    thread.start();
+
     REQUIRE_NOTHROW(thread.stop());
     REQUIRE_NOTHROW(thread.join());
 
