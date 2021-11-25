@@ -19,6 +19,9 @@
  */
 
 #include <cRIO/Thread.h>
+#include <iostream>
+
+using namespace std::chrono_literals;
 
 namespace LSST {
 namespace cRIO {
@@ -29,12 +32,13 @@ Thread::~Thread() { stop(); }
 
 void Thread::start() {
     {
-        std::lock_guard<std::mutex> lg(runMutex);
+        std::unique_lock<std::mutex> lg(runMutex);
         if (_thread) {
             throw std::runtime_error("Thread: Cannot run a thread twice!");
         }
         keepRunning = true;
-        _thread = new std::thread(&Thread::run, this);
+        _thread = new std::thread(&Thread::_run, this);
+        _startCondition.wait(lg);
     }
 }
 
@@ -49,6 +53,11 @@ void Thread::stop() {
         delete _thread;
         _thread = NULL;
     }
+}
+
+void Thread::_run() {
+    _startCondition.notify_one();
+    run();
 }
 
 }  // namespace cRIO

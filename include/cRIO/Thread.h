@@ -81,6 +81,15 @@ protected:
 
 private:
     std::thread *_thread;
+
+    /*
+     * Condition for start detection. Notified on call to _run. Without this,
+     * SIGABRT will be raised when deleting _thread while initializing (e.g.
+     * delete Thread object right after call to start()).
+     */
+    std::condition_variable _startCondition;
+
+    void _run();
 };
 
 }  // namespace cRIO

@@ -43,6 +43,13 @@ TEST_CASE("Test thread join without stop", "[Thread]") {
     TestThread thread;
     thread.start();
 
+    REQUIRE(true);
+}
+
+TEST_CASE("Test thread join with stop", "[Thread]") {
+    TestThread thread;
+    thread.start();
+
     REQUIRE_NOTHROW(thread.stop());
 
     REQUIRE(true);
