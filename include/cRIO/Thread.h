@@ -29,7 +29,9 @@ namespace LSST {
 namespace cRIO {
 
 /**
- * Abstract thread class. Intended to provide a while loop to run various threads. Provides
+ * Abstract thread class. Intended to provide a while loop to run various
+ * threads. Provides pure virtual run method with lock, that should be override
+ * in descendants.
  */
 class Thread {
 public:
