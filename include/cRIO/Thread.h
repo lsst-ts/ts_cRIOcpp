@@ -34,7 +34,7 @@ namespace cRIO {
 class Thread {
 public:
     Thread();
-    virtual ~Thread() { stop(); }
+    virtual ~Thread();
 
     /**
      * Starts the thread. Starts new thread running the loop.

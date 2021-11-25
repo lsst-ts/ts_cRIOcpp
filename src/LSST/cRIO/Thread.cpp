@@ -25,6 +25,8 @@ namespace cRIO {
 
 Thread::Thread() : keepRunning(false) { _thread = NULL; }
 
+Thread::~Thread() { stop(); }
+
 void Thread::start() {
     {
         std::lock_guard<std::mutex> lg(runMutex);
