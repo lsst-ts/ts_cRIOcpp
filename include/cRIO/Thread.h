@@ -76,11 +76,14 @@ protected:
      * Pure virtual method. Must be overloaded in children classes. Shall run
      * some loop as long as keepRunning is true. Shall call
      * runCondition.wait[|_for|_until] to wait for outside notifications.
+     *
+     * @param lock locked unique lock. Should be used as paremeter to
+     * runCondition.wait call
      */
-    virtual void run() = 0;
+    virtual void run(std::unique_lock<std::mutex>& lock) = 0;
 
 private:
-    std::thread *_thread;
+    std::thread* _thread;
 
     /*
      * Condition for start detection. Notified on call to _run. Without this,

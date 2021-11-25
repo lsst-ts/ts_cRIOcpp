@@ -30,8 +30,7 @@ using namespace std::chrono_literals;
 
 class TestThread : public Thread {
 protected:
-    void run() override {
-        std::unique_lock<std::mutex> lock(runMutex);
+    void run(std::unique_lock<std::mutex>& lock) override {
         while (keepRunning) {
             runCondition.wait(lock);
             std::this_thread::sleep_for(1ms);

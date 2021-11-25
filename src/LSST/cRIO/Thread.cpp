@@ -57,7 +57,10 @@ void Thread::stop() {
 
 void Thread::_run() {
     _startCondition.notify_one();
-    run();
+    {
+        std::unique_lock<std::mutex> lock(runMutex);
+        run(lock);
+    }
 }
 
 }  // namespace cRIO

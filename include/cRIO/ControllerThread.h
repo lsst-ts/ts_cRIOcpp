@@ -58,7 +58,7 @@ public:
     static bool exitRequested() { return instance()._exitRequested; }
 
 protected:
-    void run() override;
+    void run(std::unique_lock<std::mutex> &lock) override;
 
 private:
     void _runCommands();

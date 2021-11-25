@@ -61,8 +61,7 @@ TEST_CASE("Test Application", "[Application]") {
 }
 
 class Thread1 : public Thread {
-    void run() override {
-        std::unique_lock<std::mutex> lock(runMutex);
+    void run(std::unique_lock<std::mutex>& lock) override {
         while (keepRunning) {
             runCondition.wait(lock);
             std::this_thread::sleep_for(50ms);

@@ -45,9 +45,8 @@ void ControllerThread::enqueue(Command* command) {
     runCondition.notify_one();
 }
 
-void ControllerThread::run() {
+void ControllerThread::run(std::unique_lock<std::mutex>& lock) {
     SPDLOG_INFO("ControllerThread: Run");
-    std::unique_lock<std::mutex> lock(runMutex);
     // runs commands already queued
     _runCommands();
     while (keepRunning) {
