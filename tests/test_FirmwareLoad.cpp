@@ -36,10 +36,6 @@
 
 using namespace LSST::cRIO;
 
-// global variables
-uint16_t currentMode = 0;  // current address 8 mod
-double currentTimestamp = 0;
-
 class TestILC : public PrintILC {
 public:
     TestILC(uint8_t bus) : PrintILC(bus) {}
