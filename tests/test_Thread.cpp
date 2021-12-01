@@ -135,3 +135,16 @@ TEST_CASE("Test thread stop and destructor", "[Thread]") {
     REQUIRE_NOTHROW(thread->stop());
     REQUIRE_NOTHROW(delete thread);
 }
+
+TEST_CASE("Test thread is running", "[Thread]") {
+    TestThread* thread = new TestThread();
+    thread->start();
+
+    REQUIRE_NOTHROW(thread->isRunning() == true);
+
+    REQUIRE_NOTHROW(thread->stop());
+
+    REQUIRE_NOTHROW(thread->isRunning() == false);
+
+    REQUIRE_NOTHROW(delete thread);
+}

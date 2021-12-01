@@ -68,6 +68,17 @@ void Thread::stop(std::chrono::microseconds timeout) {
     }
 }
 
+bool Thread::joinable() {
+    std::lock_guard<std::mutex> lg(runMutex);
+    if (_thread == nullptr) return false;
+    return _thread->joinable();
+}
+
+bool Thread::isRunning() {
+    std::lock_guard<std::mutex> lg(runMutex);
+    return _threadStarted;
+}
+
 void Thread::_run() {
     {
         std::unique_lock<std::mutex> lock(runMutex);

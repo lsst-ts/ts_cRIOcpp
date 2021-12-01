@@ -95,17 +95,17 @@ command_vec Application::processArgs(int argc, char* const argv[]) {
     return argcommand;
 }
 
-void Application::addThread(Thread* thread) {
+void Application::addThread(Thread* thread, std::chrono::microseconds timeout) {
     std::lock_guard<std::mutex> lockG(_threadsMutex);
     _threads.push_back(thread);
-    thread->start();
+    thread->start(timeout);
 }
 
 size_t Application::runningThreads() {
     std::lock_guard<std::mutex> lockG(_threadsMutex);
     size_t ret = 0;
     for (auto t : _threads) {
-        if (t->joinable()) ret++;
+        if (t->isRunning()) ret++;
     }
     return ret;
 }

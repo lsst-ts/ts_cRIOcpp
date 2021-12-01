@@ -65,10 +65,9 @@ public:
      * @return true if thread is started and running. False otherwise (thread
      * doesn't exists, not started, joined).
      */
-    bool joinable() {
-        if (_thread == nullptr) return false;
-        return _thread->joinable();
-    }
+    bool joinable();
+
+    bool isRunning();
 
 protected:
     /**
