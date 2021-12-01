@@ -110,10 +110,10 @@ size_t Application::runningThreads() {
     return ret;
 }
 
-void Application::stopAllThreads() {
+void Application::stopAllThreads(std::chrono::microseconds timeout) {
     std::lock_guard<std::mutex> lockG(_threadsMutex);
     for (auto t : _threads) {
-        t->stop();
+        t->stop(timeout);
         delete t;
     }
     _threads.clear();

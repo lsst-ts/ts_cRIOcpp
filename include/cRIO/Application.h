@@ -18,6 +18,7 @@
 #ifndef __Application_h
 #define __Application_h
 
+#include <chrono>
 #include <string>
 #include <vector>
 #include <list>
@@ -25,6 +26,8 @@
 #include <cRIO/Thread.h>
 
 #include <spdlog/spdlog.h>
+
+using namespace std::chrono_literals;
 
 namespace LSST {
 namespace cRIO {
@@ -169,9 +172,11 @@ public:
     /**
      * Stops all running threads.
      *
+     * @param timeout timeout to wait for thread stop
+     *
      * @multithreading safe
      */
-    void stopAllThreads();
+    void stopAllThreads(std::chrono::microseconds timeout = 100ms);
 
     /**
      * Prints application help.
