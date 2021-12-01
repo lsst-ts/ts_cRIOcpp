@@ -38,7 +38,6 @@ namespace cRIO {
  */
 class Thread {
 public:
-    Thread();
     virtual ~Thread();
 
     /**
@@ -74,7 +73,7 @@ protected:
      * Mutex protecting keepRunning access, can be used in condition variable.
      */
     std::mutex runMutex;
-    bool keepRunning;
+    bool keepRunning = false;
 
     /**
      * Condition variable for outside notifications. Notified when keepRunning
@@ -93,7 +92,7 @@ protected:
     virtual void run(std::unique_lock<std::mutex>& lock) = 0;
 
 private:
-    std::thread* _thread;
+    std::thread* _thread = NULL;
 
     /*
      * Condition for start detection. Notified on call to _run. Without this,
@@ -101,7 +100,7 @@ private:
      * delete Thread object right after call to start()).
      */
     std::condition_variable _startCondition;
-    bool _threadStarted;
+    bool _threadStarted = false;
 
     void _run();
 };

@@ -25,8 +25,6 @@ using namespace std::chrono_literals;
 namespace LSST {
 namespace cRIO {
 
-Thread::Thread() : keepRunning(false), _threadStarted(false) { _thread = NULL; }
-
 Thread::~Thread() { stop(); }
 
 void Thread::start(std::chrono::microseconds timeout) {

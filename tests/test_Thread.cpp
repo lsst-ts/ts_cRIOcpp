@@ -81,7 +81,7 @@ public:
     void run(std::unique_lock<std::mutex>& lock) override {
         while (keepRunning) {
             try {
-                _testThread->stop();
+                _testThread->stop(10us);
                 stop_success++;
             } catch (std::runtime_error&) {
                 stop_failed++;
@@ -112,7 +112,7 @@ TEST_CASE("Test thread multiple stop calls from multiple threads", "[Thread]") {
 
     REQUIRE(thread.joinable() == false);
     REQUIRE(stop_calls > 20);
-    REQUIRE(stop_success == 1);
+    REQUIRE(stop_success > 0);
     REQUIRE(stop_success + stop_failed == stop_calls);
 
     for (auto i = 0; i < 10; i++) {
