@@ -72,6 +72,8 @@ TEST_CASE("Test thread multiple stop calls", "[Thread]") {
 }
 
 std::atomic<int> stop_calls(0);
+std::atomic<int> stop_success(0);
+std::atomic<int> stop_failed(0);
 
 class StopThread : public Thread {
 public:
@@ -80,7 +82,9 @@ public:
         while (keepRunning) {
             try {
                 _testThread->stop();
+                stop_success++;
             } catch (std::runtime_error&) {
+                stop_failed++;
             }
 
             stop_calls++;
@@ -108,6 +112,8 @@ TEST_CASE("Test thread multiple stop calls from multiple threads", "[Thread]") {
 
     REQUIRE(thread.joinable() == false);
     REQUIRE(stop_calls > 20);
+    REQUIRE(stop_success == 1);
+    REQUIRE(stop_success + stop_failed == stop_calls);
 
     for (auto i = 0; i < 10; i++) {
         REQUIRE_NOTHROW(stops[i]->stop());
