@@ -52,11 +52,14 @@ void Thread::stop() {
         keepRunning = false;
     }
     runCondition.notify_one();
-    if (_thread) {
-        _thread->join();
-        delete _thread;
-        _thread = NULL;
-        _threadStarted = false;
+    {
+        std::lock_guard<std::mutex> lg(runMutex);
+        if (_thread) {
+            _thread->join();
+            delete _thread;
+            _thread = NULL;
+            _threadStarted = false;
+        }
     }
 }
 

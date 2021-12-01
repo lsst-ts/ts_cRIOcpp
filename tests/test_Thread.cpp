@@ -49,6 +49,30 @@ TEST_CASE("Test thread join with stop", "[Thread]") {
     TestThread thread;
     thread.start();
 
+    REQUIRE(thread.joinable() == true);
+    REQUIRE_NOTHROW(thread.stop());
+    REQUIRE(thread.joinable() == false);
+
+    REQUIRE(true);
+}
+
+TEST_CASE("Test thread multiple stop calls", "[Thread]") {
+    TestThread thread;
+    thread.start();
+
+    REQUIRE(thread.joinable() == true);
+    REQUIRE_NOTHROW(thread.stop());
+    REQUIRE(thread.joinable() == false);
+    REQUIRE_NOTHROW(thread.stop());
+    REQUIRE(thread.joinable() == false);
+
+    REQUIRE(true);
+}
+
+TEST_CASE("Test thread join with stop", "[Thread]") {
+    TestThread thread;
+    thread.start();
+
     REQUIRE_NOTHROW(thread.stop());
 
     REQUIRE(true);
