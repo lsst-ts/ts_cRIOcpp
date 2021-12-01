@@ -36,7 +36,7 @@ public:
     void execute() override { tv++; }
 };
 
-TEST_CASE("Run ControllerThread and join it", "[ControllerThread]") {
+TEST_CASE("Run ControllerThread and stop it", "[ControllerThread]") {
     tv = 0;
     REQUIRE(tv == 0);
 

@@ -39,7 +39,7 @@ namespace cRIO {
 
 using namespace std;
 
-Application::~Application() {}
+Application::~Application() { stopAllThreads(); }
 
 void Application::addArgument(const char arg, const char* help, const char modifier) {
     _arguments.push_back(Argument(arg, help, modifier));
@@ -95,28 +95,27 @@ command_vec Application::processArgs(int argc, char* const argv[]) {
     return argcommand;
 }
 
-void Application::addThread(Thread* thread) {
+void Application::addThread(Thread* thread, std::chrono::microseconds timeout) {
     std::lock_guard<std::mutex> lockG(_threadsMutex);
     _threads.push_back(thread);
-    thread->start();
+    thread->start(timeout);
 }
 
 size_t Application::runningThreads() {
     std::lock_guard<std::mutex> lockG(_threadsMutex);
     size_t ret = 0;
     for (auto t : _threads) {
-        if (t->joinable()) ret++;
+        if (t->isRunning()) ret++;
     }
     return ret;
 }
 
-void Application::stopAllThreads() {
+void Application::stopAllThreads(std::chrono::microseconds timeout) {
     std::lock_guard<std::mutex> lockG(_threadsMutex);
-    for (auto t : _threads) {
-        t->stop();
-        delete t;
+    for (auto it = _threads.begin(); it != _threads.end(); it = _threads.erase(it)) {
+        (*it)->stop(timeout);
+        delete *it;
     }
-    _threads.clear();
 }
 
 void Application::setDebugLevel(int newLevel) {

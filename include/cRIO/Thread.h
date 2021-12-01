@@ -22,34 +22,41 @@
 #define __cRIO_THREAD_H__
 
 #include <condition_variable>
+#include <chrono>
 #include <mutex>
 #include <thread>
+
+using namespace std::chrono_literals;
 
 namespace LSST {
 namespace cRIO {
 
 /**
- * Abstract thread class. Intended to provide a while loop to run various threads. Provides
+ * Abstract thread class. Intended to provide a while loop to run various
+ * threads. Provides pure virtual run method with lock, that should be override
+ * in descendants.
  */
 class Thread {
 public:
-    Thread();
-    virtual ~Thread() { stop(); }
+    virtual ~Thread();
 
     /**
      * Starts the thread. Starts new thread running the loop.
+     *
+     * @param timeout start timeout. Defaults to 1ms.
+     *
+     * @throw runtime_error when thread was already started
      */
-    void start();
+    void start(std::chrono::microseconds timeout = 5ms);
 
     /**
-     * Stops thread run.
+     * Stops and join thread.
+     *
+     * @param timeout wait for this time to make sure thread is stopped
+     *
+     * @throw runtime_error when timeout is crossed
      */
-    void stop();
-
-    /**
-     * Join running thread. Waits for thread exits.
-     */
-    void join();
+    void stop(std::chrono::microseconds timeout = 2ms);
 
     /**
      * Returns true if thread is joinable (~is running).
@@ -57,21 +64,20 @@ public:
      * @return true if thread is started and running. False otherwise (thread
      * doesn't exists, not started, joined).
      */
-    bool joinable() {
-        if (_thread == nullptr) return false;
-        return _thread->joinable();
-    }
+    bool joinable();
+
+    bool isRunning();
 
 protected:
     /**
      * Mutex protecting keepRunning access, can be used in condition variable.
      */
     std::mutex runMutex;
-    bool keepRunning;
+    bool keepRunning = false;
 
     /**
      * Condition variable for outside notifications. Notified when keepRunning
-     * changed to false. Can used in subclasses.
+     * changed to false. Can be used in subclasses.
      */
     std::condition_variable runCondition;
 
@@ -79,11 +85,24 @@ protected:
      * Pure virtual method. Must be overloaded in children classes. Shall run
      * some loop as long as keepRunning is true. Shall call
      * runCondition.wait[|_for|_until] to wait for outside notifications.
+     *
+     * @param lock locked unique lock. Should be used as paremeter to
+     * runCondition.wait call
      */
-    virtual void run() = 0;
+    virtual void run(std::unique_lock<std::mutex>& lock) = 0;
 
 private:
-    std::thread *_thread;
+    std::thread* _thread = NULL;
+
+    /*
+     * Condition for start detection. Notified on call to _run. Without this,
+     * SIGABRT will be raised when deleting _thread while initializing (e.g.
+     * delete Thread object right after call to start()).
+     */
+    std::condition_variable _startCondition;
+    bool _threadStarted = false;
+
+    void _run();
 };
 
 }  // namespace cRIO
