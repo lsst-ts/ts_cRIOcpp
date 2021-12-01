@@ -29,7 +29,7 @@ Thread::Thread() : keepRunning(false), _threadStarted(false) { _thread = NULL; }
 
 Thread::~Thread() { stop(); }
 
-void Thread::start() {
+void Thread::start(std::chrono::microseconds timeout) {
     {
         std::unique_lock<std::mutex> lg(runMutex);
         if (_thread) {
@@ -37,7 +37,7 @@ void Thread::start() {
         }
         keepRunning = true;
         _thread = new std::thread(&Thread::_run, this);
-        auto timeout_time = std::chrono::steady_clock::now() + 1ms;
+        auto timeout_time = std::chrono::steady_clock::now() + timeout;
         while (_threadStarted == false) {
             if (_startCondition.wait_until(lg, timeout_time) == std::cv_status::timeout) {
                 throw std::runtime_error("Thread: Was not started!");
@@ -46,19 +46,24 @@ void Thread::start() {
     }
 }
 
-void Thread::stop() {
+void Thread::stop(std::chrono::microseconds timeout) {
     {
         std::lock_guard<std::mutex> lg(runMutex);
         keepRunning = false;
     }
     runCondition.notify_one();
     {
-        std::lock_guard<std::mutex> lg(runMutex);
+        std::unique_lock<std::mutex> lg(runMutex);
         if (_thread) {
+            auto timeout_time = std::chrono::steady_clock::now() + timeout;
+            while (_threadStarted == true) {
+                if (_startCondition.wait_until(lg, timeout_time) == std::cv_status::timeout) {
+                    throw std::runtime_error("Thread: Cannot stop thread!");
+                }
+            }
             _thread->join();
             delete _thread;
             _thread = NULL;
-            _threadStarted = false;
         }
     }
 }
@@ -69,6 +74,8 @@ void Thread::_run() {
         _threadStarted = true;
         _startCondition.notify_one();
         run(lock);
+        _threadStarted = false;
+        _startCondition.notify_one();
     }
 }
 

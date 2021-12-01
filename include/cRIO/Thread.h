@@ -22,8 +22,11 @@
 #define __cRIO_THREAD_H__
 
 #include <condition_variable>
+#include <chrono>
 #include <mutex>
 #include <thread>
+
+using namespace std::chrono_literals;
 
 namespace LSST {
 namespace cRIO {
@@ -41,14 +44,20 @@ public:
     /**
      * Starts the thread. Starts new thread running the loop.
      *
+     * @param timeout start timeout. Defaults to 1ms.
+     *
      * @throw runtime_error when thread was already started
      */
-    void start();
+    void start(std::chrono::microseconds timeout = 1ms);
 
     /**
      * Stops and join thread.
+     *
+     * @param timeout wait for this time to make sure thread is stopped
+     *
+     * @throw runtime_error when timeout is crossed
      */
-    void stop();
+    void stop(std::chrono::microseconds timeout = 2ms);
 
     /**
      * Returns true if thread is joinable (~is running).

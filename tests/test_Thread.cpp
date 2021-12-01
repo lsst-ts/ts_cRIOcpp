@@ -71,16 +71,20 @@ TEST_CASE("Test thread multiple stop calls", "[Thread]") {
     REQUIRE(true);
 }
 
-std::atomic<int> stop_calls = 0;
+std::atomic<int> stop_calls(0);
 
 class StopThread : public Thread {
 public:
-    StopThread(TestThread* testThread) _testThread(testThread) {}
+    StopThread(TestThread* testThread) : _testThread(testThread) {}
     void run(std::unique_lock<std::mutex>& lock) override {
         while (keepRunning) {
-            _testThread->stop();
-            stop_called++;
-            runCondition.wait_for(1ms);
+            try {
+                _testThread->stop();
+            } catch (std::runtime_error&) {
+            }
+
+            stop_calls++;
+            runCondition.wait_for(lock, 1ms);
         }
     }
 
@@ -95,9 +99,9 @@ TEST_CASE("Test thread multiple stop calls from multiple threads", "[Thread]") {
     REQUIRE(thread.joinable() == true);
 
     StopThread* stops[20];
-    for (auto t : stops) {
-        t = new StopThread(&thread);
-        t->start();
+    for (int i = 0; i < 20; i++) {
+        stops[i] = new StopThread(&thread);
+        stops[i]->start(5ms);
     }
 
     std::this_thread::sleep_for(10ms);
@@ -113,15 +117,6 @@ TEST_CASE("Test thread multiple stop calls from multiple threads", "[Thread]") {
     for (auto i = 10; i < 20; i++) {
         REQUIRE_NOTHROW(delete stops[i]);
     }
-
-    REQUIRE(true);
-}
-
-TEST_CASE("Test thread join with stop", "[Thread]") {
-    TestThread thread;
-    thread.start();
-
-    REQUIRE_NOTHROW(thread.stop());
 
     REQUIRE(true);
 }
