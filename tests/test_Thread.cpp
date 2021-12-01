@@ -25,6 +25,8 @@
 
 #include <cRIO/Thread.h>
 
+#include <atomic>
+
 using namespace LSST::cRIO;
 using namespace std::chrono_literals;
 
@@ -65,6 +67,52 @@ TEST_CASE("Test thread multiple stop calls", "[Thread]") {
     REQUIRE(thread.joinable() == false);
     REQUIRE_NOTHROW(thread.stop());
     REQUIRE(thread.joinable() == false);
+
+    REQUIRE(true);
+}
+
+std::atomic<int> stop_calls = 0;
+
+class StopThread : public Thread {
+public:
+    StopThread(TestThread* testThread) _testThread(testThread) {}
+    void run(std::unique_lock<std::mutex>& lock) override {
+        while (keepRunning) {
+            _testThread->stop();
+            stop_called++;
+            runCondition.wait_for(1ms);
+        }
+    }
+
+private:
+    TestThread* _testThread;
+};
+
+TEST_CASE("Test thread multiple stop calls from multiple threads", "[Thread]") {
+    TestThread thread;
+    thread.start();
+
+    REQUIRE(thread.joinable() == true);
+
+    StopThread* stops[20];
+    for (auto t : stops) {
+        t = new StopThread(&thread);
+        t->start();
+    }
+
+    std::this_thread::sleep_for(10ms);
+
+    REQUIRE(thread.joinable() == false);
+    REQUIRE(stop_calls > 20);
+
+    for (auto i = 0; i < 10; i++) {
+        REQUIRE_NOTHROW(stops[i]->stop());
+        REQUIRE_NOTHROW(delete stops[i]);
+    }
+
+    for (auto i = 10; i < 20; i++) {
+        REQUIRE_NOTHROW(delete stops[i]);
+    }
 
     REQUIRE(true);
 }
