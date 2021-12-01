@@ -93,6 +93,7 @@ private:
      * delete Thread object right after call to start()).
      */
     std::condition_variable _startCondition;
+    bool _threadStarted;
 
     void _run();
 };

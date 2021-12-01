@@ -19,14 +19,13 @@
  */
 
 #include <cRIO/Thread.h>
-#include <iostream>
 
 using namespace std::chrono_literals;
 
 namespace LSST {
 namespace cRIO {
 
-Thread::Thread() : keepRunning(false) { _thread = NULL; }
+Thread::Thread() : keepRunning(false), _threadStarted(false) { _thread = NULL; }
 
 Thread::~Thread() { stop(); }
 
@@ -38,7 +37,12 @@ void Thread::start() {
         }
         keepRunning = true;
         _thread = new std::thread(&Thread::_run, this);
-        _startCondition.wait(lg);
+        auto timeout_time = std::chrono::steady_clock::now() + 1ms;
+        while (_threadStarted == false) {
+            if (_startCondition.wait_until(lg, timeout_time) == std::cv_status::timeout) {
+                throw std::runtime_error("Thread: Was not started!");
+            }
+        }
     }
 }
 
@@ -52,13 +56,15 @@ void Thread::stop() {
         _thread->join();
         delete _thread;
         _thread = NULL;
+        _threadStarted = false;
     }
 }
 
 void Thread::_run() {
-    _startCondition.notify_one();
     {
         std::unique_lock<std::mutex> lock(runMutex);
+        _threadStarted = true;
+        _startCondition.notify_one();
         run(lock);
     }
 }
