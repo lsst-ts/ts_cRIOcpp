@@ -42,14 +42,14 @@ protected:
 
 TEST_CASE("Test thread join without stop", "[Thread]") {
     TestThread thread;
-    thread.start();
+    REQUIRE_NOTHROW(thread.start());
 
     REQUIRE(true);
 }
 
 TEST_CASE("Test thread join with stop", "[Thread]") {
     TestThread thread;
-    thread.start();
+    REQUIRE_NOTHROW(thread.start());
 
     REQUIRE(thread.joinable() == true);
     REQUIRE_NOTHROW(thread.stop());
@@ -60,7 +60,7 @@ TEST_CASE("Test thread join with stop", "[Thread]") {
 
 TEST_CASE("Test thread multiple stop calls", "[Thread]") {
     TestThread thread;
-    thread.start();
+    REQUIRE_NOTHROW(thread.start());
 
     REQUIRE(thread.joinable() == true);
     REQUIRE_NOTHROW(thread.stop());
@@ -94,14 +94,14 @@ private:
 
 TEST_CASE("Test thread multiple stop calls from multiple threads", "[Thread]") {
     TestThread thread;
-    thread.start();
+    REQUIRE_NOTHROW(thread.start());
 
     REQUIRE(thread.joinable() == true);
 
     StopThread* stops[20];
     for (int i = 0; i < 20; i++) {
         stops[i] = new StopThread(&thread);
-        stops[i]->start(5ms);
+        REQUIRE_NOTHROW(stops[i]->start(5ms));
     }
 
     std::this_thread::sleep_for(10ms);
@@ -123,14 +123,14 @@ TEST_CASE("Test thread multiple stop calls from multiple threads", "[Thread]") {
 
 TEST_CASE("Test thread destructor", "[Thread]") {
     TestThread* thread = new TestThread();
-    thread->start();
+    REQUIRE_NOTHROW(thread->start());
 
     REQUIRE_NOTHROW(delete thread);
 }
 
 TEST_CASE("Test thread stop and destructor", "[Thread]") {
     TestThread* thread = new TestThread();
-    thread->start();
+    REQUIRE_NOTHROW(thread->start());
 
     REQUIRE_NOTHROW(thread->stop());
     REQUIRE_NOTHROW(delete thread);
@@ -138,7 +138,7 @@ TEST_CASE("Test thread stop and destructor", "[Thread]") {
 
 TEST_CASE("Test thread is running", "[Thread]") {
     TestThread* thread = new TestThread();
-    thread->start();
+    REQUIRE_NOTHROW(thread->start());
 
     REQUIRE_NOTHROW(thread->isRunning() == true);
 

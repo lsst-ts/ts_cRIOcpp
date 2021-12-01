@@ -48,7 +48,7 @@ public:
      *
      * @throw runtime_error when thread was already started
      */
-    void start(std::chrono::microseconds timeout = 1ms);
+    void start(std::chrono::microseconds timeout = 5ms);
 
     /**
      * Stops and join thread.
