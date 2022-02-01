@@ -29,6 +29,11 @@
 
 using namespace LSST::cRIO;
 
+std::ostream& LSST::cRIO::operator<<(std::ostream& stream, ILCUnit const& u) {
+    stream << static_cast<int>(u.first->getBus()) << "/" << static_cast<int>(u.second);
+    return stream;
+}
+
 FPGACliApp::FPGACliApp(const char* name, const char* description)
         : CliApp(name, description), _fpga(nullptr), _ilcs(), _autoOpen(true), _timeIt(false) {
     addArgument('d', "increase debug level");
@@ -39,6 +44,11 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
                "Sets timing flag");
     addCommand("close", std::bind(&FPGACliApp::closeFPGA, this, std::placeholders::_1), "", NEED_FPGA, NULL,
                "Close FPGA connection");
+
+    addILCCommand("@disable", std::bind(&FPGACliApp::disableILC, this, std::placeholders::_1),
+                  "Temporary disable given ILC in * commands");
+    addILCCommand("@enable", std::bind(&FPGACliApp::enableILC, this, std::placeholders::_1),
+                  "Re-enable given ILC in * commands");
     addILCCommand(
             "info", [](ILCUnit u) { u.first->reportServerID(u.second); }, "Print ILC info");
     addILCCommand(
@@ -154,9 +164,10 @@ int FPGACliApp::verbose(command_vec cmds) {
 }
 
 void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)> action, const char* help) {
+    bool disableDisabled = strcmp(command, "@enable") == 0;
     addCommand(
             command,
-            [action, this](command_vec cmds) -> int {
+            [action, disableDisabled, this](command_vec cmds) -> int {
                 clearILCs();
 
                 ILCUnits units = getILCs(cmds);
@@ -166,7 +177,12 @@ void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)>
                 }
 
                 for (auto u : units) {
-                    action(u);
+                    auto it = std::find(_disabledILCs.begin(), _disabledILCs.end(), u);
+                    if (it == _disabledILCs.end() || disableDisabled) {
+                        action(u);
+                    } else {
+                        std::cout << "ILC " << u << " disabled." << std::endl;
+                    }
                 }
 
                 for (auto ilcp : _ilcs) {
@@ -233,6 +249,35 @@ std::shared_ptr<MPU> FPGACliApp::getMPU(std::string name) {
         }
     }
     return ret;
+}
+
+void FPGACliApp::disableILC(ILCUnit u) {
+    _disabledILCs.push_back(u);
+    printDisabled();
+}
+
+void FPGACliApp::enableILC(ILCUnit u) {
+    auto it = std::find(_disabledILCs.begin(), _disabledILCs.end(), u);
+    if (it == _disabledILCs.end()) {
+        std::cerr << "No such ILC: " << u << std::endl;
+        return;
+    }
+    _disabledILCs.erase(it);
+    printDisabled();
+}
+
+void FPGACliApp::printDisabled() {
+    if (_disabledILCs.empty()) {
+        std::cout << "All ILC enabled." << std::endl;
+        return;
+    }
+    std::cout << "Disabled ILC" << (_disabledILCs.size() > 1 ? "s: " : ": ");
+    size_t i = 0;
+    for (auto it = _disabledILCs.begin(); it != _disabledILCs.end(); it++, i++) {
+        if (it != _disabledILCs.begin()) std::cout << (i == _disabledILCs.size() - 1 ? " and " : ", ");
+        std::cout << *it;
+    }
+    std::cout << "." << std::endl;
 }
 
 void FPGACliApp::printMPU() {

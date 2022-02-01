@@ -61,7 +61,12 @@ TEST_CASE("Test Application", "[Application]") {
 }
 
 class Thread1 : public Thread {
-    void run() override { std::this_thread::sleep_for(50ms); }
+    void run(std::unique_lock<std::mutex>& lock) override {
+        while (keepRunning) {
+            runCondition.wait(lock);
+            std::this_thread::sleep_for(50ms);
+        }
+    }
 };
 
 TEST_CASE("Test Application threading", "[Application]") {
@@ -74,7 +79,7 @@ TEST_CASE("Test Application threading", "[Application]") {
     app.addThread(t1_2);
 
     REQUIRE(app.runningThreads() == 2);
-    app.stopAllThreads();
+    REQUIRE_NOTHROW(app.stopAllThreads(200ms));
     REQUIRE(app.runningThreads() == 0);
 }
 
@@ -89,9 +94,30 @@ TEST_CASE("Test Thread management - stopping thread", "[Application]") {
 
     REQUIRE(app.runningThreads() == 2);
 
-    t1_1->stop();
+    REQUIRE_NOTHROW(t1_1->stop(55ms));
     REQUIRE(app.runningThreads() == 1);
 
-    app.stopAllThreads();
+    REQUIRE_NOTHROW(app.stopAllThreads(200ms));
+    REQUIRE(app.runningThreads() == 0);
+}
+
+TEST_CASE("Test threading service time", "[Application]") {
+    AClass app("thereads", "test threading");
+
+    auto t1_1 = new Thread1();
+    auto t1_2 = new Thread1();
+
+    app.addThread(t1_1);
+    app.addThread(t1_2);
+
+    REQUIRE(app.runningThreads() == 2);
+
+    REQUIRE_NOTHROW(t1_1->stop(55ms));
+    REQUIRE(app.runningThreads() == 1);
+
+    REQUIRE_THROWS(app.stopAllThreads(1ms));
+    REQUIRE_NOTHROW(app.runningThreads() == 1);
+
+    REQUIRE_NOTHROW(app.stopAllThreads(50ms));
     REQUIRE(app.runningThreads() == 0);
 }

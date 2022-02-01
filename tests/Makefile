@@ -20,7 +20,7 @@ TEST_CPPFLAGS := -I"/usr/include" \
 	-I"../include" \
 	$(pkg-config --cflags catch2 2>/dev/null)
 
-compile: $(BINARIES) $(TEST_REQ_READLINE)
+compile: libcRIOtest.a $(BINARIES) $(TEST_REQ_READLINE)
 
 run: compile
 	@$(foreach b,$(ALL_BINARIES),echo '[RUN] ${b}'; ./${b};)
@@ -42,10 +42,14 @@ clean:
 	@echo '[DPP] $<'
 	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) $(TEST_CPPFLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'
 
-$(TEST_REQ_READLINE): %: %.cpp.o ../lib/libcRIOcpp.a
+$(TEST_REQ_READLINE): %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
 	@echo '[TPR] $<'
 	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(LIBS) $^ $(CPP_FLAGS) -lreadline -lhistory
 
-${BINARIES}: %: %.cpp.o ../lib/libcRIOcpp.a
+${BINARIES}: %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
 	@echo '[TPP] $<'
 	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(LIBS) $^ $(CPP_FLAGS)
+
+libcRIOtest.a: TestFPGA.cpp.o
+	@echo '[AR ] $@'
+	${co}${AR} rs $@ $^

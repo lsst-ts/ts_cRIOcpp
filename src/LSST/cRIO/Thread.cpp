@@ -20,41 +20,71 @@
 
 #include <cRIO/Thread.h>
 
+using namespace std::chrono_literals;
+
 namespace LSST {
 namespace cRIO {
 
-Thread::Thread() : keepRunning(false) { _thread = NULL; }
+Thread::~Thread() { stop(); }
 
-void Thread::start() {
+void Thread::start(std::chrono::microseconds timeout) {
     {
-        std::lock_guard<std::mutex> lg(runMutex);
+        std::unique_lock<std::mutex> lg(runMutex);
         if (_thread) {
             throw std::runtime_error("Thread: Cannot run a thread twice!");
         }
         keepRunning = true;
-        _thread = new std::thread(&Thread::run, this);
+        _thread = new std::thread(&Thread::_run, this);
+        auto timeout_time = std::chrono::steady_clock::now() + timeout;
+        while (_threadStarted == false) {
+            if (_startCondition.wait_until(lg, timeout_time) == std::cv_status::timeout) {
+                throw std::runtime_error("Thread: Was not started!");
+            }
+        }
     }
 }
 
-void Thread::stop() {
+void Thread::stop(std::chrono::microseconds timeout) {
     {
         std::lock_guard<std::mutex> lg(runMutex);
         keepRunning = false;
     }
     runCondition.notify_one();
-    if (_thread) {
-        _thread->join();
-        delete _thread;
-        _thread = NULL;
+    {
+        std::unique_lock<std::mutex> lg(runMutex);
+        if (_thread) {
+            auto timeout_time = std::chrono::steady_clock::now() + timeout;
+            while (_threadStarted == true) {
+                if (_startCondition.wait_until(lg, timeout_time) == std::cv_status::timeout) {
+                    throw std::runtime_error("Thread: Cannot stop thread!");
+                }
+            }
+            _thread->join();
+            delete _thread;
+            _thread = NULL;
+        }
     }
 }
 
-void Thread::join() {
+bool Thread::joinable() {
     std::lock_guard<std::mutex> lg(runMutex);
-    if (_thread) {
-        _thread->join();
-        delete _thread;
-        _thread = NULL;
+    if (_thread == nullptr) return false;
+    return _thread->joinable();
+}
+
+bool Thread::isRunning() {
+    std::lock_guard<std::mutex> lg(runMutex);
+    return _threadStarted;
+}
+
+void Thread::_run() {
+    {
+        std::unique_lock<std::mutex> lock(runMutex);
+        _threadStarted = true;
+        _startCondition.notify_one();
+        run(lock);
+        _threadStarted = false;
+        _startCondition.notify_one();
     }
 }
 

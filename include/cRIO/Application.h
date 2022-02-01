@@ -18,6 +18,7 @@
 #ifndef __Application_h
 #define __Application_h
 
+#include <chrono>
 #include <string>
 #include <vector>
 #include <list>
@@ -25,6 +26,8 @@
 #include <cRIO/Thread.h>
 
 #include <spdlog/spdlog.h>
+
+using namespace std::chrono_literals;
 
 namespace LSST {
 namespace cRIO {
@@ -147,15 +150,16 @@ public:
     command_vec processArgs(int argc, char* const argv[]);
 
     /**
-     * Adds thread to application threads. Runs the thread.
+     * Adds thread to application threads. Runs (starts) the thread.
      *
      * @param thread pointer to Thread to add
+     * @param timeout thread starting timeout. Defaults to 50ms.
      *
      * @see stopAllThreads()
      *
      * @multithreading safe
      */
-    void addThread(Thread* thread);
+    void addThread(Thread* thread, std::chrono::microseconds timeout = 50ms);
 
     /**
      * Returns number of running threads.
@@ -167,11 +171,13 @@ public:
     size_t runningThreads();
 
     /**
-     * Stops and join all running threads.
+     * Stops all running threads.
+     *
+     * @param timeout timeout to wait for thread stop
      *
      * @multithreading safe
      */
-    void stopAllThreads();
+    void stopAllThreads(std::chrono::microseconds timeout = 100ms);
 
     /**
      * Prints application help.
