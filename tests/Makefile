@@ -16,7 +16,8 @@ ifneq ($(MAKECMDGOALS),clean)
 endif
 
 
-TEST_CPPFLAGS := -I"/usr/include" \
+TEST_CPPFLAGS := -I. \
+	-I"/usr/include" \
 	-I"../include" \
 	$(pkg-config --cflags catch2 2>/dev/null)
 

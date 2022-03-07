@@ -66,6 +66,9 @@ protected:
 
     void processResetServer(uint8_t address) override {}
 
+    void processHardpointForceStatus(uint8_t address, uint8_t status, int32_t encoderPosition,
+                                     float loadCellForce) override {}
+
     void processCalibrationData(uint8_t address, float mainADCK[4], float mainOffset[4],
                                 float mainSensitivity[4], float backupADCK[4], float backupOffset[4],
                                 float backupSensitivity[4]) override {

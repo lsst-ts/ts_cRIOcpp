@@ -26,6 +26,14 @@ namespace LSST {
 namespace cRIO {
 
 ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(bus) {
+    auto hardpointForceStatus = [this](uint8_t address) {
+        uint8_t status = read<uint8_t>();
+        int32_t encoderPosition = read<int32_t>();
+        float loadCellForce = read<float>();
+        checkCRC();
+        processHardpointForceStatus(address, status, encoderPosition, loadCellForce);
+    };
+
     auto calibrationData = [this](uint8_t address) {
         float mainADCK[4], mainOffset[4], mainSensitivity[4], backupADCK[4], backupOffset[4],
                 backupSensitivity[4];
@@ -54,6 +62,8 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
         checkCRC();
         processMezzaninePressure(address, primaryPush, primaryPull, secondaryPush, secondaryPull);
     };
+
+    addResponse(67, hardpointForceStatus, 200);
 
     addResponse(
             81, [this](uint8_t address) { checkCRC(); }, 235);

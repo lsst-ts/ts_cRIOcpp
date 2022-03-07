@@ -43,6 +43,13 @@ public:
     ElectromechanicalPneumaticILC(uint8_t bus = 1);
 
     /**
+     * Unicast Hardpoint ILC Force [N] and Status Request. ILC command code 67 (0x43)
+     *
+     * @param address ILC address
+     */
+    void reportHardpointForceStatus(uint8_t address) { callFunction(address, 67, 1800); }
+
+    /**
      * Unicast ADC Channel Offset and Sensitivity. ILC command code 81 (0x51)
      *
      * @param address ILC address
@@ -69,6 +76,17 @@ public:
     void reportMezzaninePressure(uint8_t address) { callFunction(address, 119, 1800); }
 
 protected:
+    /**
+     * Called when response from call to command 67 (0x43) is read.
+     *
+     * @param address returned from this ILC
+     * @param status hardpoint Status
+     * @param encoderPostion HP encoder position
+     * @param loadCellForce measured load cell/actuator force
+     */
+    virtual void processHardpointForceStatus(uint8_t address, uint8_t status, int32_t encoderPostion,
+                                             float loadCellForce) = 0;
+
     /**
      * Called when response from call to command 110 (0x6E) is read.
      *
