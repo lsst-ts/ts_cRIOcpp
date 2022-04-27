@@ -260,14 +260,6 @@ const bool CliApp::onOff(std::string on) {
     throw std::runtime_error("Invalid on/off string:" + on);
 }
 
-const void CliApp::printHexBuf(uint8_t* buf, size_t len, const char* prefix) {
-    std::cout << std::hex;
-    for (size_t i = 0; i < len; i++) {
-        std::cout << prefix << std::setfill('0') << std::setw(2) << static_cast<int>(buf[i]);
-    }
-    std::cout << std::dec;
-}
-
 /**
  * Verify if passed arguments match argument map.
  *
