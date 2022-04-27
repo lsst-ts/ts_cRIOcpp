@@ -84,7 +84,7 @@ TEST_CASE("Test CliApp", "[CliApp]") {
     cli.addCommand("testcmd", std::bind(&AClass::testCmd, &cli, std::placeholders::_1), "s", 0,
                    "[ALL|command]", "Prints all command or command help.");
 
-    int argc = 3;
+    const int argc = 3;
     const char* const argv[argc] = {"test", "testcmd", "tt"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
@@ -102,7 +102,7 @@ TEST_CASE("Test int format", "[CliApp]") {
     cli.addCommand("testcmd", std::bind(&AClass::testInt, &cli, std::placeholders::_1), "I", 0, "[address]",
                    "Prints memory at given address.");
 
-    int argc = 1;
+    const int argc = 1;
     const char* const argv[argc] = {"test"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
@@ -134,7 +134,7 @@ TEST_CASE("Test Hex format", "[CliApp]") {
     cli.addCommand("testcmd", std::bind(&AClass::testHex, &cli, std::placeholders::_1), "H", 0, "[address]",
                    "Prints memory at given address.");
 
-    int argc = 1;
+    const int argc = 1;
     const char* const argv[argc] = {"test"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
@@ -166,7 +166,7 @@ TEST_CASE("Test double format", "[CliApp]") {
     cli.addCommand("testcmd", std::bind(&AClass::testDouble, &cli, std::placeholders::_1), "D", 0,
                    "[address]", "Set a parameter.");
 
-    int argc = 1;
+    const int argc = 1;
     const char* const argv[argc] = {"test"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);

@@ -250,7 +250,7 @@ TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
 
     std::vector<uint8_t> changed;
 
-    auto readAll = [&mbuf, &changed](int32_t nrp = -977453, uint32_t rp = 87346) {
+    auto readAll = [&mbuf](int32_t nrp = -977453, uint32_t rp = 87346) {
         mbuf.reset();
 
         REQUIRE(mbuf.read<uint8_t>() == 11);

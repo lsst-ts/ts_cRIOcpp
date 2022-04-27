@@ -62,8 +62,8 @@ public:
     void writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout) override {}
     void readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
-    void waitOnIrqs(uint32_t irqs, uint32_t timeout, uint32_t* triggered = NULL) {}
-    void ackIrqs(uint32_t irqs) {}
+    void waitOnIrqs(uint32_t irqs, uint32_t timeout, uint32_t* triggered = NULL) override {}
+    void ackIrqs(uint32_t irqs) override {}
 
 private:
     uint8_t _call;
@@ -74,7 +74,7 @@ private:
 
 void TestFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     _printBuffer(data, length, "C>", true);
-    _call = 0xff & (data[4] >> 1);
+    _call = 0xff & (data[5] >> 1);
 }
 
 void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) {

@@ -52,7 +52,7 @@ TEST_CASE("Test Application", "[Application]") {
     AClass app("test", "description");
     app.addArgument('h', "print help");
 
-    int argc = 3;
+    const int argc = 3;
     const char* const argv[argc] = {"test", "-h", "tt"};
 
     command_vec cmds = app.processArgs(argc, (char**)argv);

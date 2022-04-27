@@ -222,7 +222,6 @@ protected:
 
 private:
     uint16_t _modbusSoftwareTrigger;
-    uint8_t _modbusIrq;
 };
 
 }  // namespace cRIO

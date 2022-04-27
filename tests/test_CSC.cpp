@@ -109,7 +109,7 @@ void _childHandler(int sig) {
 TEST_CASE("Daemonize", "[CSC]") {
     optind = 1;
 
-    int argc = 4;
+    const int argc = 4;
     char pid_template[200];
     strcpy(pid_template, "/tmp/test.pid-XXXXXX");
     char* pid_file = mktemp(pid_template);
@@ -153,7 +153,7 @@ TEST_CASE("Run CSC", "[CSC]") {
     optind = 1;
 
     TestCSC csc2("testcsc2", "Test CSC object 2", false);
-    int argc = 2;
+    const int argc = 2;
     const char* const argv[argc] = {"test2", "-f"};
     command_vec cmds = csc2.processArgs(argc, (char**)argv);
     REQUIRE(cmds.size() == 0);

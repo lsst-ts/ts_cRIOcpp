@@ -45,7 +45,7 @@ clean:
 
 $(TEST_REQ_READLINE): %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
 	@echo '[TPR] $<'
-	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(LIBS) $^ $(CPP_FLAGS) -lreadline -lhistory
+	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(LIBS) $^ $(CPP_FLAGS) -lreadline # -lhistory
 
 ${BINARIES}: %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
 	@echo '[TPP] $<'
