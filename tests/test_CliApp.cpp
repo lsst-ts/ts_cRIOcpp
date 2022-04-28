@@ -25,6 +25,7 @@
 
 #include <cRIO/CliApp.h>
 #include <iostream>
+#include <vector>
 
 using namespace LSST::cRIO;
 
@@ -185,4 +186,21 @@ TEST_CASE("Test double format", "[CliApp]") {
     REQUIRE(cli.processCmdVector(cmds) == -1);
 
     REQUIRE(cli.test_count == 1);
+}
+
+TEST_CASE("Print decoded buffer", "[CliApp]") {
+    std::ostringstream os1;
+    std::vector<uint16_t> buf1({0x8000, 0x1233, 0x9233});
+    CliApp::printDecodedBuffer(buf1.data(), buf1.size(), os1);
+    REQUIRE(os1.str() == " invalid timestamp   ");
+
+    std::ostringstream os2;
+    std::vector<uint16_t> buf2({0x0000, 0x0000, 0x0000, 0x0100});
+    CliApp::printDecodedBuffer(buf2.data(), buf2.size(), os2);
+    REQUIRE(os2.str() == " TS:               1");
+
+    std::ostringstream os3;
+    std::vector<uint16_t> buf3({0x1200, 0x5634, 0x9a78, 0xdebc, 0x8000, 0x1233, 0x9233});
+    CliApp::printDecodedBuffer(buf3.data(), buf3.size(), os3);
+    REQUIRE(os3.str() == " TS: 5124095576030430 X    W 19 R 19");
 }

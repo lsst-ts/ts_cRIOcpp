@@ -134,7 +134,7 @@ void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeo
 void TestFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp) {
     std::stringstream ss;
     ss << prefix;
-    CliApp::printHexBuf(data, length, ss);
+    CliApp::printHexBuffer(data, length, ss);
     if (cmp) {
         std::string l;
         std::getline(_outStream, l);

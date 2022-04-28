@@ -224,13 +224,15 @@ get_the_answer command.
      * @param os output stream, defaults to std::cout
      */
     template <typename dt>
-    static const void printHexBuf(dt* buf, size_t len, std::ostream& os = std::cout) {
+    static const void printHexBuffer(dt* buf, size_t len, std::ostream& os = std::cout) {
         os << std::hex;
         for (size_t i = 0; i < len; i++) {
             os << " " << std::setfill('0') << std::setw(sizeof(dt) * 2) << +(buf[i]);
         }
         os << std::dec;
     }
+
+    static const void printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& os = std::cout);
 
 protected:
     /**

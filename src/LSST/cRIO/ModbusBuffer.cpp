@@ -167,7 +167,7 @@ void ModbusBuffer::checkCommandedEmpty() {
             os << ",";
         }
         auto c = _commanded.front();
-        os << static_cast<int>(c.first) << ":" << static_cast<int>(c.second);
+        os << +(c.first) << ":" << +(c.second);
         _commanded.pop();
     }
     throw std::runtime_error("Responses for those <address:function> pairs weren't received: " + os.str());

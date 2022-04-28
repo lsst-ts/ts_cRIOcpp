@@ -26,6 +26,7 @@
 #include <memory>
 #include <cmath>
 #include <iostream>
+#include <vector>
 
 #include <cRIO/ModbusBuffer.h>
 
@@ -33,6 +34,9 @@ using namespace LSST::cRIO;
 
 class TestModbusBuffer : public ModbusBuffer {
 public:
+    TestModbusBuffer() : ModbusBuffer() {}
+    TestModbusBuffer(std::vector<uint16_t> vec) : ModbusBuffer(vec.data(), vec.size()) {}
+
     void writeEndOfFrame() override {}
     void writeWaitForRx(uint32_t timeoutMicros) override {}
 

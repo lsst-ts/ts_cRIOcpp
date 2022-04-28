@@ -22,6 +22,7 @@
  */
 
 #include "cRIO/CliApp.h"
+#include "cRIO/ModbusBuffer.h"
 
 #include <algorithm>
 #include <readline/readline.h>
@@ -258,6 +259,26 @@ const bool CliApp::onOff(std::string on) {
     if (strcasecmp(on.c_str(), "on") == 0 || on == "1") return true;
     if (strcasecmp(on.c_str(), "off") == 0 || on == "0") return false;
     throw std::runtime_error("Invalid on/off string:" + on);
+}
+
+const void CliApp::printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& os) {
+    if (len < 4) {
+        os << " invalid timestamp   ";
+        return;
+    }
+    os << " TS: " << std::setw(15) << be64toh(*(reinterpret_cast<uint64_t*>(buf))) << std::hex;
+    for (size_t i = 4; i < len; i++) {
+        uint16_t d = buf[i];
+        uint16_t v = 0x00ff & (d >> 1);
+        // read/write data
+        if ((d & FIFO::CMD_MASK) == FIFO::WRITE) {
+            os << " W " << std::setfill('0') << std::setw(2) << v;
+        } else if ((d & FIFO::CMD_MASK) == FIFO::TX_WAIT_LONG_RX) {
+            os << " R " << std::setfill('0') << std::setw(2) << v;
+        } else {
+            os << " X   ";
+        }
+    }
 }
 
 /**
