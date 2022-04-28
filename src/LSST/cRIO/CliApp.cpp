@@ -23,6 +23,7 @@
 
 #include "cRIO/CliApp.h"
 #include "cRIO/ModbusBuffer.h"
+#include "cRIO/Timestamp.h"
 
 #include <algorithm>
 #include <readline/readline.h>
@@ -266,15 +267,19 @@ const void CliApp::printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& o
         os << " invalid timestamp   ";
         return;
     }
-    os << " TS: " << std::setw(15) << be64toh(*(reinterpret_cast<uint64_t*>(buf))) << std::hex;
+
+    OStreamRestore res(os);
+
+    os << " TS: " << std::setw(15) << std::fixed << std::setprecision(3) << Timestamp::fromFPGABuffer(buf)
+       << std::hex << std::setfill('0');
     for (size_t i = 4; i < len; i++) {
         uint16_t d = buf[i];
         uint16_t v = 0x00ff & (d >> 1);
         // read/write data
         if ((d & FIFO::CMD_MASK) == FIFO::WRITE) {
-            os << " W " << std::setfill('0') << std::setw(2) << v;
+            os << " W " << std::setw(2) << v;
         } else if ((d & FIFO::CMD_MASK) == FIFO::TX_WAIT_LONG_RX) {
-            os << " R " << std::setfill('0') << std::setw(2) << v;
+            os << " R " << std::setw(2) << v;
         } else {
             os << " X   ";
         }

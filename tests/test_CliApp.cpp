@@ -195,12 +195,12 @@ TEST_CASE("Print decoded buffer", "[CliApp]") {
     REQUIRE(os1.str() == " invalid timestamp   ");
 
     std::ostringstream os2;
-    std::vector<uint16_t> buf2({0x0000, 0x0000, 0x0000, 0x0100});
+    std::vector<uint16_t> buf2({0x0000, 0x0000, 0x3b9a, 0xca00});
     CliApp::printDecodedBuffer(buf2.data(), buf2.size(), os2);
-    REQUIRE(os2.str() == " TS:               1");
+    REQUIRE(os2.str() == " TS:           1.000");
 
     std::ostringstream os3;
-    std::vector<uint16_t> buf3({0x1200, 0x5634, 0x9a78, 0xdebc, 0x8000, 0x1233, 0x9233});
+    std::vector<uint16_t> buf3({0x0012, 0x3456, 0x789a, 0xbcde, 0x8000, 0x1233, 0x9233});
     CliApp::printDecodedBuffer(buf3.data(), buf3.size(), os3);
-    REQUIRE(os3.str() == " TS: 5124095576030430 X    W 19 R 19");
+    REQUIRE(os3.str() == " TS:     5124095.576 X    W 19 R 19");
 }

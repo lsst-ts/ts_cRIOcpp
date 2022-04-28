@@ -1,6 +1,6 @@
 /*
  * This file is part of the LSST-TS distribution (https://github.com/lsst-ts).
- * Copyright © 2020 Petr Kubánek, Vera C. Rubin Observatory
+ * Copyright © 2020-2022 Petr Kubánek, Vera C. Rubin Observatory
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -19,6 +19,7 @@
 #define __CliApp_h
 
 #include <cRIO/Application.h>
+#include <cRIO/OStreamRestore.h>
 
 #include <iomanip>
 #include <iostream>
@@ -225,9 +226,11 @@ get_the_answer command.
      */
     template <typename dt>
     static const void printHexBuffer(dt* buf, size_t len, std::ostream& os = std::cout) {
-        os << std::hex;
+        OStreamRestore res(os);
+
+        os << std::hex << std::setfill('0');
         for (size_t i = 0; i < len; i++) {
-            os << " " << std::setfill('0') << std::setw(sizeof(dt) * 2) << +(buf[i]);
+            os << " " << std::setw(sizeof(dt) * 2) << +(buf[i]);
         }
         os << std::dec;
     }
