@@ -22,6 +22,8 @@
  */
 
 #include "cRIO/CliApp.h"
+#include "cRIO/ModbusBuffer.h"
+#include "cRIO/Timestamp.h"
 
 #include <algorithm>
 #include <readline/readline.h>
@@ -260,12 +262,28 @@ const bool CliApp::onOff(std::string on) {
     throw std::runtime_error("Invalid on/off string:" + on);
 }
 
-const void CliApp::printHexBuf(uint8_t* buf, size_t len, const char* prefix) {
-    std::cout << std::hex;
-    for (size_t i = 0; i < len; i++) {
-        std::cout << prefix << std::setfill('0') << std::setw(2) << static_cast<int>(buf[i]);
+const void CliApp::printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& os) {
+    if (len < 4) {
+        os << " invalid timestamp   ";
+        return;
     }
-    std::cout << std::dec;
+
+    OStreamRestore res(os);
+
+    os << " TS: " << std::setw(15) << std::fixed << std::setprecision(3) << Timestamp::fromFPGABuffer(buf)
+       << std::hex << std::setfill('0');
+    for (size_t i = 4; i < len; i++) {
+        uint16_t d = buf[i];
+        uint16_t v = 0x00ff & (d >> 1);
+        // read/write data
+        if ((d & FIFO::CMD_MASK) == FIFO::WRITE) {
+            os << " W " << std::setw(2) << v;
+        } else if ((d & FIFO::CMD_MASK) == FIFO::TX_WAIT_LONG_RX) {
+            os << " R " << std::setw(2) << v;
+        } else {
+            os << " X   ";
+        }
+    }
 }
 
 /**
