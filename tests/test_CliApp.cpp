@@ -20,14 +20,15 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 #include <cRIO/CliApp.h>
 #include <iostream>
 #include <vector>
 
 using namespace LSST::cRIO;
+using Catch::Approx;
 
 class AClass : public CliApp {
 public:
