@@ -22,11 +22,11 @@
 #ifndef CONTROLLERTHREAD_H_
 #define CONTROLLERTHREAD_H_
 
+#include <queue>
+
 #include <cRIO/Command.h>
 #include <cRIO/Singleton.h>
 #include <cRIO/Thread.h>
-
-#include <queue>
 
 namespace LSST {
 namespace cRIO {
@@ -58,7 +58,7 @@ public:
     static bool exitRequested() { return instance()._exitRequested; }
 
 protected:
-    void run(std::unique_lock<std::mutex> &lock) override;
+    void run(std::unique_lock<std::mutex>& lock) override;
 
 private:
     void _runCommands();

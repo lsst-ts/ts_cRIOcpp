@@ -20,12 +20,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch_test_macros.hpp>
-
 #include <memory>
 #include <cmath>
 #include <iostream>
 #include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/ModbusBuffer.h>
 

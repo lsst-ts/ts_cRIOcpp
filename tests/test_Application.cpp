@@ -20,12 +20,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/Application.h>
 #include <cRIO/Thread.h>
-
-#include <iostream>
 
 using namespace LSST::cRIO;
 using namespace std::chrono_literals;

@@ -20,8 +20,9 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/MPU.h>
 #include <spdlog/spdlog.h>
+
+#include <cRIO/MPU.h>
 
 using namespace LSST::cRIO;
 

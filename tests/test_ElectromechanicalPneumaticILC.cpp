@@ -20,10 +20,10 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch_test_macros.hpp>
-
 #include <memory>
 #include <cmath>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/ElectromechanicalPneumaticILC.h>
 

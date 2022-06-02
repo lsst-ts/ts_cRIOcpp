@@ -21,9 +21,9 @@
 #ifndef RANGE_H_
 #define RANGE_H_
 
-#include <cRIO/LimitTrigger.h>
-
 #include <spdlog/spdlog.h>
+
+#include <cRIO/LimitTrigger.h>
 
 namespace LSST {
 namespace cRIO {

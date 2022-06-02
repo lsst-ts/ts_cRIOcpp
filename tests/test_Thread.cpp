@@ -20,11 +20,11 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <atomic>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/Thread.h>
-
-#include <atomic>
 
 using namespace LSST::cRIO;
 using namespace std::chrono_literals;
@@ -51,6 +51,8 @@ TEST_CASE("Test thread join with stop", "[Thread]") {
     REQUIRE_NOTHROW(thread.start());
 
     REQUIRE(thread.joinable() == true);
+    // wait for more than default 2ms, as thread is sleeping for 1ms and processing
+    // on CI can sometimes take longer then 1ms
     REQUIRE_NOTHROW(thread.stop(5ms));
     REQUIRE(thread.joinable() == false);
 

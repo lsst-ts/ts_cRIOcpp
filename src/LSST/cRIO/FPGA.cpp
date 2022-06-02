@@ -20,15 +20,15 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/FPGA.h>
-#include <cRIO/ModbusBuffer.h>
+#include <chrono>
+#include <string.h>
+#include <thread>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
 
-#include <chrono>
-#include <string.h>
-#include <thread>
+#include <cRIO/FPGA.h>
+#include <cRIO/ModbusBuffer.h>
 
 using namespace std::chrono_literals;
 

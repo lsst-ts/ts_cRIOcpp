@@ -21,13 +21,7 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cRIO/CliApp.h"
-#include "cRIO/ModbusBuffer.h"
-#include "cRIO/Timestamp.h"
-
 #include <algorithm>
-#include <readline/readline.h>
-#include <readline/history.h>
 #include <iomanip>
 #include <iostream>
 #include <fstream>
@@ -35,6 +29,13 @@
 #include <unistd.h>
 #include <cmath>
 #include <csignal>
+
+#include <readline/readline.h>
+#include <readline/history.h>
+
+#include "cRIO/CliApp.h"
+#include "cRIO/ModbusBuffer.h"
+#include "cRIO/Timestamp.h"
 
 namespace LSST {
 namespace cRIO {

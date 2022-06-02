@@ -20,14 +20,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch_test_macros.hpp>
-
 #include <cstdlib>
 #include <signal.h>
 #include <string>
 #include <sys/types.h>
 #include <sys/wait.h>
 #include <unistd.h>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/CSC.h>
 #include <cRIO/FPGA.h>

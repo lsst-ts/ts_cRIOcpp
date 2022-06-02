@@ -21,15 +21,17 @@
 #ifndef TABLELOADER_H_
 #define TABLELOADER_H_
 
-#include <cRIO/Limit.h>
-#include <cRIO/DataTypes.h>
-#include <cRIO/Settings/Path.h>
-#include <boost/tokenizer.hpp>
-#include <boost/lexical_cast.hpp>
-#include <boost/algorithm/string.hpp>
 #include <fstream>
 #include <string>
 #include <vector>
+
+#include <boost/tokenizer.hpp>
+#include <boost/lexical_cast.hpp>
+#include <boost/algorithm/string.hpp>
+
+#include <cRIO/Limit.h>
+#include <cRIO/DataTypes.h>
+#include <cRIO/Settings/Path.h>
 
 namespace LSST {
 namespace cRIO {

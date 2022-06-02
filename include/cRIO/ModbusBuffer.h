@@ -21,7 +21,6 @@
 #ifndef CRIO_MODBUSBUFFER_H_
 #define CRIO_MODBUSBUFFER_H_
 
-#include <cRIO/DataTypes.h>
 #include <functional>
 #include <map>
 #include <queue>
@@ -53,6 +52,8 @@
 #else
 
 #include <endian.h>
+
+#include <cRIO/DataTypes.h>
 
 #endif
 

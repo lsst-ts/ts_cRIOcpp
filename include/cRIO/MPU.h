@@ -23,12 +23,12 @@
 #ifndef CRIO_MPU_H_
 #define CRIO_MPU_H_
 
-#include <cRIO/ModbusBuffer.h>
-
 #include <list>
 #include <map>
 #include <vector>
 #include <cstdint>
+
+#include <cRIO/ModbusBuffer.h>
 
 namespace LSST {
 namespace cRIO {

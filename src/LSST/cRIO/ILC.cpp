@@ -20,10 +20,10 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/ILC.h>
-
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
+
+#include <cRIO/ILC.h>
 
 namespace LSST {
 namespace cRIO {

@@ -20,11 +20,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/PrintILC.h>
 #include <cRIO/FPGACliApp.h>
-#include <iostream>
 
 #include "TestFPGA.h"
 

@@ -23,8 +23,9 @@
 #ifndef __cRIO_Settings_Path__
 #define __cRIO_Settings_Path__
 
-#include <cRIO/Singleton.h>
 #include <string>
+
+#include <cRIO/Singleton.h>
 
 namespace LSST {
 namespace cRIO {

@@ -20,6 +20,10 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <fstream>
+#include <iostream>
+#include <sstream>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/CliApp.h>
@@ -28,10 +32,6 @@
 #include <cRIO/ILC.h>
 #include <cRIO/PrintILC.h>
 #include <cRIO/SimulatedILC.h>
-
-#include <fstream>
-#include <iostream>
-#include <sstream>
 
 using namespace LSST::cRIO;
 

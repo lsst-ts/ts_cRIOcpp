@@ -23,9 +23,9 @@
 #include <vector>
 #include <list>
 
-#include <cRIO/Thread.h>
-
 #include <spdlog/spdlog.h>
+
+#include <cRIO/Thread.h>
 
 using namespace std::chrono_literals;
 

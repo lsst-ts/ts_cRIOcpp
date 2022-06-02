@@ -18,12 +18,12 @@
 #ifndef __CliApp_h
 #define __CliApp_h
 
-#include <cRIO/Application.h>
-#include <cRIO/OStreamRestore.h>
-
 #include <iomanip>
 #include <iostream>
 #include <ostream>
+
+#include <cRIO/Application.h>
+#include <cRIO/OStreamRestore.h>
 
 namespace LSST {
 namespace cRIO {

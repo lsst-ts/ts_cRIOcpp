@@ -21,8 +21,9 @@
 #ifndef TIMESTAMP_H_
 #define TIMESTAMP_H_
 
-#include <cRIO/DataTypes.h>
 #include <sys/time.h>
+
+#include <cRIO/DataTypes.h>
 
 namespace LSST {
 namespace cRIO {

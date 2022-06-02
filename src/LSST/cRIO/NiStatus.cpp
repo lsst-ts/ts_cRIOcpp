@@ -20,8 +20,9 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/NiStatus.h>
 #include <spdlog/spdlog.h>
+
+#include <cRIO/NiStatus.h>
 
 namespace LSST {
 namespace cRIO {
