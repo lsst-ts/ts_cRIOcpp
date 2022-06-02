@@ -21,10 +21,11 @@
 #ifndef SALSINK_H_
 #define SALSINK_H_
 
-#include "spdlog/sinks/base_sink.h"
-#include "spdlog/details/null_mutex.h"
 #include <memory>
 #include <mutex>
+
+#include "spdlog/sinks/base_sink.h"
+#include "spdlog/details/null_mutex.h"
 
 /**
  * Sink to send all M1M3 spdlog messages to SAL using logMessage event. Macro which creates template class. To

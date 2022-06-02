@@ -19,7 +19,9 @@ endif
 TEST_CPPFLAGS := -I. \
 	-I"/usr/include" \
 	-I"../include" \
-	$(pkg-config --cflags catch2 2>/dev/null)
+	$(shell pkg-config --cflags catch2-with-main)
+
+CPP_FLAGS += $(shell pkg-config --libs catch2-with-main)
 
 compile: libcRIOtest.a $(BINARIES) $(TEST_REQ_READLINE)
 

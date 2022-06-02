@@ -21,9 +21,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/Settings/Alias.h>
 #include <yaml-cpp/yaml.h>
 #include <spdlog/spdlog.h>
+
+#include <cRIO/Settings/Alias.h>
 
 using namespace LSST::cRIO::Settings;
 

@@ -20,11 +20,10 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
-
 #include <memory>
 #include <cmath>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/Timestamp.h>
 

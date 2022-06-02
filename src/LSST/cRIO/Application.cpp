@@ -21,18 +21,19 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cRIO/Application.h"
-
 #include <algorithm>
-#include <readline/readline.h>
-#include <readline/history.h>
 #include <iostream>
 #include <libgen.h>
 #include <unistd.h>
 #include <cmath>
 #include <csignal>
 
+#include <readline/readline.h>
+#include <readline/history.h>
+
 #include <spdlog/async.h>
+
+#include "cRIO/Application.h"
 
 namespace LSST {
 namespace cRIO {

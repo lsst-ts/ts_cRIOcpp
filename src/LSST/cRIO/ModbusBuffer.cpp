@@ -18,12 +18,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/ModbusBuffer.h>
-#include <cRIO/Timestamp.h>
 #include <string.h>
 #include <sstream>
+
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
+
+#include <cRIO/ModbusBuffer.h>
+#include <cRIO/Timestamp.h>
 
 using namespace std;
 

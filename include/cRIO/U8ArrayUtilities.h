@@ -21,9 +21,10 @@
 #ifndef U8ARRAYUTILITIES_H_
 #define U8ARRAYUTILITIES_H_
 
-#include <cRIO/DataTypes.h>
 #include <string>
 #include <cstring>
+
+#include <cRIO/DataTypes.h>
 
 namespace LSST {
 namespace cRIO {
