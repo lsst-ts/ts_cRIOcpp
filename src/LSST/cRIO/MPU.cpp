@@ -71,7 +71,9 @@ MPU::MPU(uint8_t bus, uint8_t mpu_address) : _bus(bus), _mpu_address(mpu_address
                     if (_readRegisters.empty()) {
                         throw std::runtime_error("Too big response");
                     }
-                    _registers[_readRegisters.front()] = read<uint16_t>();
+                    uint16_t reg = _readRegisters.front();
+                    uint16_t val = read<uint16_t>();
+                    _registers[reg] = val;
                     _readRegisters.pop_front();
                 }
                 checkCRC();
@@ -169,7 +171,7 @@ void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout
 
     _commands.push_back(MPUCommands::OUTPUT);
 
-    _commands.push_back(MPUCommands::STOP);
+    _commands.push_back(MPUCommands::EXIT);
 
     for (uint16_t add = address; add < address + count; add++) {
         _readRegisters.push_back(add);
@@ -202,9 +204,13 @@ void MPU::presetHoldingRegister(uint16_t address, uint16_t value, uint8_t timeou
     _commands.push_back(MPUCommands::READ);
     // extras: device address, function (all 1 byte), address, number of registers written, CRC (2 bytes)
     _commands.push_back(8);
-    _commands.push_back(MPUCommands::CHECK_CRC);
 
-    _presetRegister.push_back(std::pair<uint16_t, uint8_t>(address, value));
+    _commands.push_back(MPUCommands::OUTPUT);
+
+    _commands.push_back(MPUCommands::CHECK_CRC);
+    _commands.push_back(MPUCommands::EXIT);
+
+    _presetRegister.push_back(std::pair<uint16_t, uint16_t>(address, value));
 }
 
 void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint8_t timeout) {
@@ -240,5 +246,5 @@ void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t cou
     _commands.push_back(8);
     _commands.push_back(MPUCommands::CHECK_CRC);
 
-    _presetRegisters.push_back(std::pair<uint16_t, uint8_t>(address, count));
+    _presetRegisters.push_back(std::pair<uint16_t, uint16_t>(address, count));
 }
