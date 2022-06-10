@@ -124,8 +124,6 @@ public:
      *
      * @return current command buffer
      */
-    uint8_t *getCommands() { return _commands.data(); }
-
     std::vector<uint8_t> getCommandVector() { return _commands; }
 
     bool getInputStatus(uint16_t address) { return _inputStatus.at(address); }

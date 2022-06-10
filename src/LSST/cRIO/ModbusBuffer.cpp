@@ -18,6 +18,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
 #include <string.h>
 #include <sstream>
 
@@ -285,6 +286,8 @@ void ModbusBuffer::callFunction(uint8_t address, uint8_t function, uint32_t time
     writeWaitForRx(timeout);
 
     pushCommanded(address, function);
+
+    std::cout << "Commanded: " << _commanded.size() << std::endl;
 }
 
 void ModbusBuffer::broadcastFunction(uint8_t address, uint8_t function, uint8_t counter, uint32_t delay,

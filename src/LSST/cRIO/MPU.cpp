@@ -151,6 +151,12 @@ void MPU::readInputStatus(uint16_t address, uint16_t count, uint8_t timeout) {
 }
 
 void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout) {
+    // remove EXIT if commands were already pushed to buffer
+    if (!_commands.empty()) {
+        _commands.pop_back();
+    }
+
+    clear(true);
     callFunction(_mpu_address, 3, 0, address, count);
 
     // write request
@@ -202,6 +208,7 @@ void MPU::presetHoldingRegister(uint16_t address, uint16_t value, uint8_t timeou
 
     // read response
     _commands.push_back(MPUCommands::READ);
+    _contains_read = true;
     // extras: device address, function (all 1 byte), address, number of registers written, CRC (2 bytes)
     _commands.push_back(8);
 
