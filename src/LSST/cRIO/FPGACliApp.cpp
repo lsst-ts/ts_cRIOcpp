@@ -21,11 +21,11 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include "cRIO/FPGACliApp.h"
-#include "cRIO/IntelHex.h"
-
 #include <iomanip>
 #include <iostream>
+
+#include "cRIO/FPGACliApp.h"
+#include "cRIO/IntelHex.h"
 
 using namespace LSST::cRIO;
 

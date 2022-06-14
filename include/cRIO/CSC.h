@@ -24,11 +24,13 @@
 #ifndef __cRIO_CSC_H
 #define __cRIO_CSC_H
 
+#include <string>
+
+#include <spdlog/spdlog.h>
+
 #include <cRIO/Application.h>
 #include <cRIO/FPGA.h>
 #include <cRIO/Singleton.h>
-#include <spdlog/spdlog.h>
-#include <string>
 
 namespace LSST {
 namespace cRIO {

@@ -20,19 +20,18 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <fstream>
+#include <iostream>
+#include <sstream>
 
+#include <catch2/catch_test_macros.hpp>
+
+#include <cRIO/CliApp.h>
 #include <cRIO/FPGA.h>
 #include <cRIO/IntelHex.h>
 #include <cRIO/ILC.h>
 #include <cRIO/PrintILC.h>
 #include <cRIO/SimulatedILC.h>
-
-#include <fstream>
-#include <iostream>
-#include <iomanip>
-#include <sstream>
 
 using namespace LSST::cRIO;
 
@@ -62,8 +61,8 @@ public:
     void writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout) override {}
     void readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
-    void waitOnIrqs(uint32_t irqs, uint32_t timeout, uint32_t* triggered = NULL) {}
-    void ackIrqs(uint32_t irqs) {}
+    void waitOnIrqs(uint32_t irqs, uint32_t timeout, uint32_t* triggered = NULL) override {}
+    void ackIrqs(uint32_t irqs) override {}
 
 private:
     uint8_t _call;
@@ -74,7 +73,7 @@ private:
 
 void TestFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     _printBuffer(data, length, "C>", true);
-    _call = 0xff & (data[4] >> 1);
+    _call = 0xff & (data[5] >> 1);
 }
 
 void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) {
@@ -134,9 +133,7 @@ void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeo
 void TestFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp) {
     std::stringstream ss;
     ss << prefix;
-    for (size_t i = 0; i < length; i++) {
-        ss << " " << std::hex << std::setfill('0') << std::setw(4) << data[i];
-    }
+    CliApp::printHexBuffer(data, length, ss);
     if (cmp) {
         std::string l;
         std::getline(_outStream, l);

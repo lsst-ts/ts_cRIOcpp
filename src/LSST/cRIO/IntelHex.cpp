@@ -20,12 +20,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/IntelHex.h>
+#include <algorithm>
+#include <fstream>
 
 #include <spdlog/spdlog.h>
 
-#include <algorithm>
-#include <fstream>
+#include <cRIO/IntelHex.h>
 
 using namespace LSST::cRIO;
 

@@ -12,11 +12,13 @@ jobs:
     - name: Install dependencies
       run: |
         yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-        yum install -y make boost-devel catch-devel readline-devel yaml-cpp-devel
+        yum install -y make boost-devel catch-devel readline-devel yaml-cpp-devel git
     - name: Checkout
       uses: actions/checkout@v2
     - name: make junit
       run: |
+        git clone https://github.com/gabime/spdlog.git
+        mv spdlog/include/spdlog include/
         make
         make junit || true
     - name: Publish Unit Test Results
@@ -32,7 +34,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update -y
-        sudo apt install -y make g++ libboost-dev catch libreadline-dev libyaml-cpp-dev
+        sudo apt install -y make g++ libboost-dev catch libreadline-dev libyaml-cpp-dev libspdlog-dev
     - name: Checkout
       uses: actions/checkout@v2
     - name: make junit

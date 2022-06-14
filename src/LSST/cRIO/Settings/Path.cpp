@@ -18,8 +18,9 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/Settings/Path.h>
 #include <spdlog/spdlog.h>
+
+#include <cRIO/Settings/Path.h>
 
 using namespace LSST::cRIO::Settings;
 

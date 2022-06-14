@@ -18,12 +18,12 @@
 #ifndef __FPGACliApp_h
 #define __FPGACliApp_h
 
+#include <functional>
+#include <ostream>
+
 #include <cRIO/CliApp.h>
 #include <cRIO/FPGA.h>
 #include <cRIO/PrintILC.h>
-
-#include <functional>
-#include <ostream>
 
 namespace LSST {
 namespace cRIO {

@@ -20,12 +20,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
-
 #include <memory>
 #include <cmath>
 #include <iostream>
+#include <vector>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/ModbusBuffer.h>
 
@@ -33,6 +33,9 @@ using namespace LSST::cRIO;
 
 class TestModbusBuffer : public ModbusBuffer {
 public:
+    TestModbusBuffer() : ModbusBuffer() {}
+    TestModbusBuffer(std::vector<uint16_t> vec) : ModbusBuffer(vec.data(), vec.size()) {}
+
     void writeEndOfFrame() override {}
     void writeWaitForRx(uint32_t timeoutMicros) override {}
 
@@ -250,7 +253,7 @@ TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
 
     std::vector<uint8_t> changed;
 
-    auto readAll = [&mbuf, &changed](int32_t nrp = -977453, uint32_t rp = 87346) {
+    auto readAll = [&mbuf](int32_t nrp = -977453, uint32_t rp = 87346) {
         mbuf.reset();
 
         REQUIRE(mbuf.read<uint8_t>() == 11);

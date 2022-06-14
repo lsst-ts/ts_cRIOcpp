@@ -21,8 +21,9 @@
 #ifndef TIMESTAMP_H_
 #define TIMESTAMP_H_
 
-#include <cRIO/DataTypes.h>
 #include <sys/time.h>
+
+#include <cRIO/DataTypes.h>
 
 namespace LSST {
 namespace cRIO {
@@ -48,7 +49,7 @@ inline double fromRaw(uint64_t raw) { return ((double)raw) / NSINSEC; }
  *
  * @return raw value (nanoseconds)
  */
-inline uint64_t toRaw(double timestamp) { return (uint64_t)(timestamp * (double)NSINSEC); }
+inline uint64_t toRaw(double timestamp) { return (uint64_t)(timestamp * NSINSEC); }
 
 /**
  * Converts FPGA (nanoseconds) timestamp into seconds.
@@ -67,6 +68,21 @@ inline double fromFPGA(uint64_t timestamp) { return ((double)timestamp) / NSINSE
  * @return FPGA value (nanoseconds)
  */
 inline uint64_t toFPGA(double timestamp) { return (uint64_t)(timestamp * (double)NSINSEC); }
+
+/**
+ * Converts timestamp from FPGA uin16t buffer.
+ *
+ * @note be64toh or similar cannot be used, as values are passed as 4 uint16_t
+ * - library functions on buffer can be used only if parts are passed as uint8_t
+ *
+ * @param buf FPGA buffer
+ *
+ * @return second
+ */
+inline double fromFPGABuffer(uint16_t* buf) {
+    return fromFPGA(static_cast<uint64_t>(buf[0]) << 48 | static_cast<uint64_t>(buf[1]) << 32 |
+                    static_cast<uint64_t>(buf[2]) << 16 | buf[3]);
+}
 }  // namespace Timestamp
 
 }  // namespace cRIO

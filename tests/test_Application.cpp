@@ -20,8 +20,9 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <iostream>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/Application.h>
 #include <cRIO/Thread.h>
@@ -52,7 +53,7 @@ TEST_CASE("Test Application", "[Application]") {
     AClass app("test", "description");
     app.addArgument('h', "print help");
 
-    int argc = 3;
+    const int argc = 3;
     const char* const argv[argc] = {"test", "-h", "tt"};
 
     command_vec cmds = app.processArgs(argc, (char**)argv);

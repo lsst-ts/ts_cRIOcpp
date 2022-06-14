@@ -20,12 +20,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <iomanip>
+#include <iostream>
+
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/PrintILC.h>
 #include <cRIO/SimulatedILC.h>
-
-#include <iomanip>
-#include <iostream>
 
 using namespace LSST::cRIO;
 

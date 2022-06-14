@@ -23,10 +23,10 @@
 #ifndef _cRIO_ILC_
 #define _cRIO_ILC_
 
+#include <map>
+
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/IntelHex.h>
-
-#include <map>
 
 namespace LSST {
 namespace cRIO {

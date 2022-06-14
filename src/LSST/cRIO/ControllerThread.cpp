@@ -20,10 +20,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/ControllerThread.h>
 #include <chrono>
 #include <thread>
+
 #include <spdlog/spdlog.h>
+
+#include <cRIO/ControllerThread.h>
 
 using namespace std::chrono_literals;
 

@@ -20,11 +20,10 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
-
 #include <memory>
 #include <cmath>
+
+#include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/Timestamp.h>
 
@@ -43,7 +42,7 @@ TEST_CASE("toRaw", "[Timestamp]") {
 
 TEST_CASE("fromRaw<->toRaw", "[Timestamp]") {
     REQUIRE(Timestamp::toRaw(Timestamp::fromRaw(1)) == 1);
-    REQUIRE(Timestamp::toRaw(Timestamp::fromRaw(33567335.12)) == 33567335);
+    REQUIRE(Timestamp::toRaw(Timestamp::fromRaw(33567335)) == 33567335);
 
     REQUIRE(Timestamp::fromRaw(Timestamp::toRaw(1)) == 1);
     REQUIRE(Timestamp::fromRaw(Timestamp::toRaw(33567335.12)) == 33567335.12);
@@ -60,9 +59,18 @@ TEST_CASE("toFPGA", "[Timestamp]") {
     REQUIRE(Timestamp::toFPGA(999999999) == (uint64_t)999999999000000000);
 }
 
+TEST_CASE("fromFPGABuffer", "[Timestamp]") {
+    uint16_t buf[4];
+    buf[0] = 0x00;
+    buf[1] = 0x00;
+    buf[2] = 0x3b9a;
+    buf[3] = 0xca00;
+    REQUIRE(Timestamp::fromFPGABuffer(buf) == 1.0);
+}
+
 TEST_CASE("fromFPGA<->toFPGA", "[Timestamp]") {
     REQUIRE(Timestamp::toFPGA(Timestamp::fromFPGA(1)) == 1);
-    REQUIRE(Timestamp::toFPGA(Timestamp::fromFPGA(33567335.12)) == 33567335);
+    REQUIRE(Timestamp::toFPGA(Timestamp::fromFPGA(33567335)) == 33567335);
 
     REQUIRE(Timestamp::fromFPGA(Timestamp::toFPGA(1)) == 1);
     REQUIRE(Timestamp::fromFPGA(Timestamp::toFPGA(33567335.12)) == 33567335.12);

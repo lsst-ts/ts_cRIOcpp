@@ -20,13 +20,16 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#define CATCH_CONFIG_MAIN
-#include <catch2/catch.hpp>
+#include <iostream>
+#include <vector>
+
+#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 #include <cRIO/CliApp.h>
-#include <iostream>
 
 using namespace LSST::cRIO;
+using Catch::Approx;
 
 class AClass : public CliApp {
 public:
@@ -84,7 +87,7 @@ TEST_CASE("Test CliApp", "[CliApp]") {
     cli.addCommand("testcmd", std::bind(&AClass::testCmd, &cli, std::placeholders::_1), "s", 0,
                    "[ALL|command]", "Prints all command or command help.");
 
-    int argc = 3;
+    const int argc = 3;
     const char* const argv[argc] = {"test", "testcmd", "tt"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
@@ -102,7 +105,7 @@ TEST_CASE("Test int format", "[CliApp]") {
     cli.addCommand("testcmd", std::bind(&AClass::testInt, &cli, std::placeholders::_1), "I", 0, "[address]",
                    "Prints memory at given address.");
 
-    int argc = 1;
+    const int argc = 1;
     const char* const argv[argc] = {"test"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
@@ -134,7 +137,7 @@ TEST_CASE("Test Hex format", "[CliApp]") {
     cli.addCommand("testcmd", std::bind(&AClass::testHex, &cli, std::placeholders::_1), "H", 0, "[address]",
                    "Prints memory at given address.");
 
-    int argc = 1;
+    const int argc = 1;
     const char* const argv[argc] = {"test"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
@@ -166,7 +169,7 @@ TEST_CASE("Test double format", "[CliApp]") {
     cli.addCommand("testcmd", std::bind(&AClass::testDouble, &cli, std::placeholders::_1), "D", 0,
                    "[address]", "Set a parameter.");
 
-    int argc = 1;
+    const int argc = 1;
     const char* const argv[argc] = {"test"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
@@ -185,4 +188,21 @@ TEST_CASE("Test double format", "[CliApp]") {
     REQUIRE(cli.processCmdVector(cmds) == -1);
 
     REQUIRE(cli.test_count == 1);
+}
+
+TEST_CASE("Print decoded buffer", "[CliApp]") {
+    std::ostringstream os1;
+    std::vector<uint16_t> buf1({0x8000, 0x1233, 0x9233});
+    CliApp::printDecodedBuffer(buf1.data(), buf1.size(), os1);
+    REQUIRE(os1.str() == " invalid timestamp   ");
+
+    std::ostringstream os2;
+    std::vector<uint16_t> buf2({0x0000, 0x0000, 0x3b9a, 0xca00});
+    CliApp::printDecodedBuffer(buf2.data(), buf2.size(), os2);
+    REQUIRE(os2.str() == " TS:           1.000");
+
+    std::ostringstream os3;
+    std::vector<uint16_t> buf3({0x0012, 0x3456, 0x789a, 0xbcde, 0x8000, 0x1233, 0x9233});
+    CliApp::printDecodedBuffer(buf3.data(), buf3.size(), os3);
+    REQUIRE(os3.str() == " TS:     5124095.576 X    W 19 R 19");
 }

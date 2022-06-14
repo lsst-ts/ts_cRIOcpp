@@ -1,6 +1,6 @@
 /*
  * This file is part of the LSST-TS distribution (https://github.com/lsst-ts).
- * Copyright © 2020 Petr Kubánek, Vera C. Rubin Observatory
+ * Copyright © 2020-2022 Petr Kubánek, Vera C. Rubin Observatory
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
@@ -18,7 +18,12 @@
 #ifndef __CliApp_h
 #define __CliApp_h
 
+#include <iomanip>
+#include <iostream>
+#include <ostream>
+
 #include <cRIO/Application.h>
+#include <cRIO/OStreamRestore.h>
 
 namespace LSST {
 namespace cRIO {
@@ -213,12 +218,24 @@ get_the_answer command.
     static const bool onOff(std::string on);
 
     /**
-     * Utitlity function to print out buffer as hex dump.
+     * Utility function to print out buffer as hex dump.
      *
-     * @param buf buffer to print
-     * @param len length of the buffer
+     * @param dt
+     * @param len
+     * @param os output stream, defaults to std::cout
      */
-    static const void printHexBuf(uint8_t* buf, size_t len, const char* prefix = "");
+    template <typename dt>
+    static const void printHexBuffer(dt* buf, size_t len, std::ostream& os = std::cout) {
+        OStreamRestore res(os);
+
+        os << std::hex << std::setfill('0');
+        for (size_t i = 0; i < len; i++) {
+            os << " " << std::setw(sizeof(dt) * 2) << +(buf[i]);
+        }
+        os << std::dec;
+    }
+
+    static const void printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& os = std::cout);
 
 protected:
     /**

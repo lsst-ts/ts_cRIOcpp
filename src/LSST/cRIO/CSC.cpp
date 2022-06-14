@@ -21,20 +21,21 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/CSC.h>
-#include <cRIO/ControllerThread.h>
-
-#include <spdlog/async.h>
-#include <spdlog/sinks/daily_file_sink.h>
-#include <spdlog/sinks/stdout_color_sinks.h>
-#include <spdlog/sinks/syslog_sink.h>
-
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
 #include <grp.h>
 #include <pwd.h>
 #include <csignal>
+
+#include <spdlog/async.h>
+#include <spdlog/spdlog.h>
+#include <spdlog/sinks/daily_file_sink.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+#include <spdlog/sinks/syslog_sink.h>
+
+#include <cRIO/CSC.h>
+#include <cRIO/ControllerThread.h>
 
 using namespace LSST::cRIO;
 

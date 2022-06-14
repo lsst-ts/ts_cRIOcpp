@@ -18,12 +18,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/ModbusBuffer.h>
-#include <cRIO/Timestamp.h>
 #include <string.h>
 #include <sstream>
+
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
+
+#include <cRIO/ModbusBuffer.h>
+#include <cRIO/Timestamp.h>
 
 using namespace std;
 
@@ -167,7 +169,7 @@ void ModbusBuffer::checkCommandedEmpty() {
             os << ",";
         }
         auto c = _commanded.front();
-        os << static_cast<int>(c.first) << ":" << static_cast<int>(c.second);
+        os << +(c.first) << ":" << +(c.second);
         _commanded.pop();
     }
     throw std::runtime_error("Responses for those <address:function> pairs weren't received: " + os.str());

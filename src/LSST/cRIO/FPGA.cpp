@@ -20,15 +20,15 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/FPGA.h>
-#include <cRIO/ModbusBuffer.h>
+#include <chrono>
+#include <string.h>
+#include <thread>
 
 #include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
 
-#include <chrono>
-#include <string.h>
-#include <thread>
+#include <cRIO/FPGA.h>
+#include <cRIO/ModbusBuffer.h>
 
 using namespace std::chrono_literals;
 
@@ -51,16 +51,17 @@ void FPGA::ilcCommands(ILC &ilc) {
     if (requestLen == 0) {
         return;
     }
-    requestLen += 5;
+    requestLen += 6;
 
     uint16_t data[requestLen];
 
     uint8_t bus = ilc.getBus();
 
     data[0] = getTxCommand(bus);
-    data[1] = ilc.getLength() + 2;
+    data[1] = ilc.getLength() + 3;
     data[2] = FIFO::TX_WAIT_TRIGGER;
-    memcpy(data + 3, ilc.getBuffer(), ilc.getLength() * sizeof(uint16_t));
+    data[3] = FIFO::TX_TIMESTAMP;
+    memcpy(data + 4, ilc.getBuffer(), ilc.getLength() * sizeof(uint16_t));
     data[requestLen - 2] = FIFO::TX_IRQTRIGGER;
     data[requestLen - 1] = _modbusSoftwareTrigger;
 
