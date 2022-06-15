@@ -3,10 +3,12 @@ ifndef VERBOSE
   co := @
 endif
 
+c_opts := -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
+
 ifdef DEBUG
-  c_opts := -g
+  c_opts += -g
 else
-  c_opts := -O3
+  c_opts += -O3
 endif
 
 # compile x86 simulator or real cRIO stuff
