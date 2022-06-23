@@ -21,13 +21,15 @@
  */
 
 #include <endian.h>
+#include <iomanip>
 
 #include <spdlog/fmt/fmt.h>
 
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/MPUTelemetry.h>
 
-using namespace LSST::cRIO;
+namespace LSST {
+namespace cRIO {
 
 MPUTelemetry::MPUTelemetry(uint8_t data[45]) {
     instructionPointer = be16toh(*(reinterpret_cast<uint16_t *>(data + 0)));
@@ -54,3 +56,21 @@ void MPUTelemetry::checkCRC() {
 
     ModbusBuffer::CRC crc{};
 }
+
+std::ostream &operator<<(std::ostream &os, const MPUTelemetry &tel) {
+    os << std::setw(20) << "IP: " << tel.instructionPointer << std::endl
+       << std::setw(20) << "Output (Writes): " << tel.outputCounter << std::endl
+       << std::setw(20) << "Input (Reads): " << tel.inputCounter << std::endl
+       << std::setw(20) << "Out Timeouts: " << tel.outputTimeouts << std::endl
+       << std::setw(20) << "In Timeouts: " << tel.inputTimeouts << std::endl
+       << std::setw(20) << "IP on error : " << tel.instructionPointerOnError << std::endl
+       << std::setw(20) << "Write timeout: " << tel.writeTimeout << std::endl
+       << std::setw(20) << "Read timeout: " << tel.readTimeout << std::endl
+       << std::setw(20) << "Error status: " << +tel.errorStatus << std::endl
+       << std::setw(20) << "Error code: " << tel.errorCode << std::endl;
+
+    return os;
+}
+
+}  // namespace cRIO
+}  // namespace LSST

@@ -51,6 +51,8 @@ public:
      * @throws std::runtime_exception on mismatch
      */
     void checkCRC();
+
+    friend std::ostream& operator<<(std::ostream& os, const MPUTelemetry& tel);
 };
 
 }  // namespace cRIO
