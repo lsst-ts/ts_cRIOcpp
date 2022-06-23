@@ -22,11 +22,14 @@
 
 #include <endian.h>
 
+#include <spdlog/fmt/fmt.h>
+
+#include <cRIO/ModbusBuffer.h>
 #include <cRIO/MPUTelemetry.h>
 
 using namespace LSST::cRIO;
 
-MPUTelemetry::MPUTelemetry(uint8_t *data) {
+MPUTelemetry::MPUTelemetry(uint8_t data[45]) {
     instructionPointer = be16toh(*(reinterpret_cast<uint16_t *>(data + 0)));
     outputCounter = be64toh(*(reinterpret_cast<uint64_t *>(data + 2)));
     inputCounter = be64toh(*(reinterpret_cast<uint64_t *>(data + 10)));
@@ -37,4 +40,17 @@ MPUTelemetry::MPUTelemetry(uint8_t *data) {
     readTimeout = be16toh(*(reinterpret_cast<uint16_t *>(data + 38)));
     errorStatus = data[40];
     errorCode = be16toh(*(reinterpret_cast<uint16_t *>(data + 41)));
+    modbusCRC = be16toh(*(reinterpret_cast<uint16_t *>(data + 43)));
+
+    calculatedCRC = ModbusBuffer::CRC(data, 43).get();
+}
+
+void MPUTelemetry::checkCRC() {
+    if (calculatedCRC != modbusCRC) {
+        throw std::runtime_error(
+                fmt::format("Mismatched telemetry Modbus CRC - expected 0x{:X}, calculated 0x{:X}", modbusCRC,
+                            calculatedCRC));
+    }
+
+    ModbusBuffer::CRC crc{};
 }

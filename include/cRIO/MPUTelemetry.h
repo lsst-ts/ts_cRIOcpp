@@ -30,7 +30,7 @@ namespace cRIO {
 
 class MPUTelemetry {
 public:
-    MPUTelemetry(uint8_t *data);
+    MPUTelemetry(uint8_t data[45]);
     uint16_t instructionPointer;
     uint64_t outputCounter;
     uint64_t inputCounter;
@@ -42,6 +42,15 @@ public:
     uint8_t errorStatus;
     uint16_t errorCode;
     uint16_t modbusCRC;
+
+    uint16_t calculatedCRC;
+
+    /**
+     * Check that received CRC matches calculated CRC.
+     *
+     * @throws std::runtime_exception on mismatch
+     */
+    void checkCRC();
 };
 
 }  // namespace cRIO

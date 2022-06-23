@@ -27,7 +27,7 @@
 using namespace LSST::cRIO;
 
 TEST_CASE("Test MPU telemetry class", "[MPUTelemetry]") {
-    uint8_t data[] = {
+    uint8_t data[45] = {
             // current IP
             0x00,
             0x01,
@@ -82,8 +82,8 @@ TEST_CASE("Test MPU telemetry class", "[MPUTelemetry]") {
             0x00,
             0x08,
             // modbusCRC
-            0xaa,
-            0xaa,
+            0xB6,
+            0x35,
     };
 
     MPUTelemetry mpuTel(data);
@@ -93,4 +93,11 @@ TEST_CASE("Test MPU telemetry class", "[MPUTelemetry]") {
     REQUIRE(mpuTel.inputCounter == 0x02);
     REQUIRE(mpuTel.outputTimeouts == 0x03);
     REQUIRE(mpuTel.inputTimeouts == 0x04);
+
+    REQUIRE_NOTHROW(mpuTel.checkCRC());
+
+    data[43] = 0xB7;
+
+    MPUTelemetry mpuTelFailed(data);
+    REQUIRE_THROWS(mpuTelFailed.checkCRC());
 }

@@ -409,7 +409,7 @@ public:
      * Class to calculate CRC. Example usage:
      *
      * @code{.cpp}
-     * ModbusBuffer::CRC crc;
+     * ModbusBuffer::CRC crc{};
      *
      * for (uint8_t d = 0; d < 0xFF; d++) {
      *     crc.add(d);
@@ -425,6 +425,19 @@ public:
          * don't need to be called).
          */
         CRC() { reset(); }
+
+        /**
+         * Construct CRC class and fill its buffer.
+         *
+         * @param buf data buffer
+         * @param len data length
+         */
+        CRC(uint8_t* data, size_t len) {
+            reset();
+            for (size_t i = 0; i < len; i++) {
+                add(data[i]);
+            }
+        }
 
         /**
          * Reset internal CRC counter.
