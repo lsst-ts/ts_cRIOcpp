@@ -354,3 +354,10 @@ TEST_CASE("CRC class", "[ModbusBuffer::CRC]") {
 
     REQUIRE(crc.get() == 0x6310);
 }
+
+TEST_CASE("CRC class constructed from buffer", "[ModbusBuffer::CRC]") {
+    uint8_t data[5] = {0x12, 0x34, 0x56, 0x78, 0xff};
+    ModbusBuffer::CRC crc(data, 5);
+
+    REQUIRE(crc.get() == 0x6310);
+}
