@@ -26,66 +26,22 @@
 
 using namespace LSST::cRIO;
 
-TEST_CASE("Test MPU telemetry class", "[MPUTelemetry]") {
-    uint8_t data[45] = {
-            // current IP
-            0x00,
-            0x01,
-            // outputCounter
-            0x01,
-            0x02,
-            0x03,
-            0x04,
-            0x05,
-            0x06,
-            0x07,
-            0xff,
-            // inputCounter
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x02,
-            // outputTimeouts
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x03,
-            // inputTimeouts
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x00,
-            0x04,
-            // instructionPointerOnError
-            0x00,
-            0x05,
-            // writeTimeout
-            0x00,
-            0x06,
-            // readTimeout
-            0x00,
-            0x07,
-            // errorStatus
-            0x00,
-            // errorCode
-            0x00,
-            0x08,
-            // modbusCRC
-            0xB6,
-            0x35,
-    };
+uint8_t data[45] = {
+        0x00, 0x01,                                      // current IP
+        0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0xff,  // outputCounter
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x02,  // inputCounter
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03,  // outputTimeouts
+        0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04,  // inputTimeouts
+        0x00, 0x05,                                      // instructionPointerOnError
+        0x00, 0x06,                                      // writeTimeout
+        0x00, 0x07,                                      // readTimeout
+        0x00,                                            // errorStatus
+        0x00, 0x08,                                      // errorCode
+        0xB6, 0x35,                                      // modbusCRC
 
+};
+
+TEST_CASE("Test MPU telemetry class", "[MPUTelemetry]") {
     MPUTelemetry mpuTel(data);
 
     REQUIRE(mpuTel.instructionPointer == 0x01);
@@ -93,6 +49,12 @@ TEST_CASE("Test MPU telemetry class", "[MPUTelemetry]") {
     REQUIRE(mpuTel.inputCounter == 0x02);
     REQUIRE(mpuTel.outputTimeouts == 0x03);
     REQUIRE(mpuTel.inputTimeouts == 0x04);
+    REQUIRE(mpuTel.instructionPointerOnError == 0x05);
+    REQUIRE(mpuTel.writeTimeout == 0x06);
+    REQUIRE(mpuTel.readTimeout == 0x07);
+    REQUIRE(mpuTel.errorStatus == 0x00);
+    REQUIRE(mpuTel.errorCode == 0x08);
+    REQUIRE(mpuTel.modbusCRC == mpuTel.calculatedCRC);
 
     REQUIRE_NOTHROW(mpuTel.checkCRC());
 
@@ -100,4 +62,32 @@ TEST_CASE("Test MPU telemetry class", "[MPUTelemetry]") {
 
     MPUTelemetry mpuTelFailed(data);
     REQUIRE_THROWS(mpuTelFailed.checkCRC());
+}
+
+struct testMsg_t {
+    uint16_t instructionPointer;         /// Current MPU instruction pointer
+    uint64_t outputCounter;              /// Current MPU output counter
+    uint64_t inputCounter;               /// Current MPU input counter
+    uint64_t outputTimeouts;             /// Current MPU output timeouts counter
+    uint64_t inputTimeouts;              /// Current MPU input timeouts counter
+    uint16_t instructionPointerOnError;  /// Instruction counter on MPU error
+    uint16_t writeTimeout;               ///
+    uint16_t readTimeout;
+    uint8_t errorStatus;
+    uint16_t errorCode;
+};
+
+TEST_CASE("Test MPU sending", "[MPUTelemetry]") {
+    MPUTelemetry mpuTel(data);
+
+    struct testMsg_t testMsg;
+    memset(&testMsg, '0', sizeof(testMsg));
+
+    REQUIRE(mpuTel.sendUpdates(&testMsg) == true);
+    REQUIRE(mpuTel.sendUpdates(&testMsg) == false);
+
+    testMsg.errorCode = 1;
+
+    REQUIRE(mpuTel.sendUpdates(&testMsg) == true);
+    REQUIRE(mpuTel.sendUpdates(&testMsg) == false);
 }
