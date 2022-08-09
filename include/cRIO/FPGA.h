@@ -144,7 +144,7 @@ public:
      * along in mpu parameter - you need to fill the MPU commands prior to
      * calling this method.
      *
-     * @param mpu Modbus Processing Unite to write
+     * @param mpu Modbus Processing Unit to write
      */
     virtual void writeMPUFIFO(MPU& mpu) = 0;
 
