@@ -19,8 +19,9 @@
  */
 
 #include <spdlog/spdlog.h>
-
 #include <cRIO/Settings/Path.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 using namespace LSST::cRIO::Settings;
 

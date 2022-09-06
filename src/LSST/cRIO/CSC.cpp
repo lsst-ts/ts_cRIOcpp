@@ -28,6 +28,9 @@
 #include <pwd.h>
 #include <csignal>
 
+#include <unistd.h>
+#include <fcntl.h>
+
 #include <spdlog/async.h>
 #include <spdlog/spdlog.h>
 #include <spdlog/sinks/daily_file_sink.h>
