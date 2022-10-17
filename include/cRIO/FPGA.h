@@ -29,17 +29,12 @@
 
 #include "ILC.h"
 #include "MPU.h"
+#include "SimpleFPGA.h"
 
 using namespace std::chrono_literals;
 
 namespace LSST {
 namespace cRIO {
-
-/**
- * FPGA Type. Currently only SS (Static Support) or TS (Thermal System) are
- * known and supported.
- */
-typedef enum { SS, TS } fpgaType;
 
 /**
  * Interface class for cRIO FPGA. Subclasses can talk either to the real HW, or
@@ -50,7 +45,7 @@ typedef enum { SS, TS } fpgaType;
  * Controller subclass, which uses ILC (and similar) subclasses to form FPGA
  * commands and parse device replies.
  */
-class FPGA {
+class FPGA : public SimpleFPGA {
 public:
     /**
      * Construct FPGA. Sets internal variable depending on FPGA type.
@@ -60,34 +55,6 @@ public:
     FPGA(fpgaType type);
 
     virtual ~FPGA() {}
-
-    /**
-     * Initialize FPGA.
-     *
-     * @throw NiError on NI error
-     */
-    virtual void initialize() = 0;
-
-    /**
-     * Load & run FPGA code, setup interrupts.
-     *
-     * @throw NiError on NI error
-     */
-    virtual void open() = 0;
-
-    /**
-     * Close FPGA, stop FPGA code.
-     *
-     * @throw NiError on NI error
-     */
-    virtual void close() = 0;
-
-    /**
-     * Should be called after closing FPGA.
-     *
-     * @throw NiError on NI error
-     */
-    virtual void finalize() = 0;
 
     /**
      * Returns command used on CommandFIFO to write data to Modbus bus

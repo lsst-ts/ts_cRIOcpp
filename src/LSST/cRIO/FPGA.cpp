@@ -32,13 +32,16 @@
 namespace LSST {
 namespace cRIO {
 
-FPGA::FPGA(fpgaType type) {
+FPGA::FPGA(fpgaType type) : SimpleFPGA(type) {
     switch (type) {
         case SS:
             _modbusSoftwareTrigger = 252;
             break;
         case TS:
             _modbusSoftwareTrigger = 252;
+            break;
+        case VMS:
+            _modbusSoftwareTrigger = 0;
             break;
     }
 }

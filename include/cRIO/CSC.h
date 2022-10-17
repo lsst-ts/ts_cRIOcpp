@@ -29,7 +29,7 @@
 #include <spdlog/spdlog.h>
 
 #include <cRIO/Application.h>
-#include <cRIO/FPGA.h>
+#include <cRIO/SimpleFPGA.h>
 #include <cRIO/Singleton.h>
 
 namespace LSST {
@@ -54,7 +54,7 @@ public:
      *
      * @param fpga FPGA to open, initialize and run
      */
-    int run(FPGA* fpga);
+    int run(SimpleFPGA* fpga);
 
     /**
      * Returns current SAL debug level.
