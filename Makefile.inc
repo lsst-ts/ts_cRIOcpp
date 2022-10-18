@@ -3,7 +3,7 @@ ifndef VERBOSE
   co := @
 endif
 
-c_opts := -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
+c_opts := -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE `pkg-config --cflags spdlog`
 
 ifdef DEBUG
   c_opts += -g
