@@ -28,22 +28,29 @@
 namespace LSST {
 namespace cRIO {
 
+/**
+ * Class representing readouts of MPU telemetry.
+ */
 class MPUTelemetry {
 public:
+    /**
+     * Construct MPUTelemetry from data received from FPGA.
+     *
+     * @param data[45] data as received from FPGA
+     */
     MPUTelemetry(uint8_t data[45]);
-    uint16_t instructionPointer;
-    uint64_t outputCounter;
-    uint64_t inputCounter;
-    uint64_t outputTimeouts;
-    uint64_t inputTimeouts;
-    uint16_t instructionPointerOnError;
-    uint16_t writeTimeout;
-    uint16_t readTimeout;
-    uint8_t errorStatus;
-    uint16_t errorCode;
-    uint16_t modbusCRC;
-
-    uint16_t calculatedCRC;
+    uint16_t instructionPointer;         /// Current MPU instruction pointer
+    uint64_t outputCounter;              /// Current MPU output counter
+    uint64_t inputCounter;               /// Current MPU input counter
+    uint64_t outputTimeouts;             /// Current MPU output timeouts counter
+    uint64_t inputTimeouts;              /// Current MPU input timeouts counter
+    uint16_t instructionPointerOnError;  /// Instruction counter on MPU error
+    uint16_t writeTimeout;               /// Write timeout (in ms)
+    uint16_t readTimeout;                /// Read timeout (in ms)
+    uint8_t errorStatus;                 /// True if any error was triggered
+    uint16_t errorCode;                  /// MPU error code
+    uint16_t modbusCRC;                  /// CRC received from FPGA
+    uint16_t calculatedCRC;              /// CRC calculated for message
 
     /**
      * Check that received CRC matches calculated CRC.
@@ -53,6 +60,33 @@ public:
     void checkCRC();
 
     friend std::ostream& operator<<(std::ostream& os, const MPUTelemetry& tel);
+
+    /**
+     * Updates MPU telemetry SAL message structure.
+     *
+     * @tparam message class with telemetry filed. Shall be SAL declared class
+     * @param msg message to check and update
+     *
+     * @return true if message shall be send, false if updates are minor and it should not be send
+     */
+    template <class message>
+    bool sendUpdates(message* msg) {
+        bool send = false;
+        if (msg->writeTimeout != writeTimeout || msg->readTimeout != readTimeout ||
+            msg->instructionPointerOnError != instructionPointerOnError || msg->errorCode != errorCode) {
+            send = true;
+        }
+        msg->instructionPointer = instructionPointer;
+        msg->outputCounter = outputCounter;
+        msg->inputCounter = inputCounter;
+        msg->outputTimeouts = outputTimeouts;
+        msg->inputTimeouts = inputTimeouts;
+        msg->instructionPointerOnError = instructionPointerOnError;
+        msg->writeTimeout = writeTimeout;
+        msg->readTimeout = readTimeout;
+        msg->errorCode = errorCode;
+        return send;
+    }
 };
 
 }  // namespace cRIO

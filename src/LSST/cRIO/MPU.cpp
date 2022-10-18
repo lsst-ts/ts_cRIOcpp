@@ -67,14 +67,18 @@ MPU::MPU(uint8_t bus, uint8_t mpu_address) : _bus(bus), _mpu_address(mpu_address
                             fmt::format("Invalid ModBus address {}, expected {}", address, _mpu_address));
                 }
                 uint8_t len = read<uint8_t>();
-                for (size_t i = 0; i < len; i += 2) {
-                    if (_readRegisters.empty()) {
-                        throw std::runtime_error("Too big response");
+
+                {
+                    std::lock_guard<std::mutex> lg(_registerMutex);
+                    for (size_t i = 0; i < len; i += 2) {
+                        if (_readRegisters.empty()) {
+                            throw std::runtime_error("Too big response");
+                        }
+                        uint16_t reg = _readRegisters.front();
+                        uint16_t val = read<uint16_t>();
+                        _registers[reg] = val;
+                        _readRegisters.pop_front();
                     }
-                    uint16_t reg = _readRegisters.front();
-                    uint16_t val = read<uint16_t>();
-                    _registers[reg] = val;
-                    _readRegisters.pop_front();
                 }
                 checkCRC();
             },

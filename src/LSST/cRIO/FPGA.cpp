@@ -20,7 +20,6 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <chrono>
 #include <string.h>
 #include <thread>
 
@@ -29,8 +28,6 @@
 
 #include <cRIO/FPGA.h>
 #include <cRIO/ModbusBuffer.h>
-
-using namespace std::chrono_literals;
 
 namespace LSST {
 namespace cRIO {
@@ -138,11 +135,11 @@ void FPGA::ilcCommands(ILC &ilc) {
     reportTime(beginTs, endTs);
 }
 
-void FPGA::mpuCommands(MPU &mpu) {
+void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
     writeMPUFIFO(mpu);
 
     if (mpu.containsRead()) {
-        std::this_thread::sleep_for(500ms);
+        std::this_thread::sleep_for(timeout);
         readMPUFIFO(mpu);
     }
 }
