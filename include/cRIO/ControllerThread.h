@@ -25,6 +25,7 @@
 #include <queue>
 
 #include <cRIO/Command.h>
+#include <cRIO/Event.h>
 #include <cRIO/Singleton.h>
 #include <cRIO/Thread.h>
 
@@ -52,6 +53,7 @@ public:
      * executed or when queue is cleared.
      */
     void enqueue(Command* command);
+    void enqueueEvent(Event* event);
 
     static void setExitRequested() { instance()._exitRequested = true; }
 
@@ -61,11 +63,17 @@ protected:
     void run(std::unique_lock<std::mutex>& lock) override;
 
 private:
-    void _runCommands();
     void _clear();
+
+    void _processEvents();
+    void _process(Event* event);
+
+    void _runCommands();
     void _execute(Command* command);
 
-    std::queue<Command*> _queue;
+    std::queue<Event*> _eventQueue;
+    std::queue<Command*> _commandQueue;
+
     bool _exitRequested;
 };
 

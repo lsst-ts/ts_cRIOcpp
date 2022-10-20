@@ -42,27 +42,48 @@ void ControllerThread::enqueue(Command* command) {
     SPDLOG_TRACE("ControllerThread: enqueue()");
     {
         std::lock_guard<std::mutex> lg(runMutex);
-        _queue.push(command);
+        _commandQueue.push(command);
+    }
+    runCondition.notify_one();
+}
+
+void ControllerThread::enqueueEvent(Event* event) {
+    SPDLOG_TRACE("ControllerThread: enqueueEvent()");
+    {
+        std::lock_guard<std::mutex> lg(runMutex);
+        _eventQueue.push(event);
     }
     runCondition.notify_one();
 }
 
 void ControllerThread::run(std::unique_lock<std::mutex>& lock) {
     SPDLOG_INFO("ControllerThread: Run");
-    // runs commands already queued
+    // process already queued events
+    _processEvents();
+    // runs already queued commands
     _runCommands();
     while (keepRunning) {
         runCondition.wait(lock);
+        _processEvents();
         _runCommands();
     }
     SPDLOG_INFO("ControllerThread: Completed");
 }
 
-// runMutex must be locked by calling method to guard _queue access!!
+// runMutex must be locked by calling method to guard _eventQueue access!!
+void ControllerThread::_processEvents() {
+    while (!_eventQueue.empty()) {
+        Event* event = _eventQueue.front();
+        _eventQueue.pop();
+        _process(event);
+    }
+}
+
+// runMutex must be locked by calling method to guard _commandQueue access!!
 void ControllerThread::_runCommands() {
-    while (!_queue.empty()) {
-        Command* command = _queue.front();
-        _queue.pop();
+    while (!_commandQueue.empty()) {
+        Command* command = _commandQueue.front();
+        _commandQueue.pop();
         _execute(command);
     }
 }
@@ -71,12 +92,28 @@ void ControllerThread::_clear() {
     SPDLOG_TRACE("ControllerThread: _clear()");
     {
         std::lock_guard<std::mutex> lg(runMutex);
-        while (!_queue.empty()) {
-            Command* command = _queue.front();
-            _queue.pop();
+        while (!_eventQueue.empty()) {
+            Event* event = _eventQueue.front();
+            _eventQueue.pop();
+            delete event;
+        }
+        while (!_commandQueue.empty()) {
+            Command* command = _commandQueue.front();
+            _commandQueue.pop();
             delete command;
         }
     }
+}
+
+void ControllerThread::_process(Event* event) {
+    SPDLOG_TRACE("ControllerThread::_process()");
+    try {
+        event->received();
+    } catch (std::exception& e) {
+        SPDLOG_ERROR("Cannot process event: {}", e.what());
+    }
+
+    delete event;
 }
 
 void ControllerThread::_execute(Command* command) {

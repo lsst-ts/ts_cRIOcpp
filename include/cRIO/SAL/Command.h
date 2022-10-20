@@ -79,7 +79,7 @@ constexpr int ACK_FAILED = -302;
         }                                                                                                    \
                                                                                                              \
     private:                                                                                                 \
-        int _commandId;                                                                                      \
+        int32_t _commandId;                                                                                  \
         prefix##_command_##command##C params;                                                                \
     }
 
