@@ -39,7 +39,7 @@ clean:
 
 %.cpp.o: %.cpp.d
 	@echo '[CPP] $(patsubst %.d,%,$<)'
-	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) $(TEST_CPPFLAGS) -c -fmessage-length=0 -o $@ $(patsubst %.d,%,$<)
+	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) $(TEST_CPPFLAGS) -c -fmessage-length=0 -o $@ -Wl,--gc-sections $(patsubst %.d,%,$<)
 
 %.cpp.d: %.cpp
 	@echo '[DPP] $<'
@@ -51,7 +51,7 @@ $(TEST_REQ_READLINE): %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
 
 ${BINARIES}: %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
 	@echo '[TPP] $<'
-	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(LIBS) $^ $(CPP_FLAGS)
+	${co}$(CPP) -o $@ -Wl,--gc-sections $(LIBS_FLAGS) $(LIBS) $^ $(CPP_FLAGS)
 
 libcRIOtest.a: TestFPGA.cpp.o
 	@echo '[AR ] $@'

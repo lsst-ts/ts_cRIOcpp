@@ -63,7 +63,7 @@ void sigHandler(int sig) {
     ControllerThread::setExitRequested();
 }
 
-int CSC::run(FPGA* fpga) {
+int CSC::run(SimpleFPGA* fpga) {
     std::signal(SIGINT, &sigHandler);
     std::signal(SIGTERM, &sigHandler);
 
