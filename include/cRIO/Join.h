@@ -21,17 +21,36 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/Command.h>
+#ifndef STRINGJOIN_H_
+#define STRINGJOIN_H_
+
+#include <string>
 
 namespace LSST {
 namespace cRIO {
 
-Command::~Command() {}
-
-bool Command::validate() { return true; }
-void Command::ackInProgress() {}
-void Command::ackComplete() {}
-void Command::ackFailed(std::string reason) {}
+/**
+ * Join iterable (list/vector/...) into string.
+ *
+ * @tparam T iterable type
+ * @param list iterable to join
+ * @param delimiter items delimiter. Defaults to ","
+ *
+ * @return string with items separeted by delimiter
+ */
+template <typename T>
+std::string join(T list, wchar_t delimiter = ',') {
+    std::string ret;
+    for (auto i : list) {
+        if (ret.size() != 0) {
+            ret += delimiter;
+        }
+        ret += i;
+    }
+    return ret;
+}
 
 }  // namespace cRIO
 }  // namespace LSST
+
+#endif /* STRINGJOIN_H_ */

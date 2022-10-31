@@ -25,6 +25,7 @@
 
 #include <list>
 #include <map>
+#include <mutex>
 #include <vector>
 #include <cstdint>
 
@@ -124,17 +125,20 @@ public:
      *
      * @return current command buffer
      */
-    uint8_t *getCommands() { return _commands.data(); }
-
     std::vector<uint8_t> getCommandVector() { return _commands; }
 
     bool getInputStatus(uint16_t address) { return _inputStatus.at(address); }
-    uint16_t getRegister(uint16_t address) { return _registers.at(address); }
+    uint16_t getRegister(uint16_t address) {
+        std::lock_guard<std::mutex> lg(_registerMutex);
+        return _registers.at(address);
+    }
 
 private:
     std::vector<uint8_t> _commands;
     uint8_t _bus;
     uint8_t _mpu_address;
+
+    std::mutex _registerMutex;
 
     bool _contains_read;
 

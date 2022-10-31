@@ -18,6 +18,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <iostream>
 #include <string.h>
 #include <sstream>
 

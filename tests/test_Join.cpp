@@ -21,17 +21,18 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/Command.h>
+#include <catch2/catch_test_macros.hpp>
+#include <list>
+#include <string>
 
-namespace LSST {
-namespace cRIO {
+#include <cRIO/Join.h>
 
-Command::~Command() {}
+using namespace LSST::cRIO;
 
-bool Command::validate() { return true; }
-void Command::ackInProgress() {}
-void Command::ackComplete() {}
-void Command::ackFailed(std::string reason) {}
+TEST_CASE("Test Join", "[Join]") {
+    std::list<std::string> testList = {"A", "B", "C"};
+    REQUIRE(join(testList) == "A,B,C");
+    REQUIRE(join(testList, ':') == "A:B:C");
 
-}  // namespace cRIO
-}  // namespace LSST
+    REQUIRE(join(std::vector<std::string>({"A"})) == "A");
+}

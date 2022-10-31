@@ -21,17 +21,12 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/Command.h>
+#include <cRIO/Event.h>
 
 namespace LSST {
 namespace cRIO {
 
-Command::~Command() {}
-
-bool Command::validate() { return true; }
-void Command::ackInProgress() {}
-void Command::ackComplete() {}
-void Command::ackFailed(std::string reason) {}
+Event::~Event() {}
 
 }  // namespace cRIO
 }  // namespace LSST

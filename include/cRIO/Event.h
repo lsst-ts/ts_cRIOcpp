@@ -21,17 +21,34 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/Command.h>
+#ifndef EVENT_H_
+#define EVENT_H_
+
+#include <string>
 
 namespace LSST {
 namespace cRIO {
 
-Command::~Command() {}
+/**
+ * Parent class for all events.
+ *
+ * Follows Command Pattern from Design Patterns. Encapsulates command executed
+ * in ControllerThread. Pure virtual methed ::received() shall be overriden in
+ * child classes, implementing reaction to specified events.
+ *
+ * @see ControllerThread
+ */
+class Event {
+public:
+    virtual ~Event();
 
-bool Command::validate() { return true; }
-void Command::ackInProgress() {}
-void Command::ackComplete() {}
-void Command::ackFailed(std::string reason) {}
+    /**
+     * Process data.
+     */
+    virtual void received() = 0;
+};
 
 }  // namespace cRIO
 }  // namespace LSST
+
+#endif /* EVENT_H_ */

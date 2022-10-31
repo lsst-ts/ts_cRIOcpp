@@ -23,20 +23,18 @@
 #ifndef CRIO_FPGA_H_
 #define CRIO_FPGA_H_
 
+#include <chrono>
 #include <stddef.h>
 #include <stdint.h>
 
 #include "ILC.h"
 #include "MPU.h"
+#include "SimpleFPGA.h"
+
+using namespace std::chrono_literals;
 
 namespace LSST {
 namespace cRIO {
-
-/**
- * FPGA Type. Currently only SS (Static Support) or TS (Thermal System) are
- * known and supported.
- */
-typedef enum { SS, TS } fpgaType;
 
 /**
  * Interface class for cRIO FPGA. Subclasses can talk either to the real HW, or
@@ -47,7 +45,7 @@ typedef enum { SS, TS } fpgaType;
  * Controller subclass, which uses ILC (and similar) subclasses to form FPGA
  * commands and parse device replies.
  */
-class FPGA {
+class FPGA : public SimpleFPGA {
 public:
     /**
      * Construct FPGA. Sets internal variable depending on FPGA type.
@@ -57,34 +55,6 @@ public:
     FPGA(fpgaType type);
 
     virtual ~FPGA() {}
-
-    /**
-     * Initialize FPGA.
-     *
-     * @throw NiError on NI error
-     */
-    virtual void initialize() = 0;
-
-    /**
-     * Load & run FPGA code, setup interrupts.
-     *
-     * @throw NiError on NI error
-     */
-    virtual void open() = 0;
-
-    /**
-     * Close FPGA, stop FPGA code.
-     *
-     * @throw NiError on NI error
-     */
-    virtual void close() = 0;
-
-    /**
-     * Should be called after closing FPGA.
-     *
-     * @throw NiError on NI error
-     */
-    virtual void finalize() = 0;
 
     /**
      * Returns command used on CommandFIFO to write data to Modbus bus
@@ -126,14 +96,32 @@ public:
      */
     void ilcCommands(ILC& ilc);
 
-    void mpuCommands(MPU& mpu);
+    /**
+     * Sends MPU commands to command FIFO. MPU command buffer must be filled
+     * before calling this method. Read outs data if data output was specified in MPU commands. If you would
+     * like to split commanding and reading code, please use writeMPUFIFO and readMPUFIFO.
+     *
+     * @param mpu Modbus Processing Unit containing the commands.
+     * @param timeout timeout to sleep before reading. Default to 500ms.
+     */
+    void mpuCommands(MPU& mpu, const std::chrono::duration<double>& timeout = 500ms);
 
     /**
-     * Commands FPGA to write to MPU commands buffer.
+     * Commands FPGA to write to MPU commands buffer. Data to write are passed
+     * along in mpu parameter - you need to fill the MPU commands prior to
+     * calling this method.
      *
-     * @param mpu
+     * @param mpu Modbus Processing Unit to write
      */
     virtual void writeMPUFIFO(MPU& mpu) = 0;
+
+    /**
+     * Commands FPGA to copy MPU output FIFO to FPGA-C/C++ output FIFO. This
+     * method will dump data from MPU to FIFO which C/C++ can read, and reads
+     * the data.
+     *
+     * @param mpu Modbus Processing Unit to read the data
+     */
     virtual void readMPUFIFO(MPU& mpu) = 0;
 
     /**

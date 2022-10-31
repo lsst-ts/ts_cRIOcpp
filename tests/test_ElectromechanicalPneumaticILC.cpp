@@ -22,6 +22,7 @@
 
 #include <memory>
 #include <cmath>
+#include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
 
