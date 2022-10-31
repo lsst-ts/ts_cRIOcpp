@@ -64,7 +64,7 @@ node {
     {
          M1M3sim.inside("--entrypoint=''") {
              sh """
-                source $SALUSER_HOME/.setup_salobj.sh
+                source $SALUSER_HOME/.crio_setup.sh
                 cd $WORKSPACE/ts_cRIOcpp
                 make doc
              """
@@ -78,7 +78,7 @@ node {
             withCredentials([usernamePassword(credentialsId: 'lsst-io', usernameVariable: 'LTD_USERNAME', passwordVariable: 'LTD_PASSWORD')]) {
                 M1M3sim.inside("--entrypoint=''") {
                     sh """
-                        source $SALUSER_HOME/.setup_salobj.sh
+                        source $SALUSER_HOME/.crio_setup.sh
                         ltd upload --product ts-criocpp --git-ref """ + BRANCH + """ --dir $WORKSPACE/ts_cRIOcpp/doc/html
                     """
                 }
