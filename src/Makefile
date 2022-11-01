@@ -17,7 +17,6 @@ endif
 CPP_FLAGS += -I. \
 	-I"../include" \
 	-I"." \
-	-I"/usr/include" \
 	-DVERSION="\"$(VERSION)\""
 
 libcRIOcpp.a: $(OBJS)
