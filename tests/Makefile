@@ -17,7 +17,6 @@ endif
 
 
 TEST_CPPFLAGS := -I. \
-	-I"/usr/include" \
 	-I"../include" \
 	$(shell pkg-config --cflags catch2-with-main)
 
