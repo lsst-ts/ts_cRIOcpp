@@ -147,7 +147,7 @@ public:
      *
      * @see Command
      */
-    command_vec processArgs(int argc, char* const argv[]);
+    virtual command_vec processArgs(int argc, char* const argv[]);
 
     /**
      * Adds thread to application threads. Runs (starts) the thread.
@@ -185,7 +185,7 @@ public:
     virtual void printAppHelp();
 
     /**
-     * Returns applicstion name.
+     * Returns application name.
      *
      * @return application name
      */
