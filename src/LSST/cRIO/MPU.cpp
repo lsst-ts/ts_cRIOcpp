@@ -131,6 +131,16 @@ MPU::MPU(uint8_t bus, uint8_t mpu_address) : _bus(bus), _mpu_address(mpu_address
             0x90);
 }
 
+void MPU::clearCommanded() {
+    clear();
+    _commands.clear();
+
+    _readInputStatus.clear();
+    _readRegisters.clear();
+    _presetRegister.clear();
+    _presetRegisters.clear();
+}
+
 void MPU::readInputStatus(uint16_t address, uint16_t count, uint8_t timeout) {
     callFunction(_mpu_address, 2, 0, address, count);
 
