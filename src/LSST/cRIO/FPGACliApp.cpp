@@ -70,7 +70,7 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
 
     addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
                NEED_FPGA, "<firmware hex file> <ILC...>", "Program ILC with new firmware.");
-    addCommand("help", std::bind(&FPGACliApp::helpCommands, this, std::placeholders::_1), "", 0, NULL,
+    addCommand("help", std::bind(&FPGACliApp::helpCommands, this, std::placeholders::_1), "s", 0, "[command]",
                "Print commands help");
     addCommand("open", std::bind(&FPGACliApp::openFPGA, this, std::placeholders::_1), "", 0, NULL,
                "Open FPGA");

@@ -30,7 +30,7 @@ void Path::setRootPath(std::string rootPath) {
     auto test_dir = [rootPath](std::string dir) {
         struct stat dirstat;
         if (stat(dir.c_str(), &dirstat)) {
-            throw std::runtime_error("Directory " + rootPath + "doesn't exist: " + strerror(errno));
+            throw std::runtime_error("Directory " + rootPath + " doesn't exist: " + strerror(errno));
         }
         if (!(dirstat.st_mode & (S_IFLNK | S_IFDIR))) {
             throw std::runtime_error(rootPath + " isn't directory or link");

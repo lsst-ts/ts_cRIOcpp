@@ -1,0 +1,18 @@
+[Unit]
+Description=OpenSplice daemon
+
+[Service]
+Type=forking
+UMask=0002
+User=ospl
+# Paths and user shall be modified as needed
+Environment=OSPL_HOME=/opt/OpenSpliceDDS/V6.10.4/HDE/x86_64.linux
+Environment=PATH=/opt/OpenSpliceDDS/V6.10.4/HDE/x86_64.linux/bin
+Environment=OSPL_URI=file:///usr/lib/python3.10/site-packages/lsst/ts/ddsconfig/data/config/ospl-shmem-debug-no-network.xml
+Environment=LD_LIBRARY_PATH=/opt/OpenSpliceDDS/V6.10.4/HDE/x86_64.linux/lib
+WorkingDirectory=/tmp
+ExecStart=/opt/OpenSpliceDDS/V6.10.4/HDE/x86_64.linux/bin/ospl start
+ExecStop=/opt/OpenSpliceDDS/V6.10.4/HDE/x86_64.linux/bin/ospl stop
+
+[Install]
+WantedBy=multi-user.target

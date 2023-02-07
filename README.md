@@ -2,6 +2,13 @@
 
 Common functions for C++ development.
 
+## OSPL setup
+
+To get history data, and faster/lower bandwidth communication, OSPL shall be
+run on a machine for multiple users. For that, /tmp/ispddskey_XXXXXX file shall
+be accessible to users requiring OSPL access. Please see
+[OSPL_SETUP.md](OSPL_SETUP.md) for details.
+
 ## Command hierarchy, Controller processing
 
 Provides abstract Command class. This shall be enqued into ControllerThread

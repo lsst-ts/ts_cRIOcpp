@@ -145,6 +145,8 @@ void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
         std::this_thread::sleep_for(timeout);
         readMPUFIFO(mpu);
     }
+
+    mpu.checkCommandedEmpty();
 }
 
 }  // namespace cRIO

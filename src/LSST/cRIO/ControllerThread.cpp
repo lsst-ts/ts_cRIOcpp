@@ -42,7 +42,17 @@ void ControllerThread::enqueue(Command* command) {
     SPDLOG_TRACE("ControllerThread: enqueue()");
     {
         std::lock_guard<std::mutex> lg(runMutex);
-        _commandQueue.push(command);
+        try {
+            if (command->validate()) {
+                _commandQueue.push(command);
+            } else {
+                command->ackFailed("Cannot validate command");
+                delete command;
+            }
+        } catch (std::exception& ex) {
+            command->ackFailed(ex.what());
+            delete command;
+        }
     }
     runCondition.notify_one();
 }

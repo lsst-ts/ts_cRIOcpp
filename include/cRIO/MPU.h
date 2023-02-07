@@ -29,6 +29,8 @@
 #include <vector>
 #include <cstdint>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <cRIO/ModbusBuffer.h>
 
 namespace LSST {
@@ -68,10 +70,7 @@ public:
      */
     MPU(uint8_t bus, uint8_t mpu_address);
 
-    void clearCommanded() {
-        clear();
-        _commands.clear();
-    }
+    void clearCommanded();
 
     /**
      * Returns bus number (internal FPGA identifier).
@@ -130,7 +129,11 @@ public:
     bool getInputStatus(uint16_t address) { return _inputStatus.at(address); }
     uint16_t getRegister(uint16_t address) {
         std::lock_guard<std::mutex> lg(_registerMutex);
-        return _registers.at(address);
+        try {
+            return _registers.at(address);
+        } catch (std::out_of_range &e) {
+            throw std::runtime_error(fmt::format("Cannot retrive holding register {}", address));
+        }
     }
 
 private:
