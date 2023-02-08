@@ -24,9 +24,13 @@
 #include <cstdlib>
 #include <iostream>
 #include <fstream>
+#include <fcntl.h>
 #include <grp.h>
 #include <pwd.h>
 #include <csignal>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <spdlog/async.h>
 #include <spdlog/spdlog.h>

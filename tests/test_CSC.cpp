@@ -21,6 +21,7 @@
  */
 
 #include <cstdlib>
+#include <fcntl.h>
 #include <signal.h>
 #include <string>
 #include <sys/types.h>
