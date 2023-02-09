@@ -1,12 +1,14 @@
 # define to "" to produce verbose output
 ifndef VERBOSE
   co := @
+  silence := --silence-errors
 endif
 
 c_opts :=  -fdata-sections -ffunction-sections -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE
 
 ifdef DEBUG
   c_opts += -g
+  silence := --silence-errors
 else
   c_opts += -O3
 endif
@@ -21,13 +23,12 @@ else
   m1m3cli := m1m3cli
 endif
 
-LIBS += $(shell pkg-config yaml-cpp --libs) -ldl -lpthread
+PKG_LIBS := $(shell pkg-config yaml-cpp spdlog --libs $(silence))
+LIBS += $(PKG_LIBS) -ldl -lpthread
 
 BOOST_CPPFLAGS := -I/usr/include/boost169
-CPP_FLAGS += $(shell pkg-config yaml-cpp --cflags)
+PKG_CPP_FLAGS := $(shell pkg-config yaml-cpp spdlog --cflags $(silence))
+CPP_FLAGS += $(PKG_CPP_FLAGS)
 
-VERSION := $(shell git describe --tags --dirty)
-ifeq ("$(VERSION)","")
-  $(warning "Cannot retrieve version by git, using v0.0.0-None")
-  VERSION := "v0.0.0-None"
-endif
+VERSION := $(shell git describe --tags --dirty 2>/dev/null || echo "unknown:non-git")
+GIT_HASH := $(shell git rev-parse HEAD 2>/dev/null || echo "unknown-non-git")

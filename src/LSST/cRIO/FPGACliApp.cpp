@@ -21,8 +21,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <unistd.h>
 
 #include "cRIO/FPGACliApp.h"
 #include "cRIO/IntelHex.h"
