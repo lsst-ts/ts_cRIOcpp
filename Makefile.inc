@@ -23,11 +23,13 @@ else
   m1m3cli := m1m3cli
 endif
 
-PKG_LIBS := $(shell pkg-config yaml-cpp spdlog --libs $(silence))
+PKG_LIBS := $(shell pkg-config yaml-cpp --libs $(silence)) $(shell pkg-config spdlog --libs $(silence))
+
 LIBS += $(PKG_LIBS) -ldl -lpthread
 
 BOOST_CPPFLAGS := -I/usr/include/boost169
-PKG_CPP_FLAGS := $(shell pkg-config yaml-cpp spdlog --cflags $(silence))
+PKG_CPP_FLAGS := $(shell pkg-config yaml-cpp --cflags $(silence)) $(shell pkg-config spdlog --cflags $(silence))
+
 CPP_FLAGS += $(PKG_CPP_FLAGS)
 
 VERSION := $(shell git describe --tags --dirty 2>/dev/null || echo "unknown:non-git")
