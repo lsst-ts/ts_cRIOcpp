@@ -35,9 +35,21 @@ ThermalILC::ThermalILC(uint8_t bus) : ILC(bus) {
         processThermalStatus(address, status, differentialTemperature, fanRPM, absoluteTemperature);
     };
 
+    auto reheaterGains = [this](uint8_t address) {
+        float proportionalGain = read<float>();
+        float integralGain = read<float>();
+        checkCRC();
+        processReHeaterGains(address, proportionalGain, integralGain);
+    };
+
     addResponse(88, thermalStatus, 216);
 
     addResponse(89, thermalStatus, 217);
+
+    addResponse(
+            92, [this](uint8_t address) { checkCRC(); }, 220);
+
+    addResponse(93, reheaterGains, 221);
 }
 
 void ThermalILC::broadcastThermalDemand(uint8_t heaterPWM[NUM_TS_ILC], uint8_t fanRPM[NUM_TS_ILC]) {

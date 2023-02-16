@@ -66,6 +66,24 @@ public:
     void reportThermalStatus(uint8_t address) { callFunction(address, 89, 300); }
 
     /**
+     * Set new re-heater gains.
+     *
+     * @param address ILC address
+     * @param proportionalGain Commanded proportional gain
+     * @param integralGain Commanded integral gain
+     */
+    void setReHeaterGains(uint8_t address, float proportionalGain, float integralGain) {
+        callFunction(address, 92, 500000, proportionalGain, integralGain);
+    }
+
+    /**
+     * Report re-heater gains. Command code 93 (0x5D).
+     *
+     * @param address ILC address to query.
+     */
+    void reportReHeaterGains(uint8_t address) { callFunction(address, 93, 300); }
+
+    /**
      * Broadcast heater PWM and fan RPM. ILC command code 88 (0x58).
      *
      * @param heaterPWM[NUM_TS_ILC]
@@ -85,6 +103,15 @@ protected:
      */
     virtual void processThermalStatus(uint8_t address, uint8_t status, float differentialTemperature,
                                       uint8_t fanRPM, float absoluteTemperature) = 0;
+
+    /**
+     * Called when response from call to command 93 (0x5D) is read.
+     *
+     * @param address status returned from this ILC
+     * @param proportionalGain Re-Heater proportional gain
+     * @param integralGain Re-Heater integral gain
+     */
+    virtual void processReHeaterGains(uint8_t address, float proportionalGain, float integralGain) = 0;
 };
 
 }  // namespace cRIO
