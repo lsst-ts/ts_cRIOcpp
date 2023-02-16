@@ -21,12 +21,6 @@ jobs:
         mv spdlog/include/spdlog include/
         make
         make junit || true
-    - name: Publish Unit Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1.6
-      if: always()
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        files: tests/*.xml
 
   ubuntu:
     runs-on: ubuntu-latest
@@ -41,9 +35,3 @@ jobs:
       run: |
         make
         make junit || true
-    - name: Publish Unit Test Results
-      uses: EnricoMi/publish-unit-test-result-action@v1.6
-      if: always()
-      with:
-        github_token: ${{ secrets.GITHUB_TOKEN }}
-        files: tests/*.xml
