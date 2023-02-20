@@ -33,15 +33,21 @@ class TestThermalILC : public ThermalILC {
 public:
     TestThermalILC() {
         responseStatus = 0;
-        responseDifferentialTemperature = std::nan("f");
+        responseDifferentialTemperature = NAN;
         responseFanRPM = 0;
-        responseAbsoluteTemperature = std::nan("f");
+        responseAbsoluteTemperature = NAN;
+
+        responseProportionalGain = NAN;
+        responseIntegralGain = NAN;
     }
 
     uint8_t responseStatus;
     float responseDifferentialTemperature;
     uint8_t responseFanRPM;
     float responseAbsoluteTemperature;
+
+    float responseProportionalGain;
+    float responseIntegralGain;
 
 protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
@@ -62,6 +68,11 @@ protected:
         responseDifferentialTemperature = differentialTemperature;
         responseFanRPM = fanRPM;
         responseAbsoluteTemperature = absoluteTemperature;
+    }
+
+    void processReHeaterGains(uint8_t address, float proportionalGain, float integralGain) override {
+        responseProportionalGain = proportionalGain;
+        responseIntegralGain = integralGain;
     }
 };
 
@@ -132,4 +143,29 @@ TEST_CASE("Test parsing of thermal status response", "[ThermalILC]") {
     REQUIRE(ilc.responseDifferentialTemperature == 34.567f);
     REQUIRE(ilc.responseFanRPM == 0xff);
     REQUIRE(ilc.responseAbsoluteTemperature == 215.567f);
+}
+
+TEST_CASE("Test parsing of thermal re-heater gains response", "[ThermalILC]") {
+    TestThermalILC ilc, response;
+
+    ilc.reportReHeaterGains(78);
+
+    ilc.reset();
+
+    REQUIRE(ilc.read<uint8_t>() == 78);
+    REQUIRE(ilc.read<uint8_t>() == 93);
+    REQUIRE_NOTHROW(ilc.checkCRC());
+    REQUIRE_NOTHROW(ilc.readEndOfFrame());
+    REQUIRE(ilc.readWaitForRx() == 300);
+
+    response.write<uint8_t>(78);
+    response.write<uint8_t>(93);
+    response.write<float>(31.355f);
+    response.write<float>(678.234f);
+    response.writeCRC();
+
+    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+
+    REQUIRE(ilc.responseProportionalGain == 31.355f);
+    REQUIRE(ilc.responseIntegralGain == 678.234f);
 }
