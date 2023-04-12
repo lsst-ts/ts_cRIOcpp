@@ -49,6 +49,8 @@ public:
      */
     void reportHardpointForceStatus(uint8_t address) { callFunction(address, 67, 1800); }
 
+    void reportForceActuatorForceStatus(uint8_t address) { callFunction(address, 76, 1800); }
+
     /**
      * Unicast ADC Channel Offset and Sensitivity. ILC command code 81 (0x51)
      *
@@ -86,6 +88,10 @@ protected:
      */
     virtual void processHardpointForceStatus(uint8_t address, uint8_t status, int32_t encoderPostion,
                                              float loadCellForce) = 0;
+
+    virtual void processSAAForceStatus(uint8_t address, uint8_t status, float primaryLoadCellForce) = 0;
+    virtual void processDAAForceStatus(uint8_t address, uint8_t status, float primaryLoadCellForce,
+                                       float secondaryLoadCellForce) = 0;
 
     /**
      * Called when response from call to command 110 (0x6E) is read.
