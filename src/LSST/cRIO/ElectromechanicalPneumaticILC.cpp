@@ -88,6 +88,8 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
 
     addResponse(67, hardpointForceStatus, 200);
 
+    addResponse(75, forceActuatorForceStatus, 210);
+
     addResponse(76, forceActuatorForceStatus, 220);
 
     addResponse(

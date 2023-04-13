@@ -80,6 +80,16 @@ const static uint16_t RX_MASK = 0x9200;
 }  // namespace FIFO
 
 /**
+ * 24 bit type integer. This is used to pass some parameters to ILC calls.
+ */
+class int24_t {
+public:
+    int32_t value;
+
+    int24_t(int32_t v) { value = v; }
+};
+
+/**
  * Utility class for Modbus buffer management.
  *
  * This class doesn't handle subnet. Doesn't handle FPGA FIFO read/writes -
@@ -639,6 +649,18 @@ private:
 };
 
 template <>
+inline int24_t ModbusBuffer::read() {
+    int32_t db = 0;
+    readBuffer(&db, 3);
+    // handle properly negative values
+    db = ntohl(db) >> 8;
+    if (db & 0x800000) {
+        return db | 0xFF000000;
+    }
+    return db;
+}
+
+template <>
 inline int32_t ModbusBuffer::read() {
     int32_t db;
     readBuffer(&db, 4);
@@ -689,6 +711,11 @@ template <>
 inline void ModbusBuffer::write(int16_t data) {
     int16_t d = htons(data);
     writeBuffer(reinterpret_cast<uint8_t*>(&d), 2);
+}
+
+template <>
+inline void ModbusBuffer::write(int24_t data) {
+    writeI24(data.value);
 }
 
 template <>

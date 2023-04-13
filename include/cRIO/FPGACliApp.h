@@ -112,6 +112,17 @@ protected:
     }
 
     /**
+     * Run prepared ILC commands on ILC busses.
+     */
+    void runILCCommands() {
+        for (auto ilcp : _ilcs) {
+            if (ilcp->getLength() > 0) {
+                _fpga->ilcCommands(*ilcp);
+            }
+        }
+    }
+
+    /**
      * Disable given ILC.
      *
      * @param u ILC unit to disable.
