@@ -20,6 +20,8 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <spdlog/fmt/fmt.h>
+
 #include <cRIO/ElectromechanicalPneumaticILC.h>
 
 namespace LSST {
@@ -32,6 +34,27 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
         float loadCellForce = read<float>();
         checkCRC();
         processHardpointForceStatus(address, status, encoderPosition, loadCellForce);
+    };
+
+    auto forceActuatorForceStatus = [this](uint8_t address) {
+        uint8_t status = read<uint8_t>();
+        float primary = read<float>();
+        switch (getLength()) {
+            case 9: {
+                checkCRC();
+                processSAAForceStatus(address, status, primary);
+                break;
+            }
+            case 13: {
+                float secondary = read<float>();
+                checkCRC();
+                processDAAForceStatus(address, status, primary, secondary);
+                break;
+            }
+            default:
+                throw std::runtime_error(
+                        fmt::format("Invalid reply length - {}, expected 9 or 13", getLength()));
+        }
     };
 
     auto calibrationData = [this](uint8_t address) {
@@ -64,6 +87,10 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
     };
 
     addResponse(67, hardpointForceStatus, 200);
+
+    addResponse(75, forceActuatorForceStatus, 210);
+
+    addResponse(76, forceActuatorForceStatus, 220);
 
     addResponse(
             81, [this](uint8_t address) { checkCRC(); }, 235);

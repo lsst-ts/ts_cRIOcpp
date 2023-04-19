@@ -187,11 +187,7 @@ void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)>
                     }
                 }
 
-                for (auto ilcp : _ilcs) {
-                    if (ilcp->getLength() > 0) {
-                        _fpga->ilcCommands(*ilcp);
-                    }
-                }
+                runILCCommands();
 
                 return 0;
             },

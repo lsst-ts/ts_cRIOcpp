@@ -111,6 +111,7 @@ TEST_CASE("WriteIxx", "[ModbusBuffer]") {
     TestModbusBuffer mbuf;
     mbuf.write<int8_t>(0x12);
     mbuf.write<int16_t>(0x3456);
+    mbuf.write<int24_t>(0x112233);
     mbuf.write<int32_t>(0x7890abcd);
     mbuf.write<int32_t>(0xf890abcd);
     mbuf.writeCRC();
@@ -122,19 +123,23 @@ TEST_CASE("WriteIxx", "[ModbusBuffer]") {
     REQUIRE(buf[0] == 0x12);
     REQUIRE(buf[1] == 0x34);
     REQUIRE(buf[2] == 0x56);
-    REQUIRE(buf[3] == 0x78);
-    REQUIRE(buf[4] == 0x90);
-    REQUIRE(buf[5] == 0xab);
-    REQUIRE(buf[6] == 0xcd);
-    REQUIRE(buf[7] == 0xf8);
-    REQUIRE(buf[8] == 0x90);
-    REQUIRE(buf[9] == 0xab);
-    REQUIRE(buf[10] == 0xcd);
+    REQUIRE(buf[3] == 0x11);
+    REQUIRE(buf[4] == 0x22);
+    REQUIRE(buf[5] == 0x33);
+    REQUIRE(buf[6] == 0x78);
+    REQUIRE(buf[7] == 0x90);
+    REQUIRE(buf[8] == 0xab);
+    REQUIRE(buf[9] == 0xcd);
+    REQUIRE(buf[10] == 0xf8);
+    REQUIRE(buf[11] == 0x90);
+    REQUIRE(buf[12] == 0xab);
+    REQUIRE(buf[13] == 0xcd);
 
     mbuf.reset();
 
     REQUIRE(mbuf.read<uint8_t>() == 0x12);
     REQUIRE(mbuf.read<uint16_t>() == 0x3456);
+    REQUIRE(mbuf.read<int24_t>().value == 0x112233);
     REQUIRE(mbuf.read<uint32_t>() == 0x7890abcd);
     REQUIRE(mbuf.read<uint32_t>() == 0xf890abcd);
 
