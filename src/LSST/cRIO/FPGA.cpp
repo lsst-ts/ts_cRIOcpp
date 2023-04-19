@@ -67,8 +67,6 @@ void FPGA::ilcCommands(ILC &ilc) {
 
     writeCommandFIFO(data, requestLen, 0);
 
-    std::this_thread::sleep_for(1ms);
-
     uint32_t irq = getIrq(bus);
 
     waitOnIrqs(irq, 5000);

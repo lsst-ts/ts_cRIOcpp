@@ -29,6 +29,8 @@
 #include <unistd.h>
 #include <cmath>
 #include <csignal>
+#include <sys/stat.h>
+#include <unistd.h>
 
 #include <readline/readline.h>
 #include <readline/history.h>

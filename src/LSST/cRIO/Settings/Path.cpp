@@ -18,6 +18,10 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
 #include <spdlog/spdlog.h>
 
 #include <cRIO/Settings/Path.h>

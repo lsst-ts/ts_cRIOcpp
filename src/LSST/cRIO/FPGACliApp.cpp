@@ -21,8 +21,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <algorithm>
 #include <iomanip>
 #include <iostream>
+#include <unistd.h>
 
 #include "cRIO/FPGACliApp.h"
 #include "cRIO/IntelHex.h"
@@ -185,11 +187,7 @@ void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)>
                     }
                 }
 
-                for (auto ilcp : _ilcs) {
-                    if (ilcp->getLength() > 0) {
-                        _fpga->ilcCommands(*ilcp);
-                    }
-                }
+                runILCCommands();
 
                 return 0;
             },

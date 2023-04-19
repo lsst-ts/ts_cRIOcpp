@@ -25,10 +25,12 @@
 #include <cstring>
 
 #include <catch2/catch_test_macros.hpp>
+#include <catch2/catch_approx.hpp>
 
 #include <cRIO/ElectromechanicalPneumaticILC.h>
 
 using namespace LSST::cRIO;
+using Catch::Approx;
 
 class TestElectromechanicalPneumaticILC : public ElectromechanicalPneumaticILC {
 public:
@@ -44,7 +46,13 @@ public:
         set_nan(responseBackupADCK);
         set_nan(responseBackupOffset);
         set_nan(responseBackupSensitivity);
+
+        primaryForce = NAN;
+        secondaryForce = NAN;
     }
+
+    float primaryForce;
+    float secondaryForce;
 
     float responseMainADCK[4];
     float responseMainOffset[4];
@@ -68,6 +76,17 @@ protected:
 
     void processHardpointForceStatus(uint8_t address, uint8_t status, int32_t encoderPosition,
                                      float loadCellForce) override {}
+
+    virtual void processSAAForceStatus(uint8_t address, uint8_t status, float primaryLoadCellForce) override {
+        primaryForce = primaryLoadCellForce;
+        secondaryForce = NAN;
+    }
+
+    virtual void processDAAForceStatus(uint8_t address, uint8_t status, float primaryLoadCellForce,
+                                       float secondaryLoadCellForce) override {
+        primaryForce = primaryLoadCellForce;
+        secondaryForce = secondaryLoadCellForce;
+    }
 
     void processCalibrationData(uint8_t address, float mainADCK[4], float mainOffset[4],
                                 float mainSensitivity[4], float backupADCK[4], float backupOffset[4],
@@ -95,7 +114,117 @@ void TestElectromechanicalPneumaticILC::processMezzaninePressure(uint8_t address
     REQUIRE(secondaryPull == -127.657f);
 }
 
-TEST_CASE("Test set offset and sensitivity", "[ElectromechaniclPneumaticILC]") {
+TEST_CASE("Test SSA force set", "[ElectromechanicalPneumaticILC]") {
+    TestElectromechanicalPneumaticILC ilc, response;
+
+    ilc.setSAAForceOffset(18, true, 31.45);
+
+    ilc.reset();
+
+    REQUIRE(ilc.read<uint8_t>() == 18);
+    REQUIRE(ilc.read<uint8_t>() == 75);
+    REQUIRE(ilc.read<uint8_t>() == 0xFF);
+    REQUIRE(ilc.read<int24_t>().value == 31450);
+    REQUIRE_NOTHROW(ilc.checkCRC());
+    REQUIRE_NOTHROW(ilc.readEndOfFrame());
+    REQUIRE(ilc.readWaitForRx() == 1800);
+
+    response.write<uint8_t>(18);
+    response.write<uint8_t>(75);
+    response.write<uint8_t>(8);
+    response.write<float>(31.45);
+    response.writeCRC();
+
+    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+
+    REQUIRE(ilc.primaryForce == Approx(31.45));
+    REQUIRE(isnan(ilc.secondaryForce));
+}
+
+TEST_CASE("Test DAA force set", "[ElectromechanicalPneumaticILC]") {
+    TestElectromechanicalPneumaticILC ilc, response;
+
+    ilc.setDAAForceOffset(212, false, -123.45, 345.10);
+
+    ilc.reset();
+
+    REQUIRE(ilc.read<uint8_t>() == 212);
+    REQUIRE(ilc.read<uint8_t>() == 75);
+    REQUIRE(ilc.read<uint8_t>() == 0x00);
+    REQUIRE(ilc.read<int24_t>().value == -123450);
+    // hex(345100) = 0x05 44 0C
+    REQUIRE(ilc.read<uint8_t>() == 0x05);
+    REQUIRE(ilc.read<uint8_t>() == 0x44);
+    REQUIRE(ilc.read<uint8_t>() == 0x0C);
+    REQUIRE_NOTHROW(ilc.checkCRC());
+    REQUIRE_NOTHROW(ilc.readEndOfFrame());
+    REQUIRE(ilc.readWaitForRx() == 1800);
+
+    response.write<uint8_t>(212);
+    response.write<uint8_t>(75);
+    response.write<uint8_t>(8);
+    response.write<float>(-123.45);
+    response.write<float>(345.10);
+    response.writeCRC();
+
+    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+
+    REQUIRE(ilc.primaryForce == Approx(-123.45));
+    REQUIRE(ilc.secondaryForce == Approx(345.10));
+}
+
+TEST_CASE("Test SAA force actuator readout", "[ElectromechanicalPneumaticILC]") {
+    TestElectromechanicalPneumaticILC ilc, response;
+
+    ilc.reportForceActuatorForceStatus(18);
+
+    ilc.reset();
+
+    REQUIRE(ilc.read<uint8_t>() == 18);
+    REQUIRE(ilc.read<uint8_t>() == 76);
+    REQUIRE_NOTHROW(ilc.checkCRC());
+    REQUIRE_NOTHROW(ilc.readEndOfFrame());
+    REQUIRE(ilc.readWaitForRx() == 1800);
+
+    response.write<uint8_t>(18);
+    response.write<uint8_t>(76);
+    response.write<uint8_t>(8);
+    response.write<float>(13.7);
+    response.writeCRC();
+
+    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+
+    REQUIRE(ilc.primaryForce == Approx(13.7));
+    REQUIRE(isnan(ilc.secondaryForce));
+}
+
+TEST_CASE("Test DAA force actuator readout", "[ElectromechanicalPneumaticILC]") {
+    TestElectromechanicalPneumaticILC ilc, response;
+
+    ilc.reportForceActuatorForceStatus(23);
+
+    ilc.reset();
+
+    REQUIRE(ilc.read<uint8_t>() == 23);
+    REQUIRE(ilc.read<uint8_t>() == 76);
+    REQUIRE_NOTHROW(ilc.checkCRC());
+    REQUIRE_NOTHROW(ilc.readEndOfFrame());
+    REQUIRE(ilc.readWaitForRx() == 1800);
+
+    response.write<uint8_t>(23);
+    response.write<uint8_t>(76);
+    response.write<uint8_t>(8);
+    response.write<float>(15.9);
+    response.write<float>(-67.4);
+    response.writeCRC();
+
+    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+
+    REQUIRE(ilc.primaryForce == Approx(15.9));
+    REQUIRE(ilc.secondaryForce == Approx(-67.4));
+}
+
+TEST_CASE("Test set offset and sensitivity", "[ElectromechanicalPneumaticILC]") {
     TestElectromechanicalPneumaticILC ilc;
 
     ilc.setOffsetAndSensitivity(231, 1, 2.34, -4.56);
@@ -112,7 +241,7 @@ TEST_CASE("Test set offset and sensitivity", "[ElectromechaniclPneumaticILC]") {
     REQUIRE(ilc.readWaitForRx() == 37000);
 }
 
-TEST_CASE("Test parsing of calibration data", "[ElectromechaniclPneumaticILC]") {
+TEST_CASE("Test parsing of calibration data", "[ElectromechanicalPneumaticILC]") {
     TestElectromechanicalPneumaticILC ilc, response;
 
     ilc.reportCalibrationData(17);
@@ -158,7 +287,7 @@ TEST_CASE("Test parsing of calibration data", "[ElectromechaniclPneumaticILC]") 
     check4(-478967.445456, ilc.responseBackupSensitivity);
 }
 
-TEST_CASE("Test parsing of pressure data", "[ElectromechaniclPneumaticILC]") {
+TEST_CASE("Test parsing of pressure data", "[ElectromechanicalPneumaticILC]") {
     TestElectromechanicalPneumaticILC ilc, response;
 
     ilc.reportMezzaninePressure(18);
