@@ -68,4 +68,3 @@ protected:
 }  // namespace LSST
 
 #endif  // CRIO_SIMULATIONBUFFER_H_
-

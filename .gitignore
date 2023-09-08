@@ -5,3 +5,9 @@
 tests/test_*
 !tests/test_*.cpp
 !tests/test_*.c
+.pre-commit-config.yaml
+.clang-format
+.flake8
+.isort.cfg
+.mypy.ini
+.ruff.toml
