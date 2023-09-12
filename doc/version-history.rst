@@ -2,6 +2,11 @@
 Version History
 ###############
 
+v1.9.0
+======
+
+* MPU changed to SerialMultiplex
+
 v1.8.0
 ======
 
