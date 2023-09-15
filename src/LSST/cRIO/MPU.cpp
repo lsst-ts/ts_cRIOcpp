@@ -141,7 +141,7 @@ void MPU::clearCommanded() {
     _presetRegisters.clear();
 }
 
-void MPU::readInputStatus(uint16_t address, uint16_t count, uint8_t timeout) {
+void MPU::readInputStatus(uint16_t address, uint16_t count, uint16_t timeout) {
     callFunction(_mpu_address, 2, 0, address, count);
 
     // write request
@@ -151,26 +151,19 @@ void MPU::readInputStatus(uint16_t address, uint16_t count, uint8_t timeout) {
         _commands.push_back(b);
     }
 
-    _commands.push_back(MPUCommands::WAIT_MS);
-    _commands.push_back(timeout);
-
     // read response
-    _commands.push_back(MPUCommands::READ);
+    _commands.push_back(MPUCommands::READ_MS);
     _contains_read = true;
     // extras: device address, function, length (all 1 byte), CRC (2 bytes) = 5 total
     _commands.push_back(5 + ceil(count / 8.0));
-    _commands.push_back(MPUCommands::CHECK_CRC);
+    _pushTimeout(timeout);
 
     _readInputStatus.push_back(std::pair<uint16_t, uint16_t>(address, count));
 }
 
-void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout) {
-    // remove EXIT if commands were already pushed to buffer
-    if (!_commands.empty()) {
-        _commands.pop_back();
-    }
-
+void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint16_t timeout) {
     clear(true);
+
     callFunction(_mpu_address, 3, 0, address, count);
 
     // write request
@@ -180,25 +173,19 @@ void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout
         _commands.push_back(b);
     }
 
-    _commands.push_back(MPUCommands::WAIT_MS);
-    _commands.push_back(timeout);
-
     // read response
-    _commands.push_back(MPUCommands::READ);
+    _commands.push_back(MPUCommands::READ_MS);
     _contains_read = true;
     // extras: device address, function, length (all 1 byte), CRC (2 bytes) = 5 total
     _commands.push_back(5 + count * 2);
-
-    _commands.push_back(MPUCommands::OUTPUT);
-
-    _commands.push_back(MPUCommands::EXIT);
+    _pushTimeout(timeout);
 
     for (uint16_t add = address; add < address + count; add++) {
         _readRegisters.push_back(add);
     }
 }
 
-void MPU::presetHoldingRegister(uint16_t address, uint16_t value, uint8_t timeout) {
+void MPU::presetHoldingRegister(uint16_t address, uint16_t value, uint16_t timeout) {
     write(_mpu_address);
     write<uint8_t>(6);
     write(address);
@@ -217,24 +204,17 @@ void MPU::presetHoldingRegister(uint16_t address, uint16_t value, uint8_t timeou
         _commands.push_back(b);
     }
 
-    _commands.push_back(MPUCommands::WAIT_MS);
-    _commands.push_back(timeout);
-
     // read response
-    _commands.push_back(MPUCommands::READ);
+    _commands.push_back(MPUCommands::READ_MS);
     _contains_read = true;
     // extras: device address, function (all 1 byte), address, number of registers written, CRC (2 bytes)
     _commands.push_back(8);
-
-    _commands.push_back(MPUCommands::OUTPUT);
-
-    _commands.push_back(MPUCommands::CHECK_CRC);
-    _commands.push_back(MPUCommands::EXIT);
+    _pushTimeout(timeout);
 
     _presetRegister.push_back(std::pair<uint16_t, uint16_t>(address, value));
 }
 
-void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint8_t timeout) {
+void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint16_t timeout) {
     write(_mpu_address);
     write<uint8_t>(16);
     write(address);
@@ -246,8 +226,6 @@ void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t cou
     }
 
     writeCRC();
-    writeEndOfFrame();
-    writeWaitForRx(0);
 
     pushCommanded(_mpu_address, 16);
 
@@ -258,14 +236,16 @@ void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t cou
         _commands.push_back(b);
     }
 
-    _commands.push_back(MPUCommands::WAIT_MS);
-    _commands.push_back(timeout);
-
     // read response
-    _commands.push_back(MPUCommands::READ);
+    _commands.push_back(MPUCommands::READ_MS);
     // extras: device address, function (all 1 byte), address, number of registers written, CRC (2 bytes)
     _commands.push_back(8);
-    _commands.push_back(MPUCommands::CHECK_CRC);
+    _pushTimeout(timeout);
 
     _presetRegisters.push_back(std::pair<uint16_t, uint16_t>(address, count));
+}
+
+void MPU::_pushTimeout(uint16_t timeout) {
+    _commands.push_back(timeout >> 8 & 0xff);
+    _commands.push_back(timeout & 0xff);
 }
