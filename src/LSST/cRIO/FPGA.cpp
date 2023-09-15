@@ -69,7 +69,9 @@ void FPGA::ilcCommands(ILC &ilc) {
 
     uint32_t irq = getIrq(bus);
 
-    waitOnIrqs(irq, 5000);
+    bool timedout = false;
+
+    waitOnIrqs(irq, 5000, timedout);
     ackIrqs(irq);
 
     // get back response

@@ -118,7 +118,29 @@ public:
      */
     std::vector<uint8_t> getCommandVector() { return _commands; }
 
+    /***
+     * Returns cached input state. Input state shall be cached - queried with
+     * readInputStatus method.
+     *
+     * @param address input state address
+     *
+     * @return cached input state
+     *
+     * @throws std::out_of_range if the address isn't cached
+     */
+
     bool getInputStatus(uint16_t address) { return _inputStatus.at(address); }
+
+    /***
+     * Returns register value. This access only cached values - register shall be first read
+     * using readHoldingRegisters method.
+     *
+     * @param address register address
+     *
+     * @return cached regiter value
+     *
+     * @throws std::runtime_error when register value isn't cached
+     */
     uint16_t getRegister(uint16_t address) {
         std::lock_guard<std::mutex> lg(_registerMutex);
         try {

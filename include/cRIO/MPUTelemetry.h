@@ -40,9 +40,7 @@ public:
      */
     MPUTelemetry(uint8_t* data);
     uint32_t writeBytes;     /// Number of bytes written
-    uint32_t readHWBytes;    /// Read HW bytes
     uint32_t readBytes;      /// Number of bytes read
-    uint16_t writeTimedout;  /// Timedout counter of writes to output FIFO
     uint16_t readTimedout;   /// read timedout counter
 
     friend std::ostream& operator<<(std::ostream& os, const MPUTelemetry& tel);

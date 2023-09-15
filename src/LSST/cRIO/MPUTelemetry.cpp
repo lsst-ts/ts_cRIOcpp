@@ -33,17 +33,13 @@ namespace cRIO {
 
 MPUTelemetry::MPUTelemetry(uint8_t* data) {
     writeBytes = be32toh(*(reinterpret_cast<uint32_t *>(data + 0)));
-    readHWBytes = be32toh(*(reinterpret_cast<uint32_t *>(data + 4)));
-    readBytes = be32toh(*(reinterpret_cast<uint32_t *>(data + 8)));
-    writeTimedout = be16toh(*(reinterpret_cast<uint16_t *>(data + 12)));
-    readTimedout = be16toh(*(reinterpret_cast<uint16_t *>(data + 14)));
+    readBytes = be32toh(*(reinterpret_cast<uint32_t *>(data + 4)));
+    readTimedout = be16toh(*(reinterpret_cast<uint16_t *>(data + 8)));
 }
 
 std::ostream &operator<<(std::ostream &os, const MPUTelemetry &tel) {
     os << std::setw(20) << "Write bytes: " << tel.writeBytes << std::endl
-       << std::setw(20) << "Read HW bytes: " << tel.readHWBytes << std::endl
        << std::setw(20) << "Read bytes: " << tel.readBytes << std::endl
-       << std::setw(20) << "Write Timedout: " << tel.writeTimedout << std::endl
        << std::setw(20) << "Read timedout: " << tel.readTimedout << std::endl;
     return os;
 }

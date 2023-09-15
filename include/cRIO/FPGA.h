@@ -186,11 +186,12 @@ public:
      *
      * @param irqs IRQ mask. Each interrupt corresponds to a bit
      * @param timeout timeout in milliseconds
+     * @param timedout true if call timedouted, false if finished in time
      * @param triggered
      *
      * @note the method shall allocate context (for IRQ handling) as needed from the current thread id
      */
-    virtual void waitOnIrqs(uint32_t irqs, uint32_t timeout, uint32_t* triggered = NULL) = 0;
+    virtual void waitOnIrqs(uint32_t irqs, uint32_t timeout, bool& timedout, uint32_t* triggered = NULL) = 0;
 
     /**
      * Acknowledges IRQs. Clear IRQs on FPGA.
