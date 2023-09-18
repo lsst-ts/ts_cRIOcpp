@@ -27,14 +27,15 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "ILC.h"
-#include "MPU.h"
-#include "SimpleFPGA.h"
+#include <cRIO/ILC.h>
+#include <cRIO/SimpleFPGA.h>
 
 using namespace std::chrono_literals;
 
 namespace LSST {
 namespace cRIO {
+
+class MPU;
 
 /**
  * Interface class for cRIO FPGA. Subclasses can talk either to the real HW, or

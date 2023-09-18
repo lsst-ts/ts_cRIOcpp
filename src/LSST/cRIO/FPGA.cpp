@@ -27,7 +27,7 @@
 #include <spdlog/fmt/fmt.h>
 
 #include <cRIO/FPGA.h>
-#include <cRIO/ModbusBuffer.h>
+#include <cRIO/MPU.h>
 
 namespace LSST {
 namespace cRIO {

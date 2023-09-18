@@ -31,7 +31,7 @@
 namespace LSST {
 namespace cRIO {
 
-MPUTelemetry::MPUTelemetry(uint8_t* data) {
+MPUTelemetry::MPUTelemetry(uint8_t *data) {
     writeBytes = be32toh(*(reinterpret_cast<uint32_t *>(data + 0)));
     readBytes = be32toh(*(reinterpret_cast<uint32_t *>(data + 4)));
     readTimedout = be16toh(*(reinterpret_cast<uint16_t *>(data + 8)));
