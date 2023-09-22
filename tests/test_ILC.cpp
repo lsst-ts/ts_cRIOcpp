@@ -449,8 +449,7 @@ TEST_CASE("Unmatched response", "[ILC]") {
     // missing command
     ilc1.clear();
     ilc1.reportServerID(132);
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()),
-                      ModbusBuffer::UnmatchedFunction);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::EmptyCommanded);
 
     // invalid address
     ilc1.clear();

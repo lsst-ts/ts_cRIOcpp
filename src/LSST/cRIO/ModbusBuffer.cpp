@@ -18,7 +18,6 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <iostream>
 #include <string.h>
 #include <sstream>
 
@@ -46,8 +45,8 @@ void ModbusBuffer::reset() {
 
 void ModbusBuffer::clear(bool onlyBuffers) {
     _buffer.clear();
-    std::queue<std::pair<uint8_t, uint8_t>> emptyQ;
     if (onlyBuffers == false) {
+        std::queue<std::pair<uint8_t, uint8_t>> emptyQ;
         _commanded.swap(emptyQ);
     }
     reset();
@@ -116,7 +115,7 @@ uint32_t ModbusBuffer::readDelay() {
             break;
         default:
             throw std::runtime_error(
-                    fmt::format("Expected delay, finds {:04x} (@ offset {})", _buffer[_index], _index));
+                    fmt::format("Expected delay, finds {:04x} (@ offset {}).", _buffer[_index], _index));
     }
     _index++;
     return ret;
@@ -173,7 +172,8 @@ void ModbusBuffer::checkCommandedEmpty() {
         os << +(c.first) << ":" << +(c.second);
         _commanded.pop();
     }
-    throw std::runtime_error("Responses for those <address:function> pairs weren't received: " + os.str());
+    throw std::runtime_error(
+            fmt::format("Responses for those <address:function> pairs weren't received: {}.", os.str()));
 }
 
 void ModbusBuffer::addResponse(uint8_t func, std::function<void(uint8_t)> action, uint8_t errorResponse,
@@ -223,11 +223,11 @@ void ModbusBuffer::processResponse(uint16_t* response, size_t length) {
 
 ModbusBuffer::UnknownResponse::UnknownResponse(uint8_t address, uint8_t func)
         : std::runtime_error(fmt::format(
-                  "Unknown function {1} (0x{1:02x}) in ModBus response for address {0}", address, func)) {}
+                  "Unknown function {1} (0x{1:02x}) in ModBus response for address {0}.", address, func)) {}
 
 ModbusBuffer::Exception::Exception(uint8_t address, uint8_t func, uint8_t exception)
         : std::runtime_error(fmt::format(
-                  "ModBus Exception {2} (ModBus address {0}, ModBus response function {1} (0x{1:02x}))",
+                  "ModBus Exception {2} (ModBus address {0}, ModBus response function {1} (0x{1:02x})).",
                   address, func, exception)) {}
 
 void ModbusBuffer::CRC::add(uint8_t data) {
@@ -243,10 +243,15 @@ void ModbusBuffer::CRC::add(uint8_t data) {
 }
 
 ModbusBuffer::CRCError::CRCError(uint16_t calculated, uint16_t received)
-        : std::runtime_error(fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}", calculated,
-                                         received)) {}
+        : std::runtime_error(fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}.",
+                                         calculated, received)) {}
 
-ModbusBuffer::EndOfBuffer::EndOfBuffer() : std::runtime_error("End of buffer while reading response") {}
+ModbusBuffer::EndOfBuffer::EndOfBuffer() : std::runtime_error("End of buffer while reading response.") {}
+
+ModbusBuffer::EmptyCommanded::EmptyCommanded(uint8_t address, uint8_t func)
+        : std::runtime_error(
+                  fmt::format("Empty commanded buffer, but reply was received. Address {}, function {}.",
+                              address, func)) {}
 
 ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func)
         : std::runtime_error(fmt::format(
@@ -255,7 +260,7 @@ ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func
 ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func, uint8_t expectedAddress,
                                                    uint8_t expectedFunction)
         : std::runtime_error(fmt::format("Invalid response received - expected {0} (0x{0:02x}) from {1}, got "
-                                         "{2} (0x{2:02x}) from {3}",
+                                         "{2} (0x{2:02x}) from {3}.",
                                          expectedFunction, expectedAddress, func, address)) {}
 
 uint16_t ModbusBuffer::getByteInstruction(uint8_t data) {
@@ -303,7 +308,7 @@ void ModbusBuffer::broadcastFunction(uint8_t address, uint8_t function, uint8_t 
 
 void ModbusBuffer::checkCommanded(uint8_t address, uint8_t function) {
     if (_commanded.empty()) {
-        throw UnmatchedFunction(address, function);
+        throw EmptyCommanded(address, function);
     }
     std::pair<uint8_t, uint8_t> last = _commanded.front();
     _commanded.pop();

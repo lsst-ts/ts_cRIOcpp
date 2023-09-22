@@ -500,6 +500,11 @@ public:
         EndOfBuffer();
     };
 
+    class EmptyCommanded : public std::runtime_error {
+    public:
+        EmptyCommanded(uint8_t address, uint8_t function);
+    };
+
     class UnmatchedFunction : public std::runtime_error {
     public:
         UnmatchedFunction(uint8_t address, uint8_t function);
