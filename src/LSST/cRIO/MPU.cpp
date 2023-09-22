@@ -27,6 +27,8 @@
 using namespace LSST::cRIO;
 
 MPU::MPU(uint8_t bus, uint8_t mpu_address) : _bus(bus), _mpu_address(mpu_address), _contains_read(false) {
+    _loop_state = loop_state_t::WRITE;
+
     addResponse(
             2,
             [this](uint8_t address) {
@@ -133,6 +135,9 @@ MPU::MPU(uint8_t bus, uint8_t mpu_address) : _bus(bus), _mpu_address(mpu_address
 
 void MPU::clearCommanded() {
     clear();
+
+    _loop_state = loop_state_t::WRITE;
+
     _commands.clear();
 
     _readInputStatus.clear();
@@ -214,7 +219,7 @@ void MPU::presetHoldingRegister(uint16_t address, uint16_t value, uint16_t timeo
     _presetRegister.push_back(std::pair<uint16_t, uint16_t>(address, value));
 }
 
-void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint16_t timeout) {
+void MPU::presetHoldingRegisters(uint16_t address, uint16_t* values, uint8_t count, uint16_t timeout) {
     write(_mpu_address);
     write<uint8_t>(16);
     write(address);
@@ -243,6 +248,43 @@ void MPU::presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t cou
     _pushTimeout(timeout);
 
     _presetRegisters.push_back(std::pair<uint16_t, uint16_t>(address, count));
+}
+
+std::vector<uint8_t> MPU::getCommandVector() {
+    _commands.push_back(MPUCommands::IRQ);
+    return _commands;
+}
+
+void MPU::runLoop(FPGA& fpga) {
+    switch (_loop_state) {
+        case loop_state_t::WRITE:
+            clearCommanded();
+            _loop_next_read = std::chrono::steady_clock::now() + _loop_timeout;
+            loopWrite();
+            fpga.writeMPUFIFO(*this);
+            _loop_state = loop_state_t::READ;
+            break;
+        case loop_state_t::READ: {
+            bool timedout;
+            fpga.waitOnIrqs(getIrq(), 0, timedout);
+            if (timedout) {
+                if (_loop_next_read > std::chrono::steady_clock::now()) {
+                    return;
+                }
+            } else {
+                fpga.readMPUFIFO(*this);
+            }
+
+            loopRead(timedout);
+            _loop_state = loop_state_t::IDLE;
+        } break;
+        case loop_state_t::IDLE:
+            if (_loop_next_read > std::chrono::steady_clock::now()) {
+                return;
+            }
+            _loop_state = loop_state_t::WRITE;
+            break;
+    }
 }
 
 void MPU::_pushTimeout(uint16_t timeout) {

@@ -32,6 +32,9 @@ class SimulatedMPU : public MPU {
 public:
     SimulatedMPU() : MPU(0, 0) {}
     SimulatedMPU(uint16_t* buffer, size_t length) : MPU(0, 0) { setBuffer(buffer, length); }
+
+    void loopWrite() override {}
+    void loopRead(bool timedout) override {}
 };
 
 }  // namespace cRIO
