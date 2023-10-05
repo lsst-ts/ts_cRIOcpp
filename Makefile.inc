@@ -29,7 +29,6 @@ PKG_LIBS := $(shell pkg-config yaml-cpp --libs $(silence)) \
 
 LIBS += $(PKG_LIBS) -ldl -lpthread
 
-BOOST_CPPFLAGS := -I/usr/include/boost169
 PKG_CPP_FLAGS := $(shell pkg-config yaml-cpp --cflags $(silence)) \
         $(shell pkg-config spdlog --cflags $(silence)) \
         $(shell pkg-config fmt --cflags $(silence))

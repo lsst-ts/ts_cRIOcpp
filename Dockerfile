@@ -15,5 +15,7 @@ source /home/saluser/.setup_salobj.sh \\n\
 export PATH=\$CONDA_PREFIX/bin:\$PATH \\n\
 export LIBS="-L\$CONDA_PREFIX/lib" \\n\
 export CPP_FLAGS="-I\$CONDA_PREFIX/include" \\n
+export PKG_CONFIG_PATH=$CONDA_PREFIX/share/pkgconfig \\n
+export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$CONDA_PREFIX/lib \\n
 
 # SHELL ["/bin/bash", "-lc"]

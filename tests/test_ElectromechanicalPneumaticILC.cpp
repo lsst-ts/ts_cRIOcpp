@@ -140,7 +140,7 @@ TEST_CASE("Test SSA force set", "[ElectromechanicalPneumaticILC]") {
     REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
 
     REQUIRE(ilc.primaryForce == Approx(31.45));
-    REQUIRE(isnan(ilc.secondaryForce));
+    REQUIRE(std::isnan(ilc.secondaryForce));
 }
 
 TEST_CASE("Test DAA force set", "[ElectromechanicalPneumaticILC]") {
@@ -197,7 +197,7 @@ TEST_CASE("Test SAA force actuator readout", "[ElectromechanicalPneumaticILC]") 
     REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
 
     REQUIRE(ilc.primaryForce == Approx(13.7));
-    REQUIRE(isnan(ilc.secondaryForce));
+    REQUIRE(std::isnan(ilc.secondaryForce));
 }
 
 TEST_CASE("Test DAA force actuator readout", "[ElectromechanicalPneumaticILC]") {
