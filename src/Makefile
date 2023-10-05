@@ -29,8 +29,8 @@ clean:
 # file targets
 %.cpp.o: %.cpp.d
 	@echo '[CPP] $(patsubst %.d,%,$<)'
-	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) -c -fmessage-length=0 -o $@ $(patsubst %.d,%,$<)
+	${co}$(CPP) $(CPP_FLAGS) -c -fmessage-length=0 -o $@ $(patsubst %.d,%,$<)
 
 %.cpp.d: %.cpp
 	@echo '[DPP] $<'
-	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'
+	${co}$(CPP)  $(CPP_FLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'
