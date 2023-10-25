@@ -18,9 +18,12 @@ endif
 
 TEST_CPPFLAGS := -I. \
 	-I"../include" \
-	$(shell pkg-config --cflags catch2-with-main)
+	$(shell pkg-config --cflags catch2-with-main $(silence)) \
+	$(shell pkg-config --cflags yaml-cpp $(silence))
 
-CPP_FLAGS += $(shell pkg-config --libs catch2-with-main)
+CPP_FLAGS += \
+	$(shell pkg-config --libs catch2-with-main $(silence)) \
+	$(shell pkg-config --libs yaml-cpp $(silence))
 
 compile: libcRIOtest.a $(BINARIES) $(TEST_REQ_READLINE)
 
@@ -38,19 +41,19 @@ clean:
 
 %.cpp.o: %.cpp.d
 	@echo '[CPP] $(patsubst %.d,%,$<)'
-	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) $(TEST_CPPFLAGS) -c -fmessage-length=0 -o $@ -Wl,--gc-sections $(patsubst %.d,%,$<)
+	${co}$(CPP) $(CPP_FLAGS) $(TEST_CPPFLAGS) -c -fmessage-length=0 -o $@ -Wl,--gc-sections $(patsubst %.d,%,$<)
 
 %.cpp.d: %.cpp
 	@echo '[DPP] $<'
-	${co}$(CPP) $(BOOST_CPPFLAGS) $(CPP_FLAGS) $(TEST_CPPFLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'
+	${co}$(CPP) $(CPP_FLAGS) $(TEST_CPPFLAGS) -M $< -MF $@ -MT '$(patsubst %.cpp,%.o,$<) $@'
 
 $(TEST_REQ_READLINE): %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
 	@echo '[TPR] $<'
-	${co}$(CPP) -o $@ $(LIBS_FLAGS) $(LIBS) $^ $(CPP_FLAGS) -lreadline # -lhistory
+	${co}$(CPP) -o $@ $(LIBS_FLAGS) $^ $(LIBS) $(CPP_FLAGS) -lreadline # -lhistory
 
-${BINARIES}: %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
+$(BINARIES): %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
 	@echo '[TPP] $<'
-	${co}$(CPP) -o $@ -Wl,--gc-sections $(LIBS_FLAGS) $(LIBS) $^ $(CPP_FLAGS)
+	${co}$(CPP) -o $@ -Wl,--gc-sections $(LIBS_FLAGS) $^ $(LIBS) $(CPP_FLAGS)
 
 libcRIOtest.a: TestFPGA.cpp.o
 	@echo '[AR ] $@'

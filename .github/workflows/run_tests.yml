@@ -3,8 +3,26 @@ name: C/C++ CI
 on: [push]
 
 jobs:
+  almalinux:
+    runs-on: ubuntu-latest
+    name: Test compile on latest AlmaLinux
+    container:
+      image: almalinux
+    steps:
+    - name: Install dependencies
+      run: |
+        dnf install -y epel-release
+        dnf install -y make g++ catch-devel readline-devel yaml-cpp-devel spdlog-devel
+    - name: Checkout
+      uses: actions/checkout@v4
+    - name: make junit
+      run: |
+        make
+        make junit || true
+
   centos:
     runs-on: ubuntu-latest
+    name: Test compile on Centos7
     container:
       image: centos/devtoolset-7-toolchain-centos7
       options: -u root
@@ -12,25 +30,28 @@ jobs:
     - name: Install dependencies
       run: |
         yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-        yum install -y make boost-devel catch-devel readline-devel yaml-cpp-devel git
+        yum install -y make catch-devel readline-devel yaml-cpp-devel git
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: make junit
       run: |
         git clone https://github.com/gabime/spdlog.git
         mv spdlog/include/spdlog include/
+        git clone https://github.com/fmtlib/fmt
+        mv fmt/include/fmt include
         make
         make junit || true
 
   ubuntu:
     runs-on: ubuntu-latest
+    name: Test compile on Ubuntu
     steps:
     - name: Install dependencies
       run: |
         sudo apt update -y
-        sudo apt install -y make g++ libboost-dev catch libreadline-dev libyaml-cpp-dev libspdlog-dev
+        sudo apt install -y make g++ catch libreadline-dev libyaml-cpp-dev libspdlog-dev
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v4
     - name: make junit
       run: |
         make
