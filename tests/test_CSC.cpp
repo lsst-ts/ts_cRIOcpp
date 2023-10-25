@@ -50,7 +50,9 @@ public:
     void writeCommandFIFO(uint16_t*, size_t, uint32_t) override {}
     void writeRequestFIFO(uint16_t*, size_t, uint32_t) override {}
     void readU16ResponseFIFO(uint16_t*, size_t, uint32_t) override {}
-    void waitOnIrqs(uint32_t, uint32_t, uint32_t*) override {}
+    void waitOnIrqs(uint32_t irqs, uint32_t timeout, bool& timedout, uint32_t* triggered = NULL) override {
+        timedout = false;
+    }
     void ackIrqs(uint32_t) override {}
 };
 

@@ -26,8 +26,7 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include "ILC.h"
-#include "MPU.h"
+#include <cRIO/ILC.h>
 
 namespace LSST {
 namespace cRIO {

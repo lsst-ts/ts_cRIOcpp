@@ -77,6 +77,8 @@ protected:
     void processHardpointForceStatus(uint8_t address, uint8_t status, int32_t encoderPosition,
                                      float loadCellForce) override {}
 
+    void processHardpointLVDT(uint8_t address, float breakawayLVDT, float displacementLVDT) override {}
+
     virtual void processSAAForceStatus(uint8_t address, uint8_t status, float primaryLoadCellForce) override {
         primaryForce = primaryLoadCellForce;
         secondaryForce = NAN;

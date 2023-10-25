@@ -36,6 +36,13 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
         processHardpointForceStatus(address, status, encoderPosition, loadCellForce);
     };
 
+    auto hardpointLVDT = [this](uint8_t address) {
+        float breakwayLVDT = read<float>();
+        float displacementLVDT = read<float>();
+        checkCRC();
+        processHardpointLVDT(address, breakwayLVDT, displacementLVDT);
+    };
+
     auto forceActuatorForceStatus = [this](uint8_t address) {
         uint8_t status = read<uint8_t>();
         float primary = read<float>();
@@ -98,6 +105,8 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
     addResponse(110, calibrationData, 238);
 
     addResponse(119, pressureData, 247);
+
+    addResponse(122, hardpointLVDT, 250);
 }
 
 }  // namespace cRIO

@@ -26,8 +26,16 @@
 
 using namespace LSST::cRIO;
 
+class TestMPU : public MPU {
+public:
+    TestMPU(uint8_t bus, uint8_t mpu_address) : MPU(bus, mpu_address) {}
+
+    void loopWrite() override {}
+    void loopRead(bool timedout) override {}
+};
+
 TEST_CASE("Test MPU read input status", "[MPU]") {
-    MPU mpu(1, 0x11);
+    TestMPU mpu(1, 0x11);
     mpu.readInputStatus(0x00C4, 0x0016, 108);
 
     auto commands = mpu.getCommandVector();
@@ -44,11 +52,11 @@ TEST_CASE("Test MPU read input status", "[MPU]") {
     REQUIRE(commands[7] == 0x16);
     REQUIRE(commands[8] == 0xBA);
     REQUIRE(commands[9] == 0xA9);
-    REQUIRE(commands[10] == MPUCommands::WAIT_MS);
-    REQUIRE(commands[11] == 108);
-    REQUIRE(commands[12] == MPUCommands::READ);
-    REQUIRE(commands[13] == 8);
-    REQUIRE(commands[14] == MPUCommands::CHECK_CRC);
+    REQUIRE(commands[10] == MPUCommands::READ_MS);
+    REQUIRE(commands[11] == 8);
+    REQUIRE(commands[12] == 0);
+    REQUIRE(commands[13] == 108);
+    REQUIRE(commands[14] == MPUCommands::IRQ);
 
     std::vector<uint16_t> res = {0x11, 0x02, 0x03, 0xAC, 0xDB, 0x35, 0x20, 0x18};
 
@@ -92,12 +100,12 @@ TEST_CASE("Test MPU read input status", "[MPU]") {
 }
 
 TEST_CASE("Test MPU read holding registers", "[MPU]") {
-    MPU mpu(1, 12);
+    TestMPU mpu(1, 12);
     mpu.readHoldingRegisters(3, 10, 101);
 
     auto commands = mpu.getCommandVector();
 
-    REQUIRE(commands.size() == 16);
+    REQUIRE(commands.size() == 15);
 
     REQUIRE(commands[0] == MPUCommands::WRITE);
     REQUIRE(commands[1] == 8);
@@ -109,12 +117,11 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
     REQUIRE(commands[7] == 10);
     REQUIRE(commands[8] == 0x34);
     REQUIRE(commands[9] == 0xD0);
-    REQUIRE(commands[10] == MPUCommands::WAIT_MS);
-    REQUIRE(commands[11] == 101);
-    REQUIRE(commands[12] == MPUCommands::READ);
-    REQUIRE(commands[13] == 25);
-    REQUIRE(commands[14] == MPUCommands::OUTPUT);
-    REQUIRE(commands[15] == MPUCommands::EXIT);
+    REQUIRE(commands[10] == MPUCommands::READ_MS);
+    REQUIRE(commands[11] == 25);
+    REQUIRE(commands[12] == 0);
+    REQUIRE(commands[13] == 101);
+    REQUIRE(commands[14] == MPUCommands::IRQ);
 
     std::vector<uint16_t> res = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
                                  11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
@@ -140,13 +147,13 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
 }
 
 TEST_CASE("Test MPU reading multiple registers - failed response", "[MPU]") {
-    MPU mpu(1, 12);
+    TestMPU mpu(1, 12);
     mpu.readHoldingRegisters(3, 10, 101);
     mpu.readHoldingRegisters(103, 10, 101);
 
     auto commands = mpu.getCommandVector();
 
-    REQUIRE(commands.size() == 31);
+    REQUIRE(commands.size() == 29);
 
     REQUIRE(commands[0] == MPUCommands::WRITE);
     REQUIRE(commands[1] == 8);
@@ -158,29 +165,27 @@ TEST_CASE("Test MPU reading multiple registers - failed response", "[MPU]") {
     REQUIRE(commands[7] == 10);
     REQUIRE(commands[8] == 0x34);
     REQUIRE(commands[9] == 0xD0);
-    REQUIRE(commands[10] == MPUCommands::WAIT_MS);
-    REQUIRE(commands[11] == 101);
-    REQUIRE(commands[12] == MPUCommands::READ);
-    REQUIRE(commands[13] == 25);
-    REQUIRE(commands[14] == MPUCommands::OUTPUT);
+    REQUIRE(commands[10] == MPUCommands::READ_MS);
+    REQUIRE(commands[11] == 25);
+    REQUIRE(commands[12] == 0);
+    REQUIRE(commands[13] == 101);
 
-    REQUIRE(commands[15] == MPUCommands::WRITE);
-    REQUIRE(commands[16] == 8);
-    REQUIRE(commands[17] == 12);
-    REQUIRE(commands[18] == 3);
-    REQUIRE(commands[19] == 0);
-    REQUIRE(commands[20] == 103);
-    REQUIRE(commands[21] == 0);
-    REQUIRE(commands[22] == 10);
-    REQUIRE(commands[23] == 0x75);
-    REQUIRE(commands[24] == 0x0F);
-    REQUIRE(commands[25] == MPUCommands::WAIT_MS);
-    REQUIRE(commands[26] == 101);
-    REQUIRE(commands[27] == MPUCommands::READ);
-    REQUIRE(commands[28] == 25);
-    REQUIRE(commands[29] == MPUCommands::OUTPUT);
+    REQUIRE(commands[14] == MPUCommands::WRITE);
+    REQUIRE(commands[15] == 8);
+    REQUIRE(commands[16] == 12);
+    REQUIRE(commands[17] == 3);
+    REQUIRE(commands[18] == 0);
+    REQUIRE(commands[19] == 103);
+    REQUIRE(commands[20] == 0);
+    REQUIRE(commands[21] == 10);
+    REQUIRE(commands[22] == 0x75);
+    REQUIRE(commands[23] == 0x0F);
+    REQUIRE(commands[24] == MPUCommands::READ_MS);
+    REQUIRE(commands[25] == 25);
+    REQUIRE(commands[26] == 0);
+    REQUIRE(commands[27] == 101);
 
-    REQUIRE(commands[30] == MPUCommands::EXIT);
+    REQUIRE(commands[28] == MPUCommands::IRQ);
 
     std::vector<uint16_t> res1 = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
                                   11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
@@ -211,13 +216,13 @@ TEST_CASE("Test MPU reading multiple registers - failed response", "[MPU]") {
 }
 
 TEST_CASE("Test MPU reading multiple registers - successful response", "[MPU]") {
-    MPU mpu(1, 12);
+    TestMPU mpu(1, 12);
     mpu.readHoldingRegisters(3, 10, 101);
     mpu.readHoldingRegisters(103, 10, 101);
 
     auto commands = mpu.getCommandVector();
 
-    REQUIRE(commands.size() == 31);
+    REQUIRE(commands.size() == 29);
 
     REQUIRE(commands[0] == MPUCommands::WRITE);
     REQUIRE(commands[1] == 8);
@@ -229,29 +234,27 @@ TEST_CASE("Test MPU reading multiple registers - successful response", "[MPU]") 
     REQUIRE(commands[7] == 10);
     REQUIRE(commands[8] == 0x34);
     REQUIRE(commands[9] == 0xD0);
-    REQUIRE(commands[10] == MPUCommands::WAIT_MS);
-    REQUIRE(commands[11] == 101);
-    REQUIRE(commands[12] == MPUCommands::READ);
-    REQUIRE(commands[13] == 25);
-    REQUIRE(commands[14] == MPUCommands::OUTPUT);
+    REQUIRE(commands[10] == MPUCommands::READ_MS);
+    REQUIRE(commands[11] == 25);
+    REQUIRE(commands[12] == 0);
+    REQUIRE(commands[13] == 101);
 
-    REQUIRE(commands[15] == MPUCommands::WRITE);
-    REQUIRE(commands[16] == 8);
-    REQUIRE(commands[17] == 12);
-    REQUIRE(commands[18] == 3);
-    REQUIRE(commands[19] == 0);
-    REQUIRE(commands[20] == 103);
-    REQUIRE(commands[21] == 0);
-    REQUIRE(commands[22] == 10);
-    REQUIRE(commands[23] == 0x75);
-    REQUIRE(commands[24] == 0x0F);
-    REQUIRE(commands[25] == MPUCommands::WAIT_MS);
-    REQUIRE(commands[26] == 101);
-    REQUIRE(commands[27] == MPUCommands::READ);
-    REQUIRE(commands[28] == 25);
-    REQUIRE(commands[29] == MPUCommands::OUTPUT);
+    REQUIRE(commands[14] == MPUCommands::WRITE);
+    REQUIRE(commands[15] == 8);
+    REQUIRE(commands[16] == 12);
+    REQUIRE(commands[17] == 3);
+    REQUIRE(commands[18] == 0);
+    REQUIRE(commands[19] == 103);
+    REQUIRE(commands[20] == 0);
+    REQUIRE(commands[21] == 10);
+    REQUIRE(commands[22] == 0x75);
+    REQUIRE(commands[23] == 0x0F);
+    REQUIRE(commands[24] == MPUCommands::READ_MS);
+    REQUIRE(commands[25] == 25);
+    REQUIRE(commands[26] == 0);
+    REQUIRE(commands[27] == 101);
 
-    REQUIRE(commands[30] == MPUCommands::EXIT);
+    REQUIRE(commands[28] == MPUCommands::IRQ);
 
     std::vector<uint16_t> res1 = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
                                   11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
@@ -318,13 +321,13 @@ TEST_CASE("Test MPU reading multiple registers - successful response", "[MPU]") 
 }
 
 TEST_CASE("Test MPU preset holding register", "[MPU]") {
-    MPU mpu(5, 0x11);
+    TestMPU mpu(5, 0x11);
 
     mpu.presetHoldingRegister(0x0001, 0x0003, 102);
 
     auto commands = mpu.getCommandVector();
 
-    REQUIRE(commands.size() == 17);
+    REQUIRE(commands.size() == 15);
 
     REQUIRE(commands[0] == MPUCommands::WRITE);
     REQUIRE(commands[1] == 8);
@@ -336,13 +339,11 @@ TEST_CASE("Test MPU preset holding register", "[MPU]") {
     REQUIRE(commands[7] == 0x03);
     REQUIRE(commands[8] == 0x9A);
     REQUIRE(commands[9] == 0x9B);
-    REQUIRE(commands[10] == MPUCommands::WAIT_MS);
-    REQUIRE(commands[11] == 102);
-    REQUIRE(commands[12] == MPUCommands::READ);
-    REQUIRE(commands[13] == 8);
-    REQUIRE(commands[14] == MPUCommands::OUTPUT);
-    REQUIRE(commands[15] == MPUCommands::CHECK_CRC);
-    REQUIRE(commands[16] == MPUCommands::EXIT);
+    REQUIRE(commands[10] == MPUCommands::READ_MS);
+    REQUIRE(commands[11] == 8);
+    REQUIRE(commands[12] == 0);
+    REQUIRE(commands[13] == 102);
+    REQUIRE(commands[14] == MPUCommands::IRQ);
 
     std::vector<uint16_t> res = {0x11, 0x06, 0x00, 0x01, 0x00, 0x03, 0x9A, 0x9B};
 
@@ -350,7 +351,7 @@ TEST_CASE("Test MPU preset holding register", "[MPU]") {
 }
 
 TEST_CASE("Test MPU preset holding registers", "[MPU]") {
-    MPU mpu(5, 17);
+    TestMPU mpu(5, 17);
 
     std::vector<uint16_t> regs = {0x0102, 0x0304};
     mpu.presetHoldingRegisters(0x1718, regs.data(), regs.size(), 102);
@@ -374,11 +375,11 @@ TEST_CASE("Test MPU preset holding registers", "[MPU]") {
     REQUIRE(commands[12] == 0x04);
     REQUIRE(commands[13] == 0xED);
     REQUIRE(commands[14] == 0x3A);
-    REQUIRE(commands[15] == MPUCommands::WAIT_MS);
-    REQUIRE(commands[16] == 102);
-    REQUIRE(commands[17] == MPUCommands::READ);
-    REQUIRE(commands[18] == 8);
-    REQUIRE(commands[19] == MPUCommands::CHECK_CRC);
+    REQUIRE(commands[15] == MPUCommands::READ_MS);
+    REQUIRE(commands[16] == 8);
+    REQUIRE(commands[17] == 0);
+    REQUIRE(commands[18] == 102);
+    REQUIRE(commands[19] == MPUCommands::IRQ);
 
     std::vector<uint16_t> res = {17, 16, 0x17, 0x18, 0, 2, 0xC6, 0xEB};
 
@@ -386,7 +387,7 @@ TEST_CASE("Test MPU preset holding registers", "[MPU]") {
 }
 
 TEST_CASE("Test MPU preset holding registers by simplymodbus.ca", "[MPU]") {
-    MPU mpu(5, 0x11);
+    TestMPU mpu(5, 0x11);
 
     std::vector<uint16_t> regs = {0x000A, 0x0102};
     mpu.presetHoldingRegisters(0x0001, regs.data(), regs.size(), 102);
@@ -410,11 +411,11 @@ TEST_CASE("Test MPU preset holding registers by simplymodbus.ca", "[MPU]") {
     REQUIRE(commands[12] == 0x02);
     REQUIRE(commands[13] == 0xC6);
     REQUIRE(commands[14] == 0xF0);
-    REQUIRE(commands[15] == MPUCommands::WAIT_MS);
-    REQUIRE(commands[16] == 102);
-    REQUIRE(commands[17] == MPUCommands::READ);
-    REQUIRE(commands[18] == 8);
-    REQUIRE(commands[19] == MPUCommands::CHECK_CRC);
+    REQUIRE(commands[15] == MPUCommands::READ_MS);
+    REQUIRE(commands[16] == 8);
+    REQUIRE(commands[17] == 0);
+    REQUIRE(commands[18] == 102);
+    REQUIRE(commands[19] == MPUCommands::IRQ);
 
     std::vector<uint16_t> res = {0x11, 0x10, 0x00, 0x01, 0x00, 0x02, 0x12, 0x98};
 

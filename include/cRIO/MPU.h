@@ -23,6 +23,7 @@
 #ifndef CRIO_MPU_H_
 #define CRIO_MPU_H_
 
+#include <chrono>
 #include <list>
 #include <map>
 #include <mutex>
@@ -31,6 +32,7 @@
 
 #include <spdlog/fmt/fmt.h>
 
+#include <cRIO/FPGA.h>
 #include <cRIO/ModbusBuffer.h>
 
 namespace LSST {
@@ -38,27 +40,29 @@ namespace cRIO {
 
 /**
  * Modbus Processing Unit (MPU) commands. Please see
- * https://github.com/lsst-ts/Modbus_Processing_Unit for command details.
+ * https://github.com/lsst-ts/ts_M1M3Thermal/blob/develop/doc/version-history.rst
  */
 namespace MPUCommands {
-const static uint8_t STOP = 0;
-const static uint8_t WRITE_BYTE = 1;
-const static uint8_t WAIT_MS = 2;
-const static uint8_t READ = 3;
-const static uint8_t LOOP = 4;
-const static uint8_t CHECK_CRC = 5;
-const static uint8_t OUTPUT = 6;
-const static uint8_t WRITE = 20;
-const static uint8_t TELEMETRY_BYTE = 30;
-const static uint8_t TELEMETRY_16 = 31;
-const static uint8_t TELEMETRY_32 = 32;
-const static uint8_t TELEMETRY_64 = 33;
-const static uint8_t EXIT = 255;
+const static uint8_t WRITE = 1;
+const static uint8_t READ_US = 2;
+const static uint8_t READ_MS = 3;
+const static uint8_t IRQ = 240;
+const static uint8_t TELEMETRY = 254;
+const static uint8_t CLEAR = 255;
 }  // namespace MPUCommands
+
+typedef enum { WRITE, READ, IDLE } loop_state_t;
 
 /**
  * The Modbus Processing Unit class. Prepares buffer with commands to send to
  * FPGA, read responses & telemetry values.
+ *
+ * Values can be queried in a loop. Code then calls registered callback
+ * function everytime new data become available. For code to work that way,
+ * interrupt (
+ *
+ * If FPGA is instructed to raise an interrupt during (most likely at the end
+ * of) buffer execution with the 240 opcode,
  */
 class MPU : public ModbusBuffer {
 public:
@@ -79,6 +83,8 @@ public:
      */
     uint8_t getBus() { return _bus; }
 
+    virtual uint32_t getIrq() { return 1 << (10 + getBus()); }
+
     void setAddress(uint8_t address) { _mpu_address = address; }
 
     bool containsRead() { return _contains_read; }
@@ -89,7 +95,7 @@ public:
 
     void readEndOfFrame() override {}
 
-    void readInputStatus(uint16_t address, uint16_t count = 1, uint8_t timeout = 100);
+    void readInputStatus(uint16_t address, uint16_t count = 1, uint16_t timeout = 100);
 
     /**
      * Reads holding register(s).
@@ -98,7 +104,7 @@ public:
      * @param count number of registers to read
      * @param timeout timeout for register readout (in ms)
      */
-    void readHoldingRegisters(uint16_t address, uint16_t count, uint8_t timeout = 100);
+    void readHoldingRegisters(uint16_t address, uint16_t count, uint16_t timeout = 100);
 
     /**
      * Write single register.
@@ -107,7 +113,7 @@ public:
      * @param value register value
      * @param timeout timeout (in ms)
      */
-    void presetHoldingRegister(uint16_t address, uint16_t value, uint8_t timeout = 100);
+    void presetHoldingRegister(uint16_t address, uint16_t value, uint16_t timeout = 100);
 
     /**
      * Sets modbus holding registers.
@@ -117,16 +123,75 @@ public:
      * @param count number of registers to write
      * @param timeout timeout (in ms)
      */
-    void presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint8_t timeout = 100);
+    void presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint16_t timeout = 100);
 
     /**
      * Returns commands buffer.
      *
      * @return current command buffer
      */
-    std::vector<uint8_t> getCommandVector() { return _commands; }
+    std::vector<uint8_t> getCommandVector();
+
+    /***
+     * Called to set loop read timeout.
+     *
+     * @param callback function to call when new data are available
+     * @param timeout timeout. If data cannot be retrieved within timeout,
+     * callback function is called with timedout parameter set to true.
+     */
+    void setLoopTimeOut(std::chrono::microseconds timeout) { _loop_timeout = timeout; }
+
+    /***
+     * Called to write commands to retrieve values needed in loopRead.
+     */
+    virtual void loopWrite() = 0;
+
+    /***
+     * Called to process data read in the loop.
+     *
+     * @param timeout
+     */
+    virtual void loopRead(bool timedout) = 0;
+
+    /**
+     * Runs command loop. This is a state machine, with state stored in
+     * _loopStatus variable.
+     *
+     * In WRITE state, it calls loopWrite to prepare commands for FPGA.
+     *
+     * In READ state, it waits for bus IRQ. If wait succeed (IRQ was triggered),
+     * it reads the output data into a buffer, process the acquired buffer, and
+     * calls callback (if set).
+     *
+     * @param FPGA fpga used to process MPU commands.
+     */
+    void runLoop(FPGA &fpga);
+
+    loop_state_t getLoopState() { return _loop_state; }
+
+    /***
+     * Returns cached input state. Input state shall be cached - queried with
+     * readInputStatus method.
+     *
+     * @param address input state address
+     *
+     * @return cached input state
+     *
+     * @throws std::out_of_range if the address isn't cached
+     */
 
     bool getInputStatus(uint16_t address) { return _inputStatus.at(address); }
+
+    /***
+     * Returns register value. This access only cached values - register shall be first read
+     * using readHoldingRegisters method.
+     *
+     * @param address register address
+     *
+     * @return cached regiter value
+     *
+     * @throws std::runtime_error when register value isn't cached
+     */
     uint16_t getRegister(uint16_t address) {
         std::lock_guard<std::mutex> lg(_registerMutex);
         try {
@@ -137,6 +202,8 @@ public:
     }
 
 private:
+    void _pushTimeout(uint16_t timeout);
+
     std::vector<uint8_t> _commands;
     uint8_t _bus;
     uint8_t _mpu_address;
@@ -152,6 +219,10 @@ private:
 
     std::map<uint16_t, bool> _inputStatus;
     std::map<uint16_t, uint16_t> _registers;
+
+    std::chrono::microseconds _loop_timeout;
+    std::chrono::time_point<std::chrono::steady_clock> _loop_next_read;
+    loop_state_t _loop_state;
 };
 
 }  // namespace cRIO

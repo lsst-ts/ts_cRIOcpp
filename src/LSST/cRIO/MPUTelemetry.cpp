@@ -31,44 +31,16 @@
 namespace LSST {
 namespace cRIO {
 
-MPUTelemetry::MPUTelemetry(uint8_t data[45]) {
-    instructionPointer = be16toh(*(reinterpret_cast<uint16_t *>(data + 0)));
-    outputCounter = be64toh(*(reinterpret_cast<uint64_t *>(data + 2)));
-    inputCounter = be64toh(*(reinterpret_cast<uint64_t *>(data + 10)));
-    outputTimeouts = be64toh(*(reinterpret_cast<uint64_t *>(data + 18)));
-    inputTimeouts = be64toh(*(reinterpret_cast<uint64_t *>(data + 26)));
-    instructionPointerOnError = be16toh(*(reinterpret_cast<uint16_t *>(data + 34)));
-    writeTimeout = be16toh(*(reinterpret_cast<uint16_t *>(data + 36)));
-    readTimeout = be16toh(*(reinterpret_cast<uint16_t *>(data + 38)));
-    errorStatus = data[40];
-    errorCode = be16toh(*(reinterpret_cast<uint16_t *>(data + 41)));
-    modbusCRC = be16toh(*(reinterpret_cast<uint16_t *>(data + 43)));
-
-    calculatedCRC = ModbusBuffer::CRC(data, 43).get();
-}
-
-void MPUTelemetry::checkCRC() {
-    if (calculatedCRC != modbusCRC) {
-        throw std::runtime_error(
-                fmt::format("Mismatched telemetry Modbus CRC - expected 0x{:X}, calculated 0x{:X}", modbusCRC,
-                            calculatedCRC));
-    }
-
-    ModbusBuffer::CRC crc{};
+MPUTelemetry::MPUTelemetry(uint8_t *data) {
+    writeBytes = be32toh(*(reinterpret_cast<uint32_t *>(data + 0)));
+    readBytes = be32toh(*(reinterpret_cast<uint32_t *>(data + 4)));
+    readTimedout = be16toh(*(reinterpret_cast<uint16_t *>(data + 8)));
 }
 
 std::ostream &operator<<(std::ostream &os, const MPUTelemetry &tel) {
-    os << std::setw(20) << "IP: " << tel.instructionPointer << std::endl
-       << std::setw(20) << "Output (Writes): " << tel.outputCounter << std::endl
-       << std::setw(20) << "Input (Reads): " << tel.inputCounter << std::endl
-       << std::setw(20) << "Out Timeouts: " << tel.outputTimeouts << std::endl
-       << std::setw(20) << "In Timeouts: " << tel.inputTimeouts << std::endl
-       << std::setw(20) << "IP on error : " << tel.instructionPointerOnError << std::endl
-       << std::setw(20) << "Write timeout: " << tel.writeTimeout << std::endl
-       << std::setw(20) << "Read timeout: " << tel.readTimeout << std::endl
-       << std::setw(20) << "Error status: " << +tel.errorStatus << std::endl
-       << std::setw(20) << "Error code: " << tel.errorCode << std::endl;
-
+    os << std::setw(20) << "Write bytes: " << tel.writeBytes << std::endl
+       << std::setw(20) << "Read bytes: " << tel.readBytes << std::endl
+       << std::setw(20) << "Read timedout: " << tel.readTimedout << std::endl;
     return os;
 }
 

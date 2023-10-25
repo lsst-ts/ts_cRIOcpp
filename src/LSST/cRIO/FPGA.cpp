@@ -27,7 +27,7 @@
 #include <spdlog/fmt/fmt.h>
 
 #include <cRIO/FPGA.h>
-#include <cRIO/ModbusBuffer.h>
+#include <cRIO/MPU.h>
 
 namespace LSST {
 namespace cRIO {
@@ -69,7 +69,9 @@ void FPGA::ilcCommands(ILC &ilc) {
 
     uint32_t irq = getIrq(bus);
 
-    waitOnIrqs(irq, 5000);
+    bool timedout = false;
+
+    waitOnIrqs(irq, 5000, timedout);
     ackIrqs(irq);
 
     // get back response

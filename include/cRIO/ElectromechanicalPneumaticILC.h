@@ -49,6 +49,13 @@ public:
      */
     void reportHardpointForceStatus(uint8_t address) { callFunction(address, 67, 1800); }
 
+    /**
+     * Unicast command to read hardpoint LVDT. ILC command 122 (0x7a).
+     *
+     * @param address ILC address
+     */
+    void reportHardpointLVDT(uint8_t address) { callFunction(address, 122, 400); }
+
     void setSAAForceOffset(uint8_t address, bool slewFlag, float primary) {
         callFunction(address, 75, 1800, static_cast<uint8_t>(slewFlag ? 0xFF : 0x00),
                      int24_t(primary * 1000));
@@ -98,6 +105,15 @@ protected:
      */
     virtual void processHardpointForceStatus(uint8_t address, uint8_t status, int32_t encoderPostion,
                                              float loadCellForce) = 0;
+
+    /**
+     * Called when response from call to command 122 (0x7a) is read.
+     *
+     * @param address returned from this ILC
+     * @param breakawayLVDT breakway LVDT value
+     * @param displacementLVDT displacement LVDT value
+     */
+    virtual void processHardpointLVDT(uint8_t address, float breakawayLVDT, float displacementLVDT) = 0;
 
     virtual void processSAAForceStatus(uint8_t address, uint8_t status, float primaryLoadCellForce) = 0;
     virtual void processDAAForceStatus(uint8_t address, uint8_t status, float primaryLoadCellForce,

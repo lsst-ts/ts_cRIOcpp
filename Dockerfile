@@ -1,4 +1,4 @@
-FROM lsstts/develop-env:c0028.004
+FROM lsstts/develop-env:develop
 
 USER root
 RUN chmod a+rwX -R /home/saluser/
