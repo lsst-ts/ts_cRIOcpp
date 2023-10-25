@@ -7,7 +7,7 @@ USER saluser
 WORKDIR /home/saluser
 
 RUN source ~/.setup.sh \
-    && mamba install -y readline yaml-cpp boost-cpp catch2 spdlog \
+    && mamba install -y readline yaml-cpp boost-cpp catch2 spdlog fmt \
     && echo > .crio_setup.sh -e \
 echo "Configuring cRIO development environment" \\n\
 export SHELL=bash \\n\
