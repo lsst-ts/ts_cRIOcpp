@@ -253,6 +253,10 @@ ModbusBuffer::EmptyCommanded::EmptyCommanded(uint8_t address, uint8_t func)
                   fmt::format("Empty commanded buffer, but reply was received. Address {}, function {}.",
                               address, func)) {}
 
+ModbusBuffer::MissingReply::MissingReply(uint8_t address, uint8_t func)
+        : std::runtime_error(
+                  fmt::format("Missing reply for function {} from ILC with address {}.", func, address)) {}
+
 ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func)
         : std::runtime_error(fmt::format(
                   "Received response {1} with address {0} without matching send function.", address, func)) {}
@@ -262,6 +266,8 @@ ModbusBuffer::UnmatchedFunction::UnmatchedFunction(uint8_t address, uint8_t func
         : std::runtime_error(fmt::format("Invalid response received - expected {0} (0x{0:02x}) from {1}, got "
                                          "{2} (0x{2:02x}) from {3}.",
                                          expectedFunction, expectedAddress, func, address)) {}
+
+void ModbusBuffer::handleMissingReply(uint8_t address, uint8_t func) { throw MissingReply(address, func); }
 
 uint16_t ModbusBuffer::getByteInstruction(uint8_t data) {
     processDataCRC(data);
@@ -312,6 +318,15 @@ void ModbusBuffer::checkCommanded(uint8_t address, uint8_t function) {
     }
     std::pair<uint8_t, uint8_t> last = _commanded.front();
     _commanded.pop();
+    // in case some ILC isn't responding, find the first matching the address
+    while (last.first != address) {
+        handleMissingReply(last.first, last.second);
+        if (_commanded.empty()) {
+            return;
+        }
+        last = _commanded.front();
+        _commanded.pop();
+    }
     if (last.first != address || last.second != function) {
         throw UnmatchedFunction(address, function, last.first, last.second);
     }

@@ -505,6 +505,11 @@ public:
         EmptyCommanded(uint8_t address, uint8_t function);
     };
 
+    class MissingReply : public std::runtime_error {
+    public:
+        MissingReply(uint8_t address, uint8_t func);
+    };
+
     class UnmatchedFunction : public std::runtime_error {
     public:
         UnmatchedFunction(uint8_t address, uint8_t function);
@@ -520,6 +525,14 @@ protected:
     void pushBuffer(uint16_t data) { _buffer.push_back(data); }
     void incIndex() { _index++; }
     void resetCRC() { _crc.reset(); }
+
+    /**
+     * Called when a reply to command is missing.
+     *
+     * @parameter address ILC address
+     * @parameter func called function
+     */
+    virtual void handleMissingReply(uint8_t address, uint8_t func);
 
     /**
      * Return data item to write to buffer. Updates CRC counter.

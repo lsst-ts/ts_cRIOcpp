@@ -2,6 +2,11 @@
 Version History
 ###############
 
+v1.10.0
+=======
+
+* handleMissingReply, MissingReply exception
+
 v1.9.0
 ======
 
