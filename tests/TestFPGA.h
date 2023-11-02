@@ -31,7 +31,7 @@ enum FPGAAddress { MODBUS_A_RX = 21, MODBUS_A_TX = 25, HEARTBEAT = 62 };  // nam
 
 class TestILC : public LSST::cRIO::PrintILC {
 public:
-    TestILC(uint8_t bus) : PrintILC(bus) {}
+    TestILC(uint8_t bus) : LSST::cRIO::PrintILC(bus) {}
 
 protected:
     void processChangeILCMode(uint8_t address, uint16_t mode) override;
@@ -49,7 +49,9 @@ public:
     uint16_t getRxCommand(uint8_t bus) override { return FPGAAddress::MODBUS_A_RX; }
     uint32_t getIrq(uint8_t bus) override { return 1; }
     void writeMPUFIFO(LSST::cRIO::MPU&) override {}
-    void readMPUFIFO(LSST::cRIO::MPU&) override {}
+    std::vector<uint8_t> readMPUFIFO(LSST::cRIO::MPU&) override {
+        return std::vector<uint8_t>({0xff, 0x0fe});
+    }
     void writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) override;

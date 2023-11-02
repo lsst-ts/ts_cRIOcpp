@@ -48,7 +48,7 @@ const static uint8_t READ_US = 2;
 const static uint8_t READ_MS = 3;
 const static uint8_t IRQ = 240;
 const static uint8_t TELEMETRY = 254;
-const static uint8_t CLEAR = 255;
+const static uint8_t RESET = 255;
 }  // namespace MPUCommands
 
 typedef enum { WRITE, READ, IDLE } loop_state_t;
@@ -75,6 +75,11 @@ public:
     MPU(uint8_t bus, uint8_t mpu_address);
 
     void clearCommanded();
+
+    /**
+     * Reset bus. Clear all FIFOs.
+     */
+    void resetBus();
 
     /**
      * Returns bus number (internal FPGA identifier).
@@ -145,6 +150,15 @@ public:
      * Called to write commands to retrieve values needed in loopRead.
      */
     virtual void loopWrite() = 0;
+
+    /**
+     * Exception raised when read timeouts.
+     */
+    class IRQTimeout : public std::runtime_error {
+    public:
+        IRQTimeout(std::vector<uint8_t> _data);
+        std::vector<uint8_t> data;
+    };
 
     /***
      * Called to process data read in the loop.

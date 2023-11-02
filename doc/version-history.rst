@@ -6,6 +6,7 @@ v1.10.0
 =======
 
 * handleMissingReply, MissingReply exception
+* IRQTimeout handling
 
 v1.9.0
 ======

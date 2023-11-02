@@ -18,11 +18,13 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <iomanip>
+#include <ostream>
 #include <string.h>
 #include <sstream>
 
-#include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
+#include <spdlog/spdlog.h>
 
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/Timestamp.h>

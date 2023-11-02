@@ -20,11 +20,18 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
 
+#include <cRIO/CliApp.h>
 #include <cRIO/MPU.h>
 
 using namespace LSST::cRIO;
+
+MPU::IRQTimeout::IRQTimeout(std::vector<uint8_t> _data)
+        : std::runtime_error(fmt::format("Din't receive any data, reseting MPU. Read data: " +
+                                         ModbusBuffer::hexDump(_data.data(), _data.size()))),
+          data(_data) {}
 
 MPU::MPU(uint8_t bus, uint8_t mpu_address) : _bus(bus), _mpu_address(mpu_address), _contains_read(false) {
     _loop_state = loop_state_t::WRITE;
@@ -145,6 +152,8 @@ void MPU::clearCommanded() {
     _presetRegister.clear();
     _presetRegisters.clear();
 }
+
+void MPU::resetBus() { _commands.push_back(MPUCommands::RESET); }
 
 void MPU::readInputStatus(uint16_t address, uint16_t count, uint16_t timeout) {
     callFunction(_mpu_address, 2, 0, address, count);
@@ -268,9 +277,15 @@ void MPU::runLoop(FPGA& fpga) {
             bool timedout;
             fpga.waitOnIrqs(getIrq(), 0, timedout);
             if (timedout) {
+                // there is still time to retrive data, wait for IRQ
                 if (_loop_next_read > std::chrono::steady_clock::now()) {
                     return;
                 }
+                auto data = fpga.readMPUFIFO(*this);
+                clearCommanded();
+                resetBus();
+                fpga.writeMPUFIFO(*this);
+                throw IRQTimeout(data);
             } else {
                 fpga.readMPUFIFO(*this);
             }
