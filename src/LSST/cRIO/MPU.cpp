@@ -267,7 +267,6 @@ std::vector<uint8_t> MPU::getCommandVector() {
 void MPU::runLoop(FPGA& fpga) {
     switch (_loop_state) {
         case loop_state_t::WRITE:
-            clearCommanded();
             _loop_next_read = std::chrono::steady_clock::now() + _loop_timeout;
             loopWrite();
             fpga.writeMPUFIFO(*this);
@@ -287,6 +286,7 @@ void MPU::runLoop(FPGA& fpga) {
                 fpga.writeMPUFIFO(*this);
                 throw IRQTimeout(data);
             } else {
+                fpga.ackIrqs(getIrq());
                 fpga.readMPUFIFO(*this);
             }
 
