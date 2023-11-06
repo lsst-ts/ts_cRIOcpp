@@ -179,7 +179,7 @@ public:
      *
      * @param FPGA fpga used to process MPU commands.
      */
-    void runLoop(FPGA &fpga);
+    bool runLoop(FPGA &fpga);
 
     loop_state_t getLoopState() { return _loop_state; }
 

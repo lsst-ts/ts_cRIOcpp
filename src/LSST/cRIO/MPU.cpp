@@ -264,7 +264,7 @@ std::vector<uint8_t> MPU::getCommandVector() {
     return _commands;
 }
 
-void MPU::runLoop(FPGA& fpga) {
+bool MPU::runLoop(FPGA& fpga) {
     switch (_loop_state) {
         case loop_state_t::WRITE:
             _loop_next_read = std::chrono::steady_clock::now() + _loop_timeout;
@@ -278,7 +278,7 @@ void MPU::runLoop(FPGA& fpga) {
             if (timedout) {
                 // there is still time to retrive data, wait for IRQ
                 if (_loop_next_read > std::chrono::steady_clock::now()) {
-                    return;
+                    return false;
                 }
                 auto data = fpga.readMPUFIFO(*this);
                 clearCommanded();
@@ -295,11 +295,12 @@ void MPU::runLoop(FPGA& fpga) {
         } break;
         case loop_state_t::IDLE:
             if (_loop_next_read > std::chrono::steady_clock::now()) {
-                return;
+                return false;
             }
             _loop_state = loop_state_t::WRITE;
-            break;
+            return true;
     }
+    return false;
 }
 
 void MPU::_pushTimeout(uint16_t timeout) {
