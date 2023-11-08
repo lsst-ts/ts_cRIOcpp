@@ -46,6 +46,8 @@ namespace MPUCommands {
 const static uint8_t WRITE = 1;
 const static uint8_t READ_US = 2;
 const static uint8_t READ_MS = 3;
+const static uint8_t WAIT_US = 100;
+const static uint8_t WAIT_MS = 101;
 const static uint8_t IRQ = 240;
 const static uint8_t TELEMETRY = 254;
 const static uint8_t RESET = 255;
@@ -80,6 +82,20 @@ public:
      * Reset bus. Clear all FIFOs.
      */
     void resetBus();
+
+    /**
+     * Wait for given number of microseonds.
+     *
+     * @param us number of microseconds to wait
+     */ 
+    void waitUs(uint16_t us);
+
+    /**
+     * Wait for given number of milliseconds.
+     *
+     * @param ms number of milliseconds to wait
+     */
+    void waitMs(uint16_t ms);
 
     /**
      * Returns bus number (internal FPGA identifier).

@@ -29,7 +29,7 @@
 using namespace LSST::cRIO;
 
 MPU::IRQTimeout::IRQTimeout(std::vector<uint8_t> _data)
-        : std::runtime_error(fmt::format("Din't receive any data, reseting MPU. Read data: " +
+        : std::runtime_error(fmt::format("Din't receive IRQ, reseting MPU. Read data: " +
                                          ModbusBuffer::hexDump(_data.data(), _data.size()))),
           data(_data) {}
 
@@ -154,6 +154,16 @@ void MPU::clearCommanded() {
 }
 
 void MPU::resetBus() { _commands.push_back(MPUCommands::RESET); }
+
+void MPU::waitUs(uint16_t us) {
+    _commands.push_back(MPUCommands::WAIT_US);
+    _pushTimeout(us);
+}
+
+void MPU::waitMs(uint16_t ms) {
+    _commands.push_back(MPUCommands::WAIT_MS);
+    _pushTimeout(ms);
+}
 
 void MPU::readInputStatus(uint16_t address, uint16_t count, uint16_t timeout) {
     callFunction(_mpu_address, 2, 0, address, count);
@@ -284,6 +294,8 @@ bool MPU::runLoop(FPGA& fpga) {
                 clearCommanded();
                 resetBus();
                 fpga.writeMPUFIFO(*this);
+                fpga.waitOnIrqs(getIrq(), 100, timedout);
+                fpga.ackIrqs(getIrq());
                 throw IRQTimeout(data);
             } else {
                 fpga.ackIrqs(getIrq());
