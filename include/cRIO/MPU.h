@@ -87,7 +87,11 @@ public:
      * Wait for given number of microseonds.
      *
      * @param us number of microseconds to wait
+<<<<<<< HEAD
      */ 
+=======
+     */
+>>>>>>> cf704ee... Fixed IRQ responses
     void waitUs(uint16_t us);
 
     /**
