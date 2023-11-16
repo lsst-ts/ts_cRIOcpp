@@ -26,7 +26,6 @@
 
 #include <stdint.h>
 
-
 /**
  * Number of ModBus subnets. Subnets are connected and commanded through cRIO
  * DIOs.

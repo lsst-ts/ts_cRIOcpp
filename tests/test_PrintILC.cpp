@@ -27,7 +27,7 @@
 #include <cRIO/IntelHex.h>
 #include <cRIO/ILC.h>
 
-#include "TestFPGA.h"
+#include <TestFPGA.h>
 
 using namespace LSST::cRIO;
 
