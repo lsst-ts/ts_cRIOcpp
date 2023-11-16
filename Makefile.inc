@@ -4,7 +4,7 @@ ifndef VERBOSE
   silence := --silence-errors
 endif
 
-c_opts :=  -fdata-sections -ffunction-sections -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE -DSPDLOG_FMT_EXTERNAL
+c_opts :=  -fdata-sections -ffunction-sections -DSPDLOG_ACTIVE_LEVEL=SPDLOG_LEVEL_TRACE # -DSPDLOG_FMT_EXTERNAL
 
 ifdef DEBUG
   c_opts += -g
