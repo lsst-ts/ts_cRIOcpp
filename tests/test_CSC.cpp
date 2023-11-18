@@ -46,7 +46,7 @@ public:
     uint16_t getRxCommand(uint8_t) override { return 0; }
     uint32_t getIrq(uint8_t) override { return 0; }
     void writeMPUFIFO(MPU&) override {}
-    void readMPUFIFO(MPU&) override {}
+    std::vector<uint8_t> readMPUFIFO(MPU&) override { return std::vector<uint8_t>({0x04, 0x05}); }
     void writeCommandFIFO(uint16_t*, size_t, uint32_t) override {}
     void writeRequestFIFO(uint16_t*, size_t, uint32_t) override {}
     void readU16ResponseFIFO(uint16_t*, size_t, uint32_t) override {}
