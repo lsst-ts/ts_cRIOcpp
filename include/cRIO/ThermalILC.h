@@ -47,6 +47,31 @@ public:
      */
     ThermalILC(uint8_t bus = 1);
 
+    std::vector<const char*> getStatusString(uint16_t status) override;
+
+    enum ThermalILCStatus {
+        RefResistor = 0x0040,
+        RTDError = 0x0080,
+        HeaterBreaker = 0x0400,
+        FanBreaker = 0x0800
+    };
+
+    /**
+     * Return thermal status. This is the lower nibble returned from thermal demand and status functions.
+     *
+     * @param status ILC status, including broadcast counter (can be ignored)
+     *
+     * @return description of bits set in status
+     */
+    std::vector<const char*> getThermalStatusString(uint8_t status);
+
+    enum ThermalStatus {
+        ILCFault = 0x0001,
+        HeaterDisabled = 0x0002,
+        HeaterBreakerOpen = 0x0004,
+        FanBreakerOpen = 0x0008
+    };
+
     /**
      * Unicast heater PWM and fan RPM. ILC command code 88 (0x58)
      *
