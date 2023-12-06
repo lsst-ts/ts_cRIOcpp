@@ -22,8 +22,7 @@
 
 #include <cRIO/ThermalILC.h>
 
-namespace LSST {
-namespace cRIO {
+using namespace LSST::cRIO;
 
 ThermalILC::ThermalILC(uint8_t bus) : ILC(bus) {
     auto thermalStatus = [this](uint8_t address) {
@@ -52,6 +51,52 @@ ThermalILC::ThermalILC(uint8_t bus) : ILC(bus) {
     addResponse(93, reheaterGains, 221);
 }
 
+std::vector<const char*> ThermalILC::getStatusString(uint16_t status) {
+    std::vector<const char*> ret = ILC::getStatusString(status);
+
+    // 0x0010 NA
+    // 0x0020 NA
+    if (status & ThermalILCStatus::RefResistor) {
+        ret.push_back("Ref Resistor Error");
+    }
+    if (status & ThermalILCStatus::RTDError) {
+        ret.push_back("RTD Error");
+    }
+    // 0x0100 NA
+    // 0x0200 NA
+    if (status & ThermalILCStatus::HeaterBreaker) {
+        ret.push_back("Heater Breaker Failed");
+    }
+    if (status & ThermalILCStatus::FanBreaker) {
+        ret.push_back("Fan Breaker Failed");
+    }
+    // 0x1000 NA
+    // 0x2000 NA
+    // 0x4000 NA
+    // 0x8000 reserved
+
+    return ret;
+}
+
+std::vector<const char*> ThermalILC::getThermalStatusString(uint8_t status) {
+    std::vector<const char*> ret;
+
+    if (status & ThermalStatus::ILCFault) {
+        ret.push_back("ILC Fault");
+    }
+    if (status & ThermalStatus::HeaterDisabled) {
+        ret.push_back("Heater Disabled");
+    }
+    if (status & ThermalStatus::HeaterBreakerOpen) {
+        ret.push_back("Heater Breaker Open");
+    }
+    if (status & ThermalStatus::FanBreakerOpen) {
+        ret.push_back("Fan Breaker Open");
+    }
+
+    return ret;
+}
+
 void ThermalILC::broadcastThermalDemand(uint8_t heaterPWM[NUM_TS_ILC], uint8_t fanRPM[NUM_TS_ILC]) {
     uint8_t params[NUM_TS_ILC * 2];
     for (int i = 0, o = 0; i < NUM_TS_ILC; i++, o++) {
@@ -62,6 +107,3 @@ void ThermalILC::broadcastThermalDemand(uint8_t heaterPWM[NUM_TS_ILC], uint8_t f
 
     broadcastFunction(250, 88, nextBroadcastCounter(), 450, params, NUM_TS_ILC * 2);
 }
-
-}  // namespace cRIO
-}  // namespace LSST
