@@ -56,7 +56,7 @@ public:
     uint32_t getIrq(uint8_t bus) override { return 1; }
 
     void writeMPUFIFO(MPU& mpu) override {}
-    void readMPUFIFO(MPU& mpu) override {}
+    std::vector<uint8_t> readMPUFIFO(MPU& mpu) override { return std::vector<uint8_t>({0x01, 0x02}); }
 
     void writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout) override {}
@@ -134,7 +134,7 @@ void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeo
 
 void TestFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp) {
     std::stringstream ss;
-    ss << prefix;
+    ss << prefix << " ";
     CliApp::printHexBuffer(data, length, ss);
     if (cmp) {
         std::string l;

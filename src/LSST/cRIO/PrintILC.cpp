@@ -23,6 +23,8 @@
 #include <iomanip>
 #include <iostream>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/PrintILC.h>
 #include <cRIO/SimulatedILC.h>
@@ -190,8 +192,10 @@ void PrintILC::processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAp
 void PrintILC::processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
     printBusAddress(address);
     std::cout << "Mode: " << std::to_string(mode) << " - " << getModeStr(mode) << std::endl
-              << "Status: " << std::hex << std::setw(4) << std::setfill('0') << (status) << std::endl
-              << "Faults: " << std::hex << std::setw(4) << std::setfill('0') << (status) << std::endl;
+              << "Status: " << std::hex << std::setw(4) << std::setfill('0') << +status
+              << fmt::format("{}", fmt::join(getStatusString(status), " | ")) << std::endl
+              << "Faults: " << std::hex << std::setw(4) << std::setfill('0') << +faults
+              << fmt::format("{}", fmt::join(getFaultString(faults), " | ")) << std::endl;
 }
 
 void PrintILC::processChangeILCMode(uint8_t address, uint16_t mode) {

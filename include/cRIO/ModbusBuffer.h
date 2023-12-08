@@ -22,8 +22,10 @@
 #define CRIO_MODBUSBUFFER_H_
 
 #include <functional>
+#include <iomanip>
 #include <map>
 #include <queue>
+#include <sstream>
 #include <string>
 #include <stdexcept>
 #include <vector>
@@ -177,6 +179,26 @@ public:
      * @return read data
      */
     std::vector<uint8_t> getReadData(int32_t length);
+
+    /**
+     * Dumps hex data to ostring stream.
+     *
+     *
+     * @param
+     */
+    template <typename dt>
+    static const std::string hexDump(dt* buf, size_t len) {
+        std::ostringstream os;
+        os << std::setfill('0') << std::hex;
+        for (size_t i = 0; i < len; i++) {
+            if (i > 0) {
+                os << " ";
+            }
+            os << std::setw(sizeof(dt) * 2) << +(buf[i]);
+        }
+        os << std::dec;
+        return os.str();
+    }
 
     /**
      * Reads data from buffer. Updates CRC as it reads the data. Size of
@@ -505,6 +527,11 @@ public:
         EmptyCommanded(uint8_t address, uint8_t function);
     };
 
+    class MissingReply : public std::runtime_error {
+    public:
+        MissingReply(uint8_t address, uint8_t func);
+    };
+
     class UnmatchedFunction : public std::runtime_error {
     public:
         UnmatchedFunction(uint8_t address, uint8_t function);
@@ -520,6 +547,14 @@ protected:
     void pushBuffer(uint16_t data) { _buffer.push_back(data); }
     void incIndex() { _index++; }
     void resetCRC() { _crc.reset(); }
+
+    /**
+     * Called when a reply to command is missing.
+     *
+     * @parameter address ILC address
+     * @parameter func called function
+     */
+    virtual void handleMissingReply(uint8_t address, uint8_t func);
 
     /**
      * Return data item to write to buffer. Updates CRC counter.

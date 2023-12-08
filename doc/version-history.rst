@@ -2,6 +2,13 @@
 Version History
 ###############
 
+v1.10.0
+=======
+
+* getStringStatus function
+* handleMissingReply, MissingReply exception
+* IRQTimeout handling
+
 v1.9.0
 ======
 

@@ -20,13 +20,12 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <spdlog/spdlog.h>
 #include <spdlog/fmt/fmt.h>
+#include <spdlog/spdlog.h>
 
 #include <cRIO/ILC.h>
 
-namespace LSST {
-namespace cRIO {
+using namespace LSST::cRIO;
 
 ILC::ILC(uint8_t bus) {
     _bus = bus;
@@ -191,6 +190,69 @@ const char *ILC::getModeStr(uint8_t mode) {
     }
 }
 
+std::vector<const char *> ILC::getStatusString(uint16_t status) {
+    std::vector<const char *> ret;
+
+    if (status & ILCStatus::MajorFault) {
+        ret.push_back("Major Fault");
+    }
+    if (status & ILCStatus::MinorFault) {
+        ret.push_back("Minor Fault");
+    }
+    // 0x0003 reserved
+    if (status & FaultOverride) {
+        ret.push_back("Fault Override");
+    }
+    // remaining status is ILC specific, implemented in its *ILC subclass
+
+    return ret;
+}
+
+std::vector<const char *> ILC::getFaultString(uint16_t fault) {
+    std::vector<const char *> ret;
+
+    if (fault & ILCFault::UniqueIRC) {
+        ret.push_back("Unique ID CRC error");
+    }
+    if (fault & ILCFault::AppType) {
+        ret.push_back("App Type & Network Node Type do not match");
+    }
+    if (fault & ILCFault::NoILC) {
+        ret.push_back("No ILC App programmed");
+    }
+    if (fault & ILCFault::ILCAppCRC) {
+        ret.push_back("ILC App CRC error");
+    }
+    if (fault & ILCFault::NoTEDS) {
+        ret.push_back("No TEDS found");
+    }
+    if (fault & ILCFault::TEDS1) {
+        ret.push_back("TEDS copy 1 error");
+    }
+    if (fault & ILCFault::TEDS2) {
+        ret.push_back("TEDS copy 2 error");
+    }
+    // 0x0080 reserved
+    if (fault & ILCFault::WatchdogReset) {
+        ret.push_back("Reset due to Watchdog Timeout");
+    }
+    if (fault & ILCFault::BrownOut) {
+        ret.push_back("Brown Out");
+    }
+    if (fault & ILCFault::EventTrap) {
+        ret.push_back("Event Trap");
+    }
+    // 0x0800 Electromechanical only
+    if (fault & ILCFault::SSR) {
+        ret.push_back("SSR power fail");
+    }
+    if (fault & ILCFault::AUX) {
+        ret.push_back("Aux power fail");
+    }
+
+    return ret;
+}
+
 bool ILC::responseMatchCached(uint8_t address, uint8_t func) {
     try {
         std::map<uint8_t, std::vector<uint8_t>> &fc = _cachedResponse.at(address);
@@ -206,6 +268,3 @@ bool ILC::responseMatchCached(uint8_t address, uint8_t func) {
     }
     return checkRecording(_cachedResponse[address][func]) && !_alwaysTrigger;
 }
-
-}  // namespace cRIO
-}  // namespace LSST

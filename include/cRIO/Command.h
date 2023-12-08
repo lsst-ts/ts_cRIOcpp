@@ -21,8 +21,8 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef COMMAND_H_
-#define COMMAND_H_
+#ifndef __CRIO_COMMAND_H_
+#define __CRIO_COMMAND_H_
 
 #include <string>
 
@@ -74,4 +74,4 @@ public:
 }  // namespace cRIO
 }  // namespace LSST
 
-#endif /* COMMAND_H_ */
+#endif /* __CRIO_COMMAND_H_ */

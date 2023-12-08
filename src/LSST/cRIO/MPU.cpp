@@ -20,11 +20,18 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <spdlog/fmt/fmt.h>
 #include <spdlog/spdlog.h>
 
+#include <cRIO/CliApp.h>
 #include <cRIO/MPU.h>
 
 using namespace LSST::cRIO;
+
+MPU::IRQTimeout::IRQTimeout(std::vector<uint8_t> _data)
+        : std::runtime_error(fmt::format("Din't receive IRQ, reseting MPU. Read data: " +
+                                         ModbusBuffer::hexDump(_data.data(), _data.size()))),
+          data(_data) {}
 
 MPU::MPU(uint8_t bus, uint8_t mpu_address) : _bus(bus), _mpu_address(mpu_address), _contains_read(false) {
     _loop_state = loop_state_t::WRITE;
@@ -146,6 +153,18 @@ void MPU::clearCommanded() {
     _presetRegisters.clear();
 }
 
+void MPU::resetBus() { _commands.push_back(MPUCommands::RESET); }
+
+void MPU::waitUs(uint16_t us) {
+    _commands.push_back(MPUCommands::WAIT_US);
+    _pushTimeout(us);
+}
+
+void MPU::waitMs(uint16_t ms) {
+    _commands.push_back(MPUCommands::WAIT_MS);
+    _pushTimeout(ms);
+}
+
 void MPU::readInputStatus(uint16_t address, uint16_t count, uint16_t timeout) {
     callFunction(_mpu_address, 2, 0, address, count);
 
@@ -255,10 +274,9 @@ std::vector<uint8_t> MPU::getCommandVector() {
     return _commands;
 }
 
-void MPU::runLoop(FPGA& fpga) {
+bool MPU::runLoop(FPGA& fpga) {
     switch (_loop_state) {
         case loop_state_t::WRITE:
-            clearCommanded();
             _loop_next_read = std::chrono::steady_clock::now() + _loop_timeout;
             loopWrite();
             fpga.writeMPUFIFO(*this);
@@ -268,10 +286,19 @@ void MPU::runLoop(FPGA& fpga) {
             bool timedout;
             fpga.waitOnIrqs(getIrq(), 0, timedout);
             if (timedout) {
+                // there is still time to retrive data, wait for IRQ
                 if (_loop_next_read > std::chrono::steady_clock::now()) {
-                    return;
+                    return false;
                 }
+                auto data = fpga.readMPUFIFO(*this);
+                clearCommanded();
+                resetBus();
+                fpga.writeMPUFIFO(*this);
+                fpga.waitOnIrqs(getIrq(), 100, timedout);
+                fpga.ackIrqs(getIrq());
+                throw IRQTimeout(data);
             } else {
+                fpga.ackIrqs(getIrq());
                 fpga.readMPUFIFO(*this);
             }
 
@@ -280,11 +307,12 @@ void MPU::runLoop(FPGA& fpga) {
         } break;
         case loop_state_t::IDLE:
             if (_loop_next_read > std::chrono::steady_clock::now()) {
-                return;
+                return false;
             }
             _loop_state = loop_state_t::WRITE;
-            break;
+            return true;
     }
+    return false;
 }
 
 void MPU::_pushTimeout(uint16_t timeout) {

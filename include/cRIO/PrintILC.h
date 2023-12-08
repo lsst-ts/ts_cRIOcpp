@@ -177,4 +177,4 @@ private:
 }  // namespace cRIO
 }  // namespace LSST
 
-#endif  // !_cRIO_ILC_
+#endif  // !_cRIO_PrintILC_

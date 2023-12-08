@@ -37,6 +37,7 @@
 
 #include "cRIO/CliApp.h"
 #include "cRIO/ModbusBuffer.h"
+#include "cRIO/OStreamRestore.h"
 #include "cRIO/Timestamp.h"
 
 namespace LSST {
