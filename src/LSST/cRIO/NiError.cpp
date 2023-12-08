@@ -31,7 +31,7 @@ NiError::NiError(const char *msg, NiFpga_Status status) : std::runtime_error(NiS
 }
 
 void NiThrowError(const char *msg, int32_t status) {
-    if (status != 0) {
+    if (status < 0) {
         throw NiError(msg, status);
     }
 }

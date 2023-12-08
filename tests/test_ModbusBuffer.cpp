@@ -366,3 +366,9 @@ TEST_CASE("CRC class constructed from buffer", "[ModbusBuffer::CRC]") {
 
     REQUIRE(crc.get() == 0x6310);
 }
+
+TEST_CASE("Hex dumping", "[ModbusBuffer::hexDump]") {
+    std::vector<uint8_t> data({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 255});
+
+    REQUIRE(ModbusBuffer::hexDump(data.data(), data.size()) == "01 02 03 04 05 06 07 08 09 0a 0b ff");
+}

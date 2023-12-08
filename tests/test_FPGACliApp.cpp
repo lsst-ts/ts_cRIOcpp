@@ -27,7 +27,7 @@
 #include <cRIO/PrintILC.h>
 #include <cRIO/FPGACliApp.h>
 
-#include "TestFPGA.h"
+#include <TestFPGA.h>
 
 using namespace LSST::cRIO;
 

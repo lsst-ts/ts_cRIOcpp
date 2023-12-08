@@ -122,8 +122,10 @@ public:
      * the data.
      *
      * @param mpu Modbus Processing Unit to read the data
+     *
+     * @return data read from the port
      */
-    virtual void readMPUFIFO(MPU& mpu) = 0;
+    virtual std::vector<uint8_t> readMPUFIFO(MPU& mpu) = 0;
 
     /**
      * Writes buffer to command FIFO. Command FIFO is processed in

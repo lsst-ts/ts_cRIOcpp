@@ -15,7 +15,6 @@ lib/libcRIOcpp.a: FORCE
 
 # Other Targets
 clean:
-	@$(foreach file,doc,echo '[RM ] ${file}'; $(RM) -r $(file);)
 	@$(foreach dir,src tests,$(MAKE) -C ${dir} $@;)
 
 tests: tests/Makefile tests/*.cpp

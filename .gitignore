@@ -11,3 +11,4 @@ tests/test_*
 .isort.cfg
 .mypy.ini
 .ruff.toml
+towncrier.toml

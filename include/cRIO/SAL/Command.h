@@ -23,9 +23,11 @@
 namespace LSST {
 namespace cRIO {
 namespace SAL {
-constexpr int ACK_INPROGRESS = 301;
-constexpr int ACK_COMPLETE = 303;
-constexpr int ACK_FAILED = -302;
+
+constexpr int32_t ACK_INPROGRESS = 301;  /// Acknowledges command reception, command is being executed.
+constexpr int32_t ACK_COMPLETE = 303;    /// Command is completed.
+constexpr int32_t ACK_FAILED = -302;     /// Command execution failed.
+
 }  // namespace SAL
 }  // namespace cRIO
 }  // namespace LSST

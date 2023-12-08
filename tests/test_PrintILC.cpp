@@ -20,12 +20,14 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#define CATCH_CONFIG_MAIN
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/IntelHex.h>
 #include <cRIO/ILC.h>
 
-#include "TestFPGA.h"
+#include <TestFPGA.h>
 
 using namespace LSST::cRIO;
 

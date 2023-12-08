@@ -18,12 +18,10 @@
 #ifndef __CliApp_h
 #define __CliApp_h
 
-#include <iomanip>
 #include <iostream>
-#include <ostream>
 
 #include <cRIO/Application.h>
-#include <cRIO/OStreamRestore.h>
+#include <cRIO/ModbusBuffer.h>
 
 namespace LSST {
 namespace cRIO {
@@ -226,13 +224,7 @@ get_the_answer command.
      */
     template <typename dt>
     static const void printHexBuffer(dt* buf, size_t len, std::ostream& os = std::cout) {
-        OStreamRestore res(os);
-
-        os << std::hex << std::setfill('0');
-        for (size_t i = 0; i < len; i++) {
-            os << " " << std::setw(sizeof(dt) * 2) << +(buf[i]);
-        }
-        os << std::dec;
+        os << ModbusBuffer::hexDump<dt>(buf, len);
     }
 
     static const void printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& os = std::cout);

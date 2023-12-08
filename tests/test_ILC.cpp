@@ -455,8 +455,7 @@ TEST_CASE("Unmatched response", "[ILC]") {
     ilc1.clear();
     ilc1.reportServerID(132);
     ilc1.reportServerStatus(141);
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()),
-                      ModbusBuffer::UnmatchedFunction);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::MissingReply);
 
     // missing reply
     constructCommands();
@@ -476,8 +475,7 @@ TEST_CASE("Unmatched response", "[ILC]") {
 
     // invalid function
     ilc2.getBuffer()[1] = 0x1200 | (1 << 1);
-    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()),
-                      ModbusBuffer::UnmatchedFunction);
+    REQUIRE_THROWS_AS(ilc1.processResponse(ilc2.getBuffer(), ilc2.getLength()), ModbusBuffer::MissingReply);
 
     // reset function
     ilc3.write<uint8_t>(17);

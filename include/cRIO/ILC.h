@@ -162,7 +162,49 @@ protected:
 
     uint8_t getLastMode(uint8_t address) { return _lastMode.at(address); }
 
+    /**
+     * Return string with current mode description.
+     *
+     * @param mode ILC mode, as returned by function 18.
+     *
+     * @return status description (enabled, standby,..).
+     */
     const char *getModeStr(uint8_t mode);
+
+    /**
+     * Return string with short text describing all code 18 status response.
+     *
+     * @param status status returned from function 18 (and other functions).
+     *
+     * @return vector of strings with status description
+     */
+    virtual std::vector<const char *> getStatusString(uint16_t status);
+
+    enum ILCStatus { MajorFault = 0x0001, MinorFault = 0x0002, FaultOverride = 0x0008 };
+
+    /**
+     * Return ILC fault textual description.
+     *
+     * @param fault ILC faults returned by function 18.
+     *
+     * @return vector of strings with fault description
+     */
+    virtual std::vector<const char *> getFaultString(uint16_t fault);
+
+    enum ILCFault {
+        UniqueIRC = 0x0001,
+        AppType = 0x0002,
+        NoILC = 0x0004,
+        ILCAppCRC = 0x0008,
+        NoTEDS = 0x0010,
+        TEDS1 = 0x0020,
+        TEDS2 = 0x0040,
+        WatchdogReset = 0x0100,
+        BrownOut = 0x0200,
+        EventTrap = 0x0400,
+        SSR = 0x1000,
+        AUX = 0x2000
+    };
 
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for
