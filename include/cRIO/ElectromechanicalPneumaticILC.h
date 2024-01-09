@@ -69,7 +69,25 @@ public:
     void reportForceActuatorForceStatus(uint8_t address) { callFunction(address, 76, 1800); }
 
     /**
-     * Unicast ADC Channel Offset and Sensitivity. ILC command code 81 (0x51)
+     * Unicast to set DCA Gain. ILC Command code 73 (0x49).
+     *
+     * @param address ILC address
+     * @param orimaryGain axial booster valve gain
+     * @param secondaryGain lateral booster valve gain
+     */
+    void setDCAGain(uint8_t address, float primaryGain, float secondaryGain) {
+        callFunction(address, 73, 40000, primaryGain, secondaryGain);
+    }
+
+    /**
+     * Read DCA Gain. ILC Command code 74 (0x4A).
+     *
+     * @param address ILC address
+     */
+    void reportDCAGain(uint8_t address) { callFunction(address, 74, 1000); }
+
+    /**
+     * Unicast ADC Channel Offset and Sensitivity. ILC command code 81 (0x51).
      *
      * @param address ILC address
      * @param channel ADC channel (1-4)
@@ -105,6 +123,15 @@ protected:
      */
     virtual void processHardpointForceStatus(uint8_t address, uint8_t status, int32_t encoderPostion,
                                              float loadCellForce) = 0;
+
+    /**
+     * Called when response from call to command 74 (0x4A) is read.
+     *
+     * @param address returned from this ILC
+     * @param primaryGain axial booster gain value
+     * @param secondaryGain lateral booster gain value
+     */
+    virtual void processDCAGain(uint8_t, float primaryGain, float secondaryGain) = 0;
 
     /**
      * Called when response from call to command 122 (0x7a) is read.

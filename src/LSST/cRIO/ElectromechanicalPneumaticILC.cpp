@@ -36,6 +36,13 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
         processHardpointForceStatus(address, status, encoderPosition, loadCellForce);
     };
 
+    auto dcaGain = [this](uint8_t address) {
+        float primaryGain = read<float>();
+        float secondaryGain = read<float>();
+        checkCRC();
+        processDCAGain(address, primaryGain, secondaryGain);
+    };
+
     auto hardpointLVDT = [this](uint8_t address) {
         float breakwayLVDT = read<float>();
         float displacementLVDT = read<float>();
@@ -94,6 +101,11 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
     };
 
     addResponse(67, hardpointForceStatus, 200);
+
+    addResponse(
+            73, [this](uint8_t address) { checkCRC(); }, 201);
+
+    addResponse(74, dcaGain, 202);
 
     addResponse(75, forceActuatorForceStatus, 210);
 
