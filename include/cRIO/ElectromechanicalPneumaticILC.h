@@ -84,7 +84,7 @@ public:
      *
      * @param address ILC address
      */
-    void reportDCAGain(uint8_t address) { callFunction(address, 74, 1000); }
+    void reportDCAGain(uint8_t address) { callFunction(address, 74, 2000); }
 
     /**
      * Unicast ADC Channel Offset and Sensitivity. ILC command code 81 (0x51).
