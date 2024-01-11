@@ -40,9 +40,25 @@ public:
     /**
      * Construct the error.
      *
+     * @param msg Message associated with the error.
      * @param status Ni error status.
      */
     NiError(const char *msg, NiFpga_Status status);
+};
+
+/**
+ * Thrown on FPGA warnings. The code can then decide if that shall fault with
+ * warning, or continue working.
+ */
+class NiWarning : public std::runtime_error {
+public:
+    /**
+     * Construct NI warning.
+     *
+     * @param msg message associated with warning
+     * @param status NI error status
+     */
+    NiWarning(const char *msg, NiFpga_Status status);
 };
 
 /**

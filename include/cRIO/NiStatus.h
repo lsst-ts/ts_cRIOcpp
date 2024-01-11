@@ -40,14 +40,14 @@ namespace cRIO {
 const char* NiStatus(int32_t status);
 
 /**
- * Log NiFpga call error.
+ * Log NiFpga call error or warning.
  *
  * @param msg additional message (can be __PRETTY_FUNCTION__)
- * @param status NiFpga returned status
+ * @param status NiFpga returned status. < 0 for errors, > 0 for warning
  *
  * @return status (so it can be reused)
  */
-int32_t NiReportError(const char* msg, int32_t status);
+int32_t NiReportErrorWarning(const char* msg, int32_t status);
 
 }  // namespace cRIO
 }  // namespace LSST

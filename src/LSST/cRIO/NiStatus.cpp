@@ -195,15 +195,21 @@ NiErrors errors[] = {
         {0, nullptr}};
 
 const char *NiStatus(int32_t status) {
+    // non-0 negative status are errors, positive are warnings
     for (NiErrors *err = errors; err->desc != nullptr; err++) {
-        if (err->status == status) return err->desc;
+        if (err->status == abs(status)) return err->desc;
     }
-    return "Unknow error status";
+    return "Unknow error/warning status";
 }
 
-int32_t NiReportError(const char *msg, int32_t status) {
-    if (status != 0) {
+int32_t NiReportErrorWarning(const char *msg, int32_t status) {
+    if (status == 0) {
+        return status;
+    }
+    if (status < 0) {
         SPDLOG_ERROR("FPGA error {0} in {1}: {2}", status, msg, NiStatus(status));
+    } else {
+        SPDLOG_WARN("FPGA warning {0} in {1}: {2}", status, msg, NiStatus(status));
     }
     return status;
 }

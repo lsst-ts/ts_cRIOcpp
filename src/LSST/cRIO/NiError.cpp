@@ -27,12 +27,21 @@ namespace LSST {
 namespace cRIO {
 
 NiError::NiError(const char *msg, NiFpga_Status status) : std::runtime_error(NiStatus(status)) {
-    NiReportError(msg, status);
+    NiReportErrorWarning(msg, status);
+}
+
+NiWarning::NiWarning(const char *msg, NiFpga_Status status) : std::runtime_error(NiStatus(status)) {
+    NiReportErrorWarning(msg, status);
 }
 
 void NiThrowError(const char *msg, int32_t status) {
+    if (status == 0) {
+        return;
+    }
     if (status < 0) {
         throw NiError(msg, status);
+    } else {
+        throw NiWarning(msg, status);
     }
 }
 
