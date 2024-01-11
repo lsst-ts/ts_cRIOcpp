@@ -20,7 +20,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <spdlog/spdlog.h>
+#include <cmath>
 
 #include <cRIO/NiStatus.h>
 
@@ -200,18 +200,6 @@ const char *NiStatus(int32_t status) {
         if (err->status == abs(status)) return err->desc;
     }
     return "Unknow error/warning status";
-}
-
-int32_t NiReportErrorWarning(const char *msg, int32_t status) {
-    if (status == 0) {
-        return status;
-    }
-    if (status < 0) {
-        SPDLOG_ERROR("FPGA error {0} in {1}: {2}", status, msg, NiStatus(status));
-    } else {
-        SPDLOG_WARN("FPGA warning {0} in {1}: {2}", status, msg, NiStatus(status));
-    }
-    return status;
 }
 
 }  // namespace cRIO

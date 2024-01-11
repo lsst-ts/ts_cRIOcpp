@@ -26,6 +26,8 @@
 #include <stdexcept>
 #include <string>
 
+#include <spdlog/fmt/fmt.h>
+
 namespace LSST {
 namespace cRIO {
 
@@ -43,7 +45,7 @@ public:
      * @param msg Message associated with the error.
      * @param status Ni error status.
      */
-    NiError(const char *msg, NiFpga_Status status);
+    NiError(const std::string &msg, NiFpga_Status status);
 };
 
 /**
@@ -58,7 +60,7 @@ public:
      * @param msg message associated with warning
      * @param status NI error status
      */
-    NiWarning(const char *msg, NiFpga_Status status);
+    NiWarning(const std::string &msg, NiFpga_Status status);
 };
 
 /**
@@ -72,20 +74,29 @@ public:
  *
  * @see NiError
  */
-void NiThrowError(const char *msg, int32_t status);
+inline void NiThrowError(const std::string &msg, NiFpga_Status status) {
+    if (status == 0) {
+        return;
+    }
+    if (status < 0) {
+        throw NiError(msg, status);
+    } else {
+        throw NiWarning(msg, status);
+    }
+}
 
-/**
- * Throws NI exception if an error occurred. Ignores positive status values, as
- * those signal a warning  - see NiFpga_IsError.
- *
- * @param msg message associated with the error
- * @param status NI status
- *
- * @throw NiError if status < 0
- *
- * @see NiError
- */
-inline void NiThrowError(const std::string &msg, int32_t status) { NiThrowError(msg.c_str(), status); }
+template <typename... dt>
+void NiThrowError(NiFpga_Status status, const char *msg, const dt &...params) {
+    if (status == 0) {
+        return;
+    }
+    auto f_msg = fmt::format(msg, params...);
+    if (status < 0) {
+        throw NiError(f_msg, status);
+    } else {
+        throw NiWarning(f_msg, status);
+    }
+}
 
 /**
  * Throws NI exception if an error occurred. Ignores positive status values, as
@@ -99,7 +110,7 @@ inline void NiThrowError(const std::string &msg, int32_t status) { NiThrowError(
  *
  * @see NiError
  */
-void NiThrowError(const char *func, const char *ni_func, int32_t status);
+void NiThrowError(const char *func, const char *ni_func, NiFpga_Status status);
 
 }  // namespace cRIO
 }  // namespace LSST
@@ -113,11 +124,11 @@ void NiThrowError(const char *func, const char *ni_func, int32_t status);
  * @param attribute NI FPGA attribute
  * @param session NI FPGA session
  */
-#define NiOpen(dir, prefix, resource, attribute, session)                                                \
-    NiThrowError(std::string("NiFpga_Open: bitfile ") + dir + "/" + prefix##_Bitfile +                   \
-                         " with expected signature " + prefix##_Signature + " on resource " + resource + \
-                         " (check if file exists and signature matches)",                                \
-                 NiFpga_Open((std::string(dir) + "/" + prefix##_Bitfile).c_str(), prefix##_Signature,    \
-                             resource, attribute, session))
+#define NiOpen(dir, prefix, resource, attribute, session)                                                 \
+    LSST::cRIO::NiThrowError(std::string("NiFpga_Open: bitfile ") + dir + "/" + prefix##_Bitfile +        \
+                                     " with expected signature " + prefix##_Signature + " on resource " + \
+                                     resource + " (check if file exists and signature matches)",          \
+                             NiFpga_Open((std::string(dir) + "/" + prefix##_Bitfile).c_str(),             \
+                                         prefix##_Signature, resource, attribute, session))
 
 #endif  // ! _cRIO_NiError_H_
