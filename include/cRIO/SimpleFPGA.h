@@ -23,10 +23,17 @@
 #ifndef CRIO_SimpleFPGA_H_
 #define CRIO_SimpleFPGA_H_
 
+#include <chrono>
+#include <iomanip>
+#include <iostream>
+#include <fstream>
 #include <stddef.h>
 #include <stdint.h>
 
+#include <spdlog/spdlog.h>
+
 #include <cRIO/ILC.h>
+#include <cRIO/ModbusBuffer.h>
 
 namespace LSST {
 namespace cRIO {
@@ -53,8 +60,8 @@ public:
      *
      * @param type Either SS for Static Support FPGA or TS for Thermal System.
      */
-    SimpleFPGA(fpgaType type) {}
-    virtual ~SimpleFPGA() {}
+    SimpleFPGA(fpgaType type);
+    virtual ~SimpleFPGA();
 
     /**
      * Initialize FPGA.
@@ -83,6 +90,53 @@ public:
      * @throw NiError on NI error
      */
     virtual void finalize() = 0;
+
+    /**
+     * Open debug file.
+     *
+     * @param path debug file path
+     */
+    void openDebugFile(const char* path);
+
+    void writeDebugFile(const char* message);
+
+    template <typename dt>
+    const void writeDebugFile(const char* message, dt *buf, size_t length) {
+        if (_debug_stream.is_open()) {
+            try {
+                auto now = std::chrono::system_clock::now();
+                auto in_time_t = std::chrono::system_clock::to_time_t(now);
+                _debug_stream << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dZ%T:") << message << " "
+                              << ModbusBuffer::hexDump<dt>(buf, length) << std::endl;
+            } catch (const std::ios_base::failure& e) {
+                SPDLOG_WARN("Cannot write to debug file: {}", e.what());
+                closeDebugFile();
+            }
+        }
+    }
+
+    template <typename dt>
+    const void writeDebugFile(const char* message, ModbusBuffer& mb) {
+        if (_debug_stream.is_open()) {
+            try {
+                auto now = std::chrono::system_clock::now();
+                auto in_time_t = std::chrono::system_clock::to_time_t(now);
+                _debug_stream << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dZ%T:") << message << " "
+                              << mb.hexDump<dt>(mb.getBuffer(), mb.getLength()) << std::endl;
+            } catch (const std::ios_base::failure& e) {
+                SPDLOG_WARN("Cannot write to debug file: {}", e.what());
+                closeDebugFile();
+            }
+        }
+    }
+
+    void writeDebugFile(const char* message, ModbusBuffer& mb);
+
+    void closeDebugFile();
+
+private:
+    // File to write FPGA communication
+    std::ofstream _debug_stream;
 };
 
 }  // namespace cRIO

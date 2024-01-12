@@ -48,6 +48,7 @@ CSC::CSC(const char* name, const char* description) : Application(name, descript
     _keep_running = true;
     _configRoot = std::string("/var/lib/") + name;
     _startPipe[0] = _startPipe[1] = -1;
+    _fpgaDebugPath = NULL;
 
     enabledSinks = Sinks::SAL;
 
@@ -57,6 +58,7 @@ CSC::CSC(const char* name, const char* description) : Application(name, descript
     addArgument('h', "prints this help");
     addArgument('p', "PID file, started as daemon on background", ':');
     addArgument('s', "increases SAL debugging (can be specified multiple times, default is 0)");
+    addArgument('x', "Prints exhange between application and FPGA to a file", ':');
     addArgument('u', "<user>:<group> run under user & group", ':');
 }
 
@@ -75,6 +77,10 @@ int CSC::run(SimpleFPGA* fpga) {
 
     if (ret_d != -1) {
         return ret_d;
+    }
+
+    if (_fpgaDebugPath != NULL) {
+        fpga->openDebugFile(_fpgaDebugPath);
     }
 
     // initialize FPGA
@@ -121,6 +127,9 @@ void CSC::processArg(int opt, char* optarg) {
             break;
         case 's':
             _debugLevelSAL++;
+            break;
+        case 'x':
+            _fpgaDebugPath = optarg;
             break;
         case 'u': {
             char* sep = strchr(optarg, ':');
