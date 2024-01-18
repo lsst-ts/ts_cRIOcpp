@@ -24,7 +24,7 @@
 #ifndef EVENT_H_
 #define EVENT_H_
 
-#include <string>
+#include <cRIO/Task.h>
 
 namespace LSST {
 namespace cRIO {
@@ -38,14 +38,16 @@ namespace cRIO {
  *
  * @see ControllerThread
  */
-class Event {
+class Event : public Task {
 public:
     virtual ~Event();
 
-    /**
-     * Process data.
-     */
-    virtual void received() = 0;
+    std::chrono::milliseconds run() override {
+        recieved();
+        return Task::DONT_RESCHEDULE;
+    }
+
+    virtual void recieved() = 0;
 };
 
 }  // namespace cRIO

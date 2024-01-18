@@ -21,19 +21,43 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <cRIO/Command.h>
+#ifndef __CRIO_TASK__
+#define __CRIO_TASK__
+
+#include <chrono>
+#include <exception>
 
 namespace LSST {
 namespace cRIO {
 
-Command::~Command() {}
+/**
+ * Parent class for all tasks queued to operate on FPGA.
+ */
+class Task {
+public:
+    Task() {}
+    virtual ~Task() {}
 
-std::chrono::milliseconds Command::run() {
-    ackInProgress();
-    execute();
-    ackComplete();
-    return Task::DONT_RESCHEDULE;
-}
+    /**
+     * Validates the task. Run by managing queue before adding the task to the queue.
+     *
+     * @return true if command is valid and can be executed
+     */
+    virtual bool validate() { return true; }
+
+    virtual std::chrono::milliseconds run() = 0;
+
+    /**
+     * Report exception raised during task processing.
+     *
+     * @param ex exception raised during processing
+     */
+    virtual void reportException(const std::exception &ex){};
+
+    static constexpr std::chrono::milliseconds DONT_RESCHEDULE = std::chrono::milliseconds(-1);
+};
 
 }  // namespace cRIO
 }  // namespace LSST
+
+#endif /* !__CRIO_TASK__ */

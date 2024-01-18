@@ -2,7 +2,7 @@ include ../Makefile.inc
 
 all: compile
 
-.PHONY: FORCE compile run junit clean
+.PHONY: compile run junit clean
 
 TEST_REQ_READLINE := test_CliApp test_FPGACliApp
 TEST_SRCS := $(shell ls test_*.cpp 2>/dev/null | grep -v test_CliApp | grep -v test_FPGACliApp)
@@ -37,7 +37,7 @@ junit: compile
 clean:
 	@$(foreach df,$(ALL_BINARIES) $(patsubst %,%.cpp.o,$(ALL_BINARIES)) $(patsubst %,%.o,${TEST_LIB}) $(DEPS) $(JUNIT_FILES),echo '[RM ] ${df}'; $(RM) ${df};)
 
-../lib/libcRIOcpp.a: FORCE
+../lib/libcRIOcpp.a:
 	@$(MAKE) -C ../ lib/libcRIOcpp.a SIMULATOR=1
 
 %.cpp.o: %.cpp.d

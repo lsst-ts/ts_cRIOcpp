@@ -20,6 +20,8 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <atomic>
+
 #include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/Command.h>
@@ -28,11 +30,14 @@
 using namespace LSST::cRIO;
 using namespace std::chrono_literals;
 
-int tv;
+std::atomic<int> tv = 0;
 
-class TestCommand : public Command {
+class TestTask : public Task {
 public:
-    void execute() override { tv++; }
+    std::chrono::milliseconds run() override {
+        tv++;
+        return std::chrono::seconds(10);
+    }
 };
 
 TEST_CASE("Run ControllerThread and stop it", "[ControllerThread]") {
@@ -45,7 +50,7 @@ TEST_CASE("Run ControllerThread and stop it", "[ControllerThread]") {
     std::this_thread::sleep_for(100ms);
 
     // enqueue command into controller thread
-    ControllerThread::instance().enqueue(new TestCommand());
+    ControllerThread::instance().enqueue(std::make_shared<TestTask>());
 
     std::this_thread::sleep_for(1ms);
 
@@ -60,7 +65,7 @@ TEST_CASE("Queue to controller before run", "[ControllerThread]") {
     REQUIRE(tv == 0);
 
     for (int i = 0; i < 10; i++) {
-        ControllerThread::instance().enqueue(new TestCommand());
+        ControllerThread::instance().enqueue(std::make_shared<TestTask>());
     }
 
     // run controller thread
@@ -72,4 +77,48 @@ TEST_CASE("Queue to controller before run", "[ControllerThread]") {
     ControllerThread::instance().stop();
 
     REQUIRE(tv == 10);
+}
+
+TEST_CASE("Queue at different times", "[ControllerThread]") {
+    tv = 0;
+    REQUIRE(tv == 0);
+
+    auto when = std::chrono::steady_clock::now() + 500ms;
+
+    for (int i = 0; i < 3; i++) {
+        ControllerThread::instance().enqueue_at(std::make_shared<TestTask>(), when);
+        when -= 1ms;
+    }
+
+    when = std::chrono::steady_clock::now() + 200ms;
+
+    for (int i = 0; i < 4; i++) {
+        ControllerThread::instance().enqueue_at(std::make_shared<TestTask>(), when);
+        when -= 1ms;
+    }
+
+    when = std::chrono::steady_clock::now();
+
+    for (int i = 0; i < 2; i++) {
+        ControllerThread::instance().enqueue_at(std::make_shared<TestTask>(), when);
+        when += 1ms;
+    }
+
+    ControllerThread::instance().start();
+
+    std::this_thread::sleep_for(100ms);
+
+    REQUIRE(tv == 2);
+
+    std::this_thread::sleep_for(200ms);
+
+    REQUIRE(tv == 6);
+
+    std::this_thread::sleep_for(300ms);
+
+    REQUIRE(tv == 9);
+
+    ControllerThread::instance().stop();
+
+    REQUIRE(tv == 9);
 }

@@ -38,63 +38,64 @@ ControllerThread::ControllerThread(token) : _exitRequested(false) {
 
 ControllerThread::~ControllerThread() { _clear(); }
 
-void ControllerThread::enqueue(Command* command) {
-    SPDLOG_TRACE("ControllerThread: enqueue()");
+void ControllerThread::enqueue(std::shared_ptr<Task> task) {
+    enqueue_at(task, std::chrono::steady_clock::now() + 1ms);
+}
+
+void ControllerThread::enqueue_at(std::shared_ptr<Task> task,
+                                  std::chrono::time_point<std::chrono::steady_clock> when) {
+    SPDLOG_TRACE("ControllerThread: enqueue at {}",
+                 std::chrono::duration_cast<std::chrono::seconds>(when.time_since_epoch()).count());
     {
         std::lock_guard<std::mutex> lg(runMutex);
         try {
-            if (command->validate()) {
-                _commandQueue.push(command);
-            } else {
-                command->ackFailed("Cannot validate command");
-                delete command;
+            if (task->validate()) {
+                _taskQueue.push(TaskEntry(when, task));
             }
         } catch (std::exception& ex) {
-            command->ackFailed(ex.what());
-            delete command;
+            task->reportException(ex);
         }
-    }
-    runCondition.notify_one();
-}
-
-void ControllerThread::enqueueEvent(Event* event) {
-    SPDLOG_TRACE("ControllerThread: enqueueEvent()");
-    {
-        std::lock_guard<std::mutex> lg(runMutex);
-        _eventQueue.push(event);
     }
     runCondition.notify_one();
 }
 
 void ControllerThread::run(std::unique_lock<std::mutex>& lock) {
     SPDLOG_INFO("ControllerThread: Run");
-    // process already queued events
-    _processEvents();
-    // runs already queued commands
-    _runCommands();
+    // process already queued tasks
+    _processTasks();
     while (keepRunning) {
-        runCondition.wait(lock);
-        _processEvents();
-        _runCommands();
+        if (_taskQueue.empty()) {
+            runCondition.wait(lock);
+        } else {
+            runCondition.wait_until(lock, _taskQueue.top().first);
+        }
+        _processTasks();
     }
     SPDLOG_INFO("ControllerThread: Completed");
 }
 
-// runMutex must be locked by calling method to guard _eventQueue access!!
-void ControllerThread::_processEvents() {
-    while (!_eventQueue.empty()) {
-        Event* event = _eventQueue.front();
-        _eventQueue.pop();
-        _process(event);
+// runMutex must be locked by calling method to guard _taskQueue access!!
+void ControllerThread::_processTasks() {
+    if (_taskQueue.empty()) {
+        return;
     }
-}
 
-// runMutex must be locked by calling method to guard _commandQueue access!!
-void ControllerThread::_runCommands() {
-    while (!_commandQueue.empty()) {
-        Command* command = _commandQueue.front();
-        _commandQueue.pop();
-        _execute(command);
+    auto now = std::chrono::steady_clock::now();
+    auto task = _taskQueue.top();
+    while (task.first <= now) {
+        _taskQueue.pop();
+        try {
+            auto wait = task.second->run();
+            if (wait != Task::DONT_RESCHEDULE) {
+                _taskQueue.push(TaskEntry(std::chrono::steady_clock::now() + wait, task.second));
+            }
+        } catch (std::exception& ex) {
+            task.second->reportException(ex);
+        }
+        if (_taskQueue.empty()) {
+            return;
+        }
+        task = _taskQueue.top();
     }
 }
 
@@ -102,42 +103,9 @@ void ControllerThread::_clear() {
     SPDLOG_TRACE("ControllerThread: _clear()");
     {
         std::lock_guard<std::mutex> lg(runMutex);
-        while (!_eventQueue.empty()) {
-            Event* event = _eventQueue.front();
-            _eventQueue.pop();
-            delete event;
-        }
-        while (!_commandQueue.empty()) {
-            Command* command = _commandQueue.front();
-            _commandQueue.pop();
-            delete command;
-        }
+        TaskQueue empty;
+        std::swap(_taskQueue, empty);
     }
-}
-
-void ControllerThread::_process(Event* event) {
-    SPDLOG_TRACE("ControllerThread::_process()");
-    try {
-        event->received();
-    } catch (std::exception& e) {
-        SPDLOG_ERROR("Cannot process event: {}", e.what());
-    }
-
-    delete event;
-}
-
-void ControllerThread::_execute(Command* command) {
-    SPDLOG_TRACE("ControllerThread: _execute()");
-    try {
-        command->ackInProgress();
-        command->execute();
-        command->ackComplete();
-    } catch (std::exception& e) {
-        SPDLOG_ERROR("Cannot execute command: {}", e.what());
-        command->ackFailed(e.what());
-    }
-
-    delete command;
 }
 
 }  // namespace cRIO

@@ -1,5 +1,4 @@
 /*
- *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
  * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
@@ -22,11 +21,13 @@
 #ifndef CONTROLLERTHREAD_H_
 #define CONTROLLERTHREAD_H_
 
-#include <queue>
+#include <atomic>
+#include <chrono>
+#include <memory>
 
-#include <cRIO/Command.h>
-#include <cRIO/Event.h>
 #include <cRIO/Singleton.h>
+#include <cRIO/Task.h>
+#include <cRIO/TaskQueue.h>
 #include <cRIO/Thread.h>
 
 namespace LSST {
@@ -52,8 +53,9 @@ public:
      * the passed Command and will dispose it (delete it) after command is
      * executed or when queue is cleared.
      */
-    void enqueue(Command* command);
-    void enqueueEvent(Event* event);
+    void enqueue(std::shared_ptr<Task> task);
+
+    void enqueue_at(std::shared_ptr<Task> task, std::chrono::time_point<std::chrono::steady_clock> when);
 
     static void setExitRequested() { instance()._exitRequested = true; }
 
@@ -65,16 +67,11 @@ protected:
 private:
     void _clear();
 
-    void _processEvents();
-    void _process(Event* event);
+    void _processTasks();
 
-    void _runCommands();
-    void _execute(Command* command);
+    TaskQueue _taskQueue;
 
-    std::queue<Event*> _eventQueue;
-    std::queue<Command*> _commandQueue;
-
-    bool _exitRequested;
+    std::atomic<bool> _exitRequested;
 };
 
 }  // namespace cRIO
