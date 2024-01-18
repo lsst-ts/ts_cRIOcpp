@@ -35,7 +35,7 @@ namespace cRIO {
  */
 class Task {
 public:
-    Task() {}
+    Task(uint32_t irq_mask = 0) : _irq_mask(irq_mask) {}
     virtual ~Task() {}
 
     /**
@@ -55,6 +55,9 @@ public:
     virtual void reportException(const std::exception &ex){};
 
     static constexpr std::chrono::milliseconds DONT_RESCHEDULE = std::chrono::milliseconds(-1);
+
+private:
+    uint32_t _irq_mask;
 };
 
 }  // namespace cRIO
