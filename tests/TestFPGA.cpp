@@ -91,6 +91,16 @@ void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeo
     }
 }
 
+void TestFPGA::waitOnIrqs(uint32_t irqs, uint32_t timeout, bool& timedout, uint32_t* triggered) {
+    std::this_thread::sleep_for(std::chrono::milliseconds(10));
+    if (triggered != NULL) {
+        *triggered = _simulatedIRQs;
+    }
+    timedout = false;
+}
+
+void TestFPGA::ackIrqs(uint32_t irqs) {}
+
 void TestFPGA::processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
     _response.write(address);
     _response.write<uint8_t>(18);

@@ -21,6 +21,7 @@
 #ifndef __cRIO_THREAD_H__
 #define __cRIO_THREAD_H__
 
+#include <atomic>
 #include <condition_variable>
 #include <chrono>
 #include <mutex>
@@ -44,6 +45,10 @@ public:
      * Starts the thread. Starts new thread running the loop.
      *
      * @param timeout start timeout. Defaults to 1ms.
+     *
+     * @note If the call blocks indefinitely, most likely cause is the
+     * overridden run method not releasing locks (either directly, or
+     * indirectly through conditional variable wait).
      *
      * @throw runtime_error when thread was already started
      */
@@ -73,7 +78,7 @@ protected:
      * Mutex protecting keepRunning access, can be used in condition variable.
      */
     std::mutex runMutex;
-    bool keepRunning = false;
+    std::atomic<bool> keepRunning = false;
 
     /**
      * Condition variable for outside notifications. Notified when keepRunning
@@ -86,13 +91,16 @@ protected:
      * some loop as long as keepRunning is true. Shall call
      * runCondition.wait[|_for|_until] to wait for outside notifications.
      *
-     * @param lock locked unique lock. Should be used as paremeter to
-     * runCondition.wait call
+     * @note The code is expected to call runCondition.wait at least once, or
+     * to unlock the lock for some time.
+     *
+     * @param lock locked unique lock. Should be used as parameter to
+     * runCondition.wait call.
      */
     virtual void run(std::unique_lock<std::mutex>& lock) = 0;
 
 private:
-    std::thread* _thread = NULL;
+    std::thread* _thread = nullptr;
 
     /*
      * Condition for start detection. Notified on call to _run. Without this,

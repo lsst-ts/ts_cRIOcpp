@@ -24,19 +24,23 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <cRIO/Command.h>
 #include <cRIO/ControllerThread.h>
+#include <cRIO/InterruptHandler.h>
+#include <cRIO/Task.h>
+
+#include <TestFPGA.h>
 
 using namespace LSST::cRIO;
 using namespace std::chrono_literals;
 
 std::atomic<int> tv = 0;
+std::atomic<int> iv = 0;
 
 class TestTask : public Task {
 public:
-    std::chrono::milliseconds run() override {
+    task_return_t run() override {
         tv++;
-        return std::chrono::seconds(10);
+        return 10000;
     }
 };
 
@@ -108,17 +112,111 @@ TEST_CASE("Queue at different times", "[ControllerThread]") {
 
     std::this_thread::sleep_for(100ms);
 
-    REQUIRE(tv == 2);
+    CHECK(tv == 2);
 
     std::this_thread::sleep_for(200ms);
 
-    REQUIRE(tv == 6);
+    CHECK(tv == 6);
 
     std::this_thread::sleep_for(300ms);
 
-    REQUIRE(tv == 9);
+    CHECK(tv == 9);
 
     ControllerThread::instance().stop();
 
     REQUIRE(tv == 9);
+}
+
+std::atomic<int> rv = 0;
+
+class TestRescheduledTask : public Task {
+public:
+    TestRescheduledTask(task_return_t wait) : _wait(wait) {}
+
+    task_return_t run() override {
+        rv += 1;
+        return _wait;
+    }
+
+private:
+    task_return_t _wait;
+};
+
+TEST_CASE("Task rescheduling", "[ControllerThread]") {
+    rv = 0;
+    REQUIRE(rv == 0);
+
+    for (int i = 0; i < 3; i++) {
+        ControllerThread::instance().enqueue(std::make_shared<TestRescheduledTask>(20));
+    }
+
+    for (int i = 0; i < 2; i++) {
+        ControllerThread::instance().enqueue(std::make_shared<TestRescheduledTask>(30));
+    }
+
+    ControllerThread::instance().start();
+
+    std::this_thread::sleep_for(22ms);
+
+    CHECK(rv == 8);
+
+    std::this_thread::sleep_for(10ms);
+
+    CHECK(rv == 10);
+
+    std::this_thread::sleep_for(70ms);
+
+    CHECK(rv == 26);
+
+    ControllerThread::instance().stop();
+
+    REQUIRE(rv == 26);
+}
+
+class TestHandler : public InterruptHandler {
+public:
+    void handleInterrupt(uint8_t interrupt) override { iv++; }
+};
+
+class TestHandlerTask : public TestHandler, public Task {
+public:
+    task_return_t run() override {
+        tv++;
+        return 10000;
+    }
+};
+
+class TestTaskHandler : public TestTask, public InterruptHandler {
+public:
+    void handleInterrupt(uint8_t interrupt) override { iv++; }
+};
+
+TEST_CASE("Handling interrupts", "[ControllerThread]") {
+    iv = 0;
+    REQUIRE(iv == 0);
+
+    for (int i = 0; i < 3; i++) {
+        ControllerThread::instance().enqueue(std::make_shared<TestRescheduledTask>(20));
+    }
+
+    for (int i = 0; i < 3; i++) {
+        ControllerThread::instance().setInterruptHandler(std::make_shared<TestHandler>(), i + 1);
+    }
+
+    TestFPGA fpga;
+    fpga.setSimulatedIRQs(0x7);
+
+    TestILC ilc(1);
+
+    REQUIRE_NOTHROW(ControllerThread::instance().startInterruptWatcherTask(&fpga));
+
+    ControllerThread::instance().start();
+
+    std::this_thread::sleep_for(22ms);
+
+    CHECK(iv == 6);
+
+    ControllerThread::instance().stop();
+
+    REQUIRE(iv == 6);
 }

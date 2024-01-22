@@ -28,7 +28,7 @@ namespace cRIO {
 
 Command::~Command() {}
 
-std::chrono::milliseconds Command::run() {
+task_return_t Command::run() {
     ackInProgress();
     execute();
     ackComplete();

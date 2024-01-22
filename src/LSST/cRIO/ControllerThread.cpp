@@ -21,6 +21,7 @@
  */
 
 #include <chrono>
+#include <stdexcept>
 #include <thread>
 
 #include <spdlog/spdlog.h>
@@ -29,14 +30,14 @@
 
 using namespace std::chrono_literals;
 
-namespace LSST {
-namespace cRIO {
+using namespace LSST::cRIO;
 
-ControllerThread::ControllerThread(token) : _exitRequested(false) {
-    SPDLOG_DEBUG("ControllerThread: ControllerThread()");
+ControllerThread::ControllerThread(token) { SPDLOG_DEBUG("ControllerThread: ControllerThread()"); }
+
+ControllerThread::~ControllerThread() {
+    delete _interruptWatcherThread;
+    _clear();
 }
-
-ControllerThread::~ControllerThread() { _clear(); }
 
 void ControllerThread::enqueue(std::shared_ptr<Task> task) {
     enqueue_at(task, std::chrono::steady_clock::now() + 1ms);
@@ -59,6 +60,23 @@ void ControllerThread::enqueue_at(std::shared_ptr<Task> task,
     runCondition.notify_one();
 }
 
+void ControllerThread::startInterruptWatcherTask(FPGA* fpga) {
+    _interruptWatcherThread = new InterruptWatcherThread(fpga);
+    _interruptWatcherThread->start();
+}
+
+void ControllerThread::setInterruptHandler(std::shared_ptr<InterruptHandler> handler, uint8_t irq) {
+    if ((irq == 0) || (irq > CRIO_INTERRUPTS)) {
+        throw std::runtime_error(fmt::format("Interrupt number should fall between 1 and {} - {} specified",
+                                             CRIO_INTERRUPTS, irq));
+    }
+    if (_interruptHandlers[irq - 1] != nullptr) {
+        throw std::runtime_error(
+                fmt::format("Cannot set handler for interrupt {}, as the handler was already set", irq));
+    }
+    _interruptHandlers[irq - 1] = handler;
+}
+
 void ControllerThread::run(std::unique_lock<std::mutex>& lock) {
     SPDLOG_INFO("ControllerThread: Run");
     // process already queued tasks
@@ -74,6 +92,27 @@ void ControllerThread::run(std::unique_lock<std::mutex>& lock) {
     SPDLOG_INFO("ControllerThread: Completed");
 }
 
+void ControllerThread::checkInterrupts(uint32_t triggeredIterrupts) {
+    for (uint8_t i = 0; i < CRIO_INTERRUPTS; i++, triggeredIterrupts >>= 1) {
+        if ((triggeredIterrupts & 0x01) == 0x01) {
+            if (_interruptHandlers[i] == nullptr) {
+                SPDLOG_WARN("FPGA signaled non-handled interrupt {}.", i + 1);
+                continue;
+            }
+            _interruptHandlers[i]->handleInterrupt(i + 1);
+        }
+    }
+}
+
+void ControllerThread::_clear() {
+    SPDLOG_TRACE("ControllerThread: _clear()");
+    {
+        std::lock_guard<std::mutex> lg(runMutex);
+        TaskQueue empty;
+        std::swap(_taskQueue, empty);
+    }
+}
+
 // runMutex must be locked by calling method to guard _taskQueue access!!
 void ControllerThread::_processTasks() {
     if (_taskQueue.empty()) {
@@ -87,7 +126,8 @@ void ControllerThread::_processTasks() {
         try {
             auto wait = task.second->run();
             if (wait != Task::DONT_RESCHEDULE) {
-                _taskQueue.push(TaskEntry(std::chrono::steady_clock::now() + wait, task.second));
+                _taskQueue.push(TaskEntry(std::chrono::steady_clock::now() + std::chrono::milliseconds(wait),
+                                          task.second));
             }
         } catch (std::exception& ex) {
             task.second->reportException(ex);
@@ -98,15 +138,3 @@ void ControllerThread::_processTasks() {
         task = _taskQueue.top();
     }
 }
-
-void ControllerThread::_clear() {
-    SPDLOG_TRACE("ControllerThread: _clear()");
-    {
-        std::lock_guard<std::mutex> lg(runMutex);
-        TaskQueue empty;
-        std::swap(_taskQueue, empty);
-    }
-}
-
-}  // namespace cRIO
-}  // namespace LSST

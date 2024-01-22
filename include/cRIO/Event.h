@@ -42,7 +42,7 @@ class Event : public Task {
 public:
     virtual ~Event();
 
-    std::chrono::milliseconds run() override {
+    task_return_t run() override {
         recieved();
         return Task::DONT_RESCHEDULE;
     }

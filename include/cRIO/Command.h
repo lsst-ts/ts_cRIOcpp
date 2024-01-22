@@ -44,7 +44,7 @@ class Command : public Task {
 public:
     virtual ~Command();
 
-    std::chrono::milliseconds run() override;
+    task_return_t run() override;
 
     /**
      * Executes the command.

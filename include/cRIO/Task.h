@@ -30,6 +30,8 @@
 namespace LSST {
 namespace cRIO {
 
+typedef uint32_t task_return_t;
+
 /**
  * Parent class for all tasks queued to operate on FPGA.
  */
@@ -45,7 +47,7 @@ public:
      */
     virtual bool validate() { return true; }
 
-    virtual std::chrono::milliseconds run() = 0;
+    virtual task_return_t run() = 0;
 
     /**
      * Report exception raised during task processing.
@@ -54,7 +56,7 @@ public:
      */
     virtual void reportException(const std::exception &ex){};
 
-    static constexpr std::chrono::milliseconds DONT_RESCHEDULE = std::chrono::milliseconds(-1);
+    static constexpr task_return_t DONT_RESCHEDULE = 0xFFFFFFFF;
 
 private:
     uint32_t _irq_mask;

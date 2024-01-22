@@ -25,6 +25,9 @@
 #include <chrono>
 #include <memory>
 
+#include <cRIO/FPGA.h>
+#include <cRIO/InterruptHandler.h>
+#include <cRIO/InterruptWatcherTask.h>
 #include <cRIO/Singleton.h>
 #include <cRIO/Task.h>
 #include <cRIO/TaskQueue.h>
@@ -47,6 +50,8 @@ public:
     ControllerThread(token);
     ~ControllerThread();
 
+    void startInterruptWatcherTask(FPGA* fpga);
+
     /* Put command into queue.
      *
      * @param command Command to enqueue. ControllerThread takes ownership of
@@ -57,9 +62,19 @@ public:
 
     void enqueue_at(std::shared_ptr<Task> task, std::chrono::time_point<std::chrono::steady_clock> when);
 
+    /**
+     * Sets interrupt handler.
+     *
+     * @param handler new interrupt handler
+     * @param irq irq number
+     */
+    void setInterruptHandler(std::shared_ptr<InterruptHandler> handler, uint8_t irq);
+
     static void setExitRequested() { instance()._exitRequested = true; }
 
     static bool exitRequested() { return instance()._exitRequested; }
+
+    void checkInterrupts(uint32_t triggeredIterrupts);
 
 protected:
     void run(std::unique_lock<std::mutex>& lock) override;
@@ -71,7 +86,21 @@ private:
 
     TaskQueue _taskQueue;
 
-    std::atomic<bool> _exitRequested;
+    std::atomic<bool> _exitRequested = false;
+
+    static constexpr uint8_t CRIO_INTERRUPTS = 32;
+
+    /**
+     * Tasks run at specific interrupt.
+     */
+    std::shared_ptr<InterruptHandler> _interruptHandlers[CRIO_INTERRUPTS] = {
+            nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+            nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+            nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+
+    InterruptWatcherThread* _interruptWatcherThread = nullptr;
+
+    friend class InterruptWatcherTask;
 };
 
 }  // namespace cRIO

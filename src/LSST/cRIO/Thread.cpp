@@ -24,8 +24,7 @@
 
 using namespace std::chrono_literals;
 
-namespace LSST {
-namespace cRIO {
+using namespace LSST::cRIO;
 
 Thread::~Thread() { stop(); }
 
@@ -37,11 +36,8 @@ void Thread::start(std::chrono::microseconds timeout) {
         }
         keepRunning = true;
         _thread = new std::thread(&Thread::_run, this);
-        auto timeout_time = std::chrono::steady_clock::now() + timeout;
-        while (_threadStarted == false) {
-            if (_startCondition.wait_until(lg, timeout_time) == std::cv_status::timeout) {
-                throw std::runtime_error("Thread: Was not started!");
-            }
+        if (_startCondition.wait_for(lg, timeout, [this]() { return _threadStarted == true; }) == false) {
+            throw std::runtime_error("Thread: Was not started!");
         }
     }
 }
@@ -55,11 +51,9 @@ void Thread::stop(std::chrono::microseconds timeout) {
     {
         std::unique_lock<std::mutex> lg(runMutex);
         if (_thread) {
-            auto timeout_time = std::chrono::steady_clock::now() + timeout;
-            while (_threadStarted == true) {
-                if (_startCondition.wait_until(lg, timeout_time) == std::cv_status::timeout) {
-                    throw std::runtime_error("Thread: Cannot stop thread!");
-                }
+            if (_startCondition.wait_for(lg, timeout, [this]() { return _threadStarted == false; }) ==
+                false) {
+                throw std::runtime_error("Thread: Cannot stop thread!");
             }
             _thread->join();
             delete _thread;
@@ -89,6 +83,3 @@ void Thread::_run() {
         _startCondition.notify_one();
     }
 }
-
-}  // namespace cRIO
-}  // namespace LSST
