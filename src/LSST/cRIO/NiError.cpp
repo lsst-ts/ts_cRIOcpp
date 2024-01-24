@@ -20,23 +20,29 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <spdlog/spdlog.h>
+
 #include "cRIO/NiError.h"
 #include "cRIO/NiStatus.h"
 
 namespace LSST {
 namespace cRIO {
 
-NiError::NiError(const char *msg, NiFpga_Status status) : std::runtime_error(NiStatus(status)) {
-    NiReportError(msg, status);
-}
-
-void NiThrowError(const char *msg, int32_t status) {
-    if (status < 0) {
-        throw NiError(msg, status);
+NiError::NiError(const std::string &msg, NiFpga_Status status)
+        : std::runtime_error(msg + ": " + NiStatus(status)) {
+    if (status != 0) {
+        SPDLOG_ERROR("FPGA error {0} in {1}: {2}", status, msg, NiStatus(status));
     }
 }
 
-void NiThrowError(const char *func, const char *ni_func, int32_t status) {
+NiWarning::NiWarning(const std::string &msg, NiFpga_Status status)
+        : std::runtime_error(msg + ": " + NiStatus(status)) {
+    if (status != 0) {
+        SPDLOG_WARN("FPGA warning {0} in {1}: {2}", status, msg, NiStatus(status));
+    }
+}
+
+void NiThrowError(const char *func, const char *ni_func, NiFpga_Status status) {
     NiThrowError(std::string(func) + " " + ni_func, status);
 }
 

@@ -18,6 +18,8 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <stdexcept>
+
 #include <cRIO/Thread.h>
 
 using namespace std::chrono_literals;

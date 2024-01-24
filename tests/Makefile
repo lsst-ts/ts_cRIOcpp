@@ -10,6 +10,7 @@ BINARIES := $(patsubst %.cpp,%,$(TEST_SRCS))
 ALL_BINARIES := $(BINARIES) $(TEST_REQ_READLINE)
 DEPS := $(patsubst %.cpp,%.cpp.d,$(TEST_SRCS))
 JUNIT_FILES := $(shell ls *.xml 2>/dev/null)
+TEST_LIB := TestFPGA.cpp
 
 ifneq ($(MAKECMDGOALS),clean)
     -include $(DEPS)
@@ -34,7 +35,7 @@ junit: compile
 	@$(foreach b,$(ALL_BINARIES),echo '[JUT] ${b}'; ./${b} -r junit -o ${b}.xml;)
 
 clean:
-	@$(foreach df,$(ALL_BINARIES) $(patsubst %,%.cpp.o,$(ALL_BINARIES)) $(DEPS) $(JUNIT_FILES),echo '[RM ] ${df}'; $(RM) ${df};)
+	@$(foreach df,$(ALL_BINARIES) $(patsubst %,%.cpp.o,$(ALL_BINARIES)) $(patsubst %,%.o,${TEST_LIB}) $(DEPS) $(JUNIT_FILES),echo '[RM ] ${df}'; $(RM) ${df};)
 
 ../lib/libcRIOcpp.a: FORCE
 	@$(MAKE) -C ../ lib/libcRIOcpp.a SIMULATOR=1
@@ -55,6 +56,6 @@ $(BINARIES): %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
 	@echo '[TPP] $<'
 	${co}$(CPP) -o $@ -Wl,--gc-sections $(LIBS_FLAGS) $^ $(LIBS) $(CPP_FLAGS)
 
-libcRIOtest.a: TestFPGA.cpp.o
+libcRIOtest.a: $(patsubst %,%.o,${TEST_LIB})
 	@echo '[AR ] $@'
 	${co}${AR} rs $@ $^
