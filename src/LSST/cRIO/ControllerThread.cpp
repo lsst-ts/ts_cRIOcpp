@@ -21,6 +21,7 @@
  */
 
 #include <chrono>
+#include <stdexcept>
 #include <thread>
 
 #include <spdlog/spdlog.h>
@@ -29,72 +30,77 @@
 
 using namespace std::chrono_literals;
 
-namespace LSST {
-namespace cRIO {
+using namespace LSST::cRIO;
 
-ControllerThread::ControllerThread(token) : _exitRequested(false) {
-    SPDLOG_DEBUG("ControllerThread: ControllerThread()");
+ControllerThread::ControllerThread(token) { SPDLOG_DEBUG("ControllerThread: ControllerThread()"); }
+
+ControllerThread::~ControllerThread() {
+    delete _interruptWatcherThread;
+    _clear();
 }
 
-ControllerThread::~ControllerThread() { _clear(); }
+void ControllerThread::enqueue(std::shared_ptr<Task> task) {
+    enqueue_at(task, std::chrono::steady_clock::now() + 1ms);
+}
 
-void ControllerThread::enqueue(Command* command) {
-    SPDLOG_TRACE("ControllerThread: enqueue()");
+void ControllerThread::enqueue_at(std::shared_ptr<Task> task,
+                                  std::chrono::time_point<std::chrono::steady_clock> when) {
+    SPDLOG_TRACE("ControllerThread: enqueue at {}",
+                 std::chrono::duration_cast<std::chrono::seconds>(when.time_since_epoch()).count());
     {
         std::lock_guard<std::mutex> lg(runMutex);
         try {
-            if (command->validate()) {
-                _commandQueue.push(command);
-            } else {
-                command->ackFailed("Cannot validate command");
-                delete command;
+            if (task->validate()) {
+                _taskQueue.push(TaskEntry(when, task));
             }
         } catch (std::exception& ex) {
-            command->ackFailed(ex.what());
-            delete command;
+            task->reportException(ex);
         }
     }
     runCondition.notify_one();
 }
 
-void ControllerThread::enqueueEvent(Event* event) {
-    SPDLOG_TRACE("ControllerThread: enqueueEvent()");
-    {
-        std::lock_guard<std::mutex> lg(runMutex);
-        _eventQueue.push(event);
+void ControllerThread::startInterruptWatcherTask(FPGA* fpga) {
+    _interruptWatcherThread = new InterruptWatcherThread(fpga);
+    _interruptWatcherThread->start();
+}
+
+void ControllerThread::setInterruptHandler(std::shared_ptr<InterruptHandler> handler, uint8_t irq) {
+    if ((irq == 0) || (irq > CRIO_INTERRUPTS)) {
+        throw std::runtime_error(fmt::format("Interrupt number should fall between 1 and {} - {} specified",
+                                             CRIO_INTERRUPTS, irq));
     }
-    runCondition.notify_one();
+    if (_interruptHandlers[irq - 1] != nullptr) {
+        throw std::runtime_error(
+                fmt::format("Cannot set handler for interrupt {}, as the handler was already set", irq));
+    }
+    _interruptHandlers[irq - 1] = handler;
 }
 
 void ControllerThread::run(std::unique_lock<std::mutex>& lock) {
     SPDLOG_INFO("ControllerThread: Run");
-    // process already queued events
-    _processEvents();
-    // runs already queued commands
-    _runCommands();
+    // process already queued tasks
+    _processTasks();
     while (keepRunning) {
-        runCondition.wait(lock);
-        _processEvents();
-        _runCommands();
+        if (_taskQueue.empty()) {
+            runCondition.wait(lock);
+        } else {
+            runCondition.wait_until(lock, _taskQueue.top().first);
+        }
+        _processTasks();
     }
     SPDLOG_INFO("ControllerThread: Completed");
 }
 
-// runMutex must be locked by calling method to guard _eventQueue access!!
-void ControllerThread::_processEvents() {
-    while (!_eventQueue.empty()) {
-        Event* event = _eventQueue.front();
-        _eventQueue.pop();
-        _process(event);
-    }
-}
-
-// runMutex must be locked by calling method to guard _commandQueue access!!
-void ControllerThread::_runCommands() {
-    while (!_commandQueue.empty()) {
-        Command* command = _commandQueue.front();
-        _commandQueue.pop();
-        _execute(command);
+void ControllerThread::checkInterrupts(uint32_t triggeredIterrupts) {
+    for (uint8_t i = 0; i < CRIO_INTERRUPTS; i++, triggeredIterrupts >>= 1) {
+        if ((triggeredIterrupts & 0x01) == 0x01) {
+            if (_interruptHandlers[i] == nullptr) {
+                SPDLOG_WARN("FPGA signaled non-handled interrupt {}.", i + 1);
+                continue;
+            }
+            _interruptHandlers[i]->handleInterrupt(i + 1);
+        }
     }
 }
 
@@ -102,43 +108,33 @@ void ControllerThread::_clear() {
     SPDLOG_TRACE("ControllerThread: _clear()");
     {
         std::lock_guard<std::mutex> lg(runMutex);
-        while (!_eventQueue.empty()) {
-            Event* event = _eventQueue.front();
-            _eventQueue.pop();
-            delete event;
+        TaskQueue empty;
+        std::swap(_taskQueue, empty);
+    }
+}
+
+// runMutex must be locked by calling method to guard _taskQueue access!!
+void ControllerThread::_processTasks() {
+    if (_taskQueue.empty()) {
+        return;
+    }
+
+    auto now = std::chrono::steady_clock::now();
+    auto task = _taskQueue.top();
+    while (task.first <= now) {
+        _taskQueue.pop();
+        try {
+            auto wait = task.second->run();
+            if (wait != Task::DONT_RESCHEDULE) {
+                _taskQueue.push(TaskEntry(std::chrono::steady_clock::now() + std::chrono::milliseconds(wait),
+                                          task.second));
+            }
+        } catch (std::exception& ex) {
+            task.second->reportException(ex);
         }
-        while (!_commandQueue.empty()) {
-            Command* command = _commandQueue.front();
-            _commandQueue.pop();
-            delete command;
+        if (_taskQueue.empty()) {
+            return;
         }
+        task = _taskQueue.top();
     }
 }
-
-void ControllerThread::_process(Event* event) {
-    SPDLOG_TRACE("ControllerThread::_process()");
-    try {
-        event->received();
-    } catch (std::exception& e) {
-        SPDLOG_ERROR("Cannot process event: {}", e.what());
-    }
-
-    delete event;
-}
-
-void ControllerThread::_execute(Command* command) {
-    SPDLOG_TRACE("ControllerThread: _execute()");
-    try {
-        command->ackInProgress();
-        command->execute();
-        command->ackComplete();
-    } catch (std::exception& e) {
-        SPDLOG_ERROR("Cannot execute command: {}", e.what());
-        command->ackFailed(e.what());
-    }
-
-    delete command;
-}
-
-}  // namespace cRIO
-}  // namespace LSST

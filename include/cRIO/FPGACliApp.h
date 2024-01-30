@@ -68,6 +68,7 @@ public:
     virtual int run(int argc, char* const argv[]);
 
     int timeit(command_vec cmds);
+    int setIlcTimeout(command_vec cmds);
 
     int closeFPGA(command_vec cmds);
     int openFPGA(command_vec cmds);
@@ -113,11 +114,13 @@ protected:
 
     /**
      * Run prepared ILC commands on ILC busses.
+     *
+     * @param timeout ILC timeout (in ms)
      */
-    void runILCCommands() {
+    void runILCCommands(int32_t timeout) {
         for (auto ilcp : _ilcs) {
             if (ilcp->getLength() > 0) {
-                _fpga->ilcCommands(*ilcp);
+                _fpga->ilcCommands(*ilcp, timeout);
             }
         }
     }
@@ -140,6 +143,8 @@ protected:
      * Prints actually disabled ILCs.
      */
     void printDisabled();
+
+    int32_t ilcTimeout;
 
 private:
     FPGA* _fpga;

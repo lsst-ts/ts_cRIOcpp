@@ -90,12 +90,13 @@ public:
      *
      * @param ilc ILC class. That contains ModbusBuffer with commands. Its
      * ILC::getBus() method returns bus used for communication.
+     * @param timeout
      *
      * @see ILC
      * @see ILC::getBus()
      * @see ILC::processResponse()
      */
-    void ilcCommands(ILC& ilc);
+    void ilcCommands(ILC& ilc, int32_t timeout);
 
     /**
      * Sends MPU commands to command FIFO. MPU command buffer must be filled

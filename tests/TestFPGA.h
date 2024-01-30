@@ -23,6 +23,10 @@
 #ifndef __TEST_FPGA__
 #define __TEST_FPGA__
 
+#include <atomic>
+#include <chrono>
+#include <thread>
+
 #include <cRIO/FPGA.h>
 #include <cRIO/PrintILC.h>
 #include <cRIO/SimulatedILC.h>
@@ -55,12 +59,11 @@ public:
     void writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
-    void waitOnIrqs(uint32_t irqs, uint32_t timeout, bool& timedout, uint32_t* triggered = NULL) override {
-        timedout = false;
-    }
-    void ackIrqs(uint32_t irqs) override {}
+    void waitOnIrqs(uint32_t irqs, uint32_t timeout, bool& timedout, uint32_t* triggered = NULL) override;
+    void ackIrqs(uint32_t irqs) override;
 
     void setPages(uint8_t* pages) { _pages = pages; }
+    void setSimulatedIRQs(uint32_t irqs) { _simulatedIRQs = irqs; }
 
 protected:
     void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) override;
@@ -79,6 +82,8 @@ private:
     uint8_t* _pages;
 
     double _currentTimestamp;
+
+    std::atomic<uint32_t> _simulatedIRQs = 0;
 };
 
 #endif  //!__TEST_FPGA__

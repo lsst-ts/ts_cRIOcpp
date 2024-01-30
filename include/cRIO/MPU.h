@@ -227,7 +227,7 @@ public:
         try {
             return _registers.at(address);
         } catch (std::out_of_range &e) {
-            throw std::runtime_error(fmt::format("Cannot retrive holding register {}", address));
+            throw std::runtime_error(fmt::format("Cannot retrieve holding register {}", address));
         }
     }
 

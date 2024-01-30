@@ -21,36 +21,48 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef EVENT_H_
-#define EVENT_H_
+#ifndef __CRIO_TASK__
+#define __CRIO_TASK__
 
-#include <cRIO/Task.h>
+#include <chrono>
+#include <exception>
 
 namespace LSST {
 namespace cRIO {
 
+typedef uint32_t task_return_t;
+
 /**
- * Parent class for all events.
- *
- * Follows Command Pattern from Design Patterns. Encapsulates command executed
- * in ControllerThread. Pure virtual methed ::received() shall be overriden in
- * child classes, implementing reaction to specified events.
- *
- * @see ControllerThread
+ * Parent class for all tasks queued to operate on FPGA.
  */
-class Event : public Task {
+class Task {
 public:
-    virtual ~Event();
+    Task(uint32_t irq_mask = 0) : _irq_mask(irq_mask) {}
+    virtual ~Task() {}
 
-    task_return_t run() override {
-        recieved();
-        return Task::DONT_RESCHEDULE;
-    }
+    /**
+     * Validates the task. Run by managing queue before adding the task to the queue.
+     *
+     * @return true if command is valid and can be executed
+     */
+    virtual bool validate() { return true; }
 
-    virtual void recieved() = 0;
+    virtual task_return_t run() = 0;
+
+    /**
+     * Report exception raised during task processing.
+     *
+     * @param ex exception raised during processing
+     */
+    virtual void reportException(const std::exception &ex){};
+
+    static constexpr task_return_t DONT_RESCHEDULE = 0xFFFFFFFF;
+
+private:
+    uint32_t _irq_mask;
 };
 
 }  // namespace cRIO
 }  // namespace LSST
 
-#endif /* EVENT_H_ */
+#endif /* !__CRIO_TASK__ */

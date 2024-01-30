@@ -132,6 +132,8 @@ private:
     int _daemonize();
 
     int _startPipe[2];
+
+    const char *_fpgaDebugPath;
 };
 
 }  // namespace cRIO

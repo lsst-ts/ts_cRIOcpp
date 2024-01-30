@@ -26,6 +26,8 @@
 
 #include <string>
 
+#include <cRIO/Task.h>
+
 namespace LSST {
 namespace cRIO {
 
@@ -38,37 +40,34 @@ namespace cRIO {
  *
  * @see ControllerThread
  */
-class Command {
+class Command : public Task {
 public:
     virtual ~Command();
 
-    /**
-     * Validates the command.
-     *
-     * @return true if command is valid and can be executed
-     */
-    virtual bool validate();
+    task_return_t run() override;
 
     /**
      * Executes the command.
      */
     virtual void execute() = 0;
 
+    void reportException(const std::exception &ex) override { ackFailed(ex.what()); }
+
     /**
      * Acknowledges the command is in progress.
      */
-    virtual void ackInProgress();
+    virtual void ackInProgress() = 0;
 
     /**
      * Acknowledges the command has completed successfully.
      */
-    virtual void ackComplete();
+    virtual void ackComplete() = 0;
 
     /**
      * Acknowledges the command has failed.
      * @param[in] reason The reason why the command has failed.
      */
-    virtual void ackFailed(std::string reason);
+    virtual void ackFailed(std::string reason) = 0;
 };
 
 }  // namespace cRIO
