@@ -43,11 +43,21 @@ public:
     ElectromechanicalPneumaticILC(uint8_t bus = 1);
 
     /**
-     * Unicast Hardpoint ILC Force [N] and Status Request. ILC command code 67 (0x43)
+     * Unicast command to command stepper motor moves.
+     *
+     * @param address ILC address
+     * @param steps commanded steps
+     */
+    void setStepperSteps(uint8_t address, int8_t steps) { callFunction(address, 66, 1800, steps); }
+
+    /**
+     * Unicast Stepper motor ILC Force [N] and Status Request. ILC command
+     * code 67 (0x43). Applies for M2 tangent and axials controllers, as well
+     * as M1M3 hardpoints.
      *
      * @param address ILC address
      */
-    void reportHardpointForceStatus(uint8_t address) { callFunction(address, 67, 1800); }
+    void reportStepperForceStatus(uint8_t address) { callFunction(address, 67, 1800); }
 
     /**
      * Unicast command to read hardpoint LVDT. ILC command 122 (0x7a).
@@ -114,15 +124,16 @@ public:
 
 protected:
     /**
-     * Called when response from call to command 67 (0x43) is read.
+     * Called when response from call to command unicast 66 (0x42) and 67
+     * (0x43) is read.
      *
      * @param address returned from this ILC
      * @param status hardpoint Status
-     * @param encoderPostion HP encoder position
+     * @param encoderPostion encoder position
      * @param loadCellForce measured load cell/actuator force
      */
-    virtual void processHardpointForceStatus(uint8_t address, uint8_t status, int32_t encoderPostion,
-                                             float loadCellForce) = 0;
+    virtual void processStepperForceStatus(uint8_t address, uint8_t status, int32_t encoderPostion,
+                                           float loadCellForce) = 0;
 
     /**
      * Called when response from call to command 74 (0x4A) is read.

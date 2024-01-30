@@ -101,7 +101,7 @@ public:
     void writeDebugFile(const char* message);
 
     template <typename dt>
-    const void writeDebugFile(const char* message, dt *buf, size_t length) {
+    const void writeDebugFile(const char* message, dt* buf, size_t length) {
         if (_debug_stream.is_open()) {
             try {
                 auto now = std::chrono::system_clock::now();

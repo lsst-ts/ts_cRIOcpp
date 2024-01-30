@@ -133,7 +133,7 @@ private:
 
     int _startPipe[2];
 
-    const char *_fpgaDebugPath;
+    const char* _fpgaDebugPath;
 };
 
 }  // namespace cRIO

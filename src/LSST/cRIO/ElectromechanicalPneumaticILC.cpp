@@ -28,12 +28,12 @@ namespace LSST {
 namespace cRIO {
 
 ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(bus) {
-    auto hardpointForceStatus = [this](uint8_t address) {
+    auto stepperForceStatus = [this](uint8_t address) {
         uint8_t status = read<uint8_t>();
         int32_t encoderPosition = read<int32_t>();
         float loadCellForce = read<float>();
         checkCRC();
-        processHardpointForceStatus(address, status, encoderPosition, loadCellForce);
+        processStepperForceStatus(address, status, encoderPosition, loadCellForce);
     };
 
     auto dcaGain = [this](uint8_t address) {
@@ -100,7 +100,9 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC(
         processMezzaninePressure(address, primaryPush, primaryPull, secondaryPush, secondaryPull);
     };
 
-    addResponse(67, hardpointForceStatus, 200);
+    addResponse(66, stepperForceStatus, 194);
+
+    addResponse(67, stepperForceStatus, 195);
 
     addResponse(
             73, [this](uint8_t address) { checkCRC(); }, 201);
