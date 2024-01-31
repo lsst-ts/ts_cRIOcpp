@@ -96,7 +96,7 @@ public:
      * @see ILC::getBus()
      * @see ILC::processResponse()
      */
-    void ilcCommands(ILC& ilc, int32_t timeout);
+    virtual void ilcCommands(ILC& ilc, int32_t timeout);
 
     /**
      * Sends MPU commands to command FIFO. MPU command buffer must be filled

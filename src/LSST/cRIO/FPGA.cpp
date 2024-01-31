@@ -40,6 +40,8 @@ FPGA::FPGA(fpgaType type) : SimpleFPGA(type) {
         case TS:
             _modbusSoftwareTrigger = 252;
             break;
+        case M2:
+            _modbusSoftwareTrigger = 1;
         case VMS:
             _modbusSoftwareTrigger = 0;
             break;
