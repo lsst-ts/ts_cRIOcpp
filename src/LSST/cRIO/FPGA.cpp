@@ -46,7 +46,7 @@ FPGA::FPGA(fpgaType type) : SimpleFPGA(type) {
     }
 }
 
-void FPGA::ilcCommands(ILC &ilc) {
+void FPGA::ilcCommands(ILC &ilc, int32_t timeout) {
     size_t requestLen = ilc.getLength();
     if (requestLen == 0) {
         return;
@@ -71,7 +71,7 @@ void FPGA::ilcCommands(ILC &ilc) {
 
     bool timedout = false;
 
-    waitOnIrqs(irq, 5000, timedout);
+    waitOnIrqs(irq, timeout, timedout);
     ackIrqs(irq);
 
     // get back response

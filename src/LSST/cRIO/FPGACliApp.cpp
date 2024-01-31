@@ -37,13 +37,20 @@ std::ostream& LSST::cRIO::operator<<(std::ostream& stream, ILCUnit const& u) {
 }
 
 FPGACliApp::FPGACliApp(const char* name, const char* description)
-        : CliApp(name, description), _fpga(nullptr), _ilcs(), _autoOpen(true), _timeIt(false) {
+        : CliApp(name, description),
+          ilcTimeout(5000),
+          _fpga(nullptr),
+          _ilcs(),
+          _autoOpen(true),
+          _timeIt(false) {
     addArgument('d', "increase debug level");
     addArgument('h', "print this help");
     addArgument('O', "don't auto open (and run) FPGA");
 
     addCommand("@timeit", std::bind(&FPGACliApp::timeit, this, std::placeholders::_1), "b", 0, "[flag]",
                "Sets timing flag");
+    addCommand("@ilc-timeout", std::bind(&FPGACliApp::setIlcTimeout, this, std::placeholders::_1), "i", 0,
+               "[ilc timeout]", "Sets and retrieve timeout for ILC commands");
     addCommand("close", std::bind(&FPGACliApp::closeFPGA, this, std::placeholders::_1), "", NEED_FPGA, NULL,
                "Close FPGA connection");
 
@@ -109,6 +116,14 @@ int FPGACliApp::timeit(command_vec cmds) {
     } else {
         std::cout << "Commands will not be timed." << std::endl;
     }
+    return 0;
+}
+
+int FPGACliApp::setIlcTimeout(command_vec cmds) {
+    if (cmds.size() == 1) {
+        ilcTimeout = std::stoi(cmds[0]);
+    }
+    std::cout << "ILC timeout: " << ilcTimeout << std::endl;
     return 0;
 }
 
@@ -187,7 +202,7 @@ void FPGACliApp::addILCCommand(const char* command, std::function<void(ILCUnit)>
                     }
                 }
 
-                runILCCommands();
+                runILCCommands(ilcTimeout);
 
                 return 0;
             },

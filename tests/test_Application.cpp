@@ -113,11 +113,11 @@ TEST_CASE("Test threading service time", "[Application]") {
 
     REQUIRE(app.runningThreads() == 2);
 
-    REQUIRE_NOTHROW(t1_1->stop(55ms));
+    REQUIRE_NOTHROW(t1_1->stop(51ms));
     REQUIRE(app.runningThreads() == 1);
 
-    REQUIRE_THROWS(app.stopAllThreads(1ms));
-    REQUIRE_NOTHROW(app.runningThreads() == 1);
+    REQUIRE_NOTHROW(app.stopAllThreads(1ms));
+    REQUIRE_NOTHROW(app.runningThreads() == 0);
 
     REQUIRE_NOTHROW(app.stopAllThreads(50ms));
     REQUIRE(app.runningThreads() == 0);

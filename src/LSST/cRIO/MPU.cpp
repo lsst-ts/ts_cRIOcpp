@@ -286,7 +286,7 @@ bool MPU::runLoop(FPGA& fpga) {
             bool timedout;
             fpga.waitOnIrqs(getIrq(), 0, timedout);
             if (timedout) {
-                // there is still time to retrive data, wait for IRQ
+                // there is still time to retrieve data, wait for IRQ
                 if (_loop_next_read > std::chrono::steady_clock::now()) {
                     return false;
                 }

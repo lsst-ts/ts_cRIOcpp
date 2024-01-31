@@ -28,10 +28,12 @@ namespace cRIO {
 
 Command::~Command() {}
 
-bool Command::validate() { return true; }
-void Command::ackInProgress() {}
-void Command::ackComplete() {}
-void Command::ackFailed(std::string reason) {}
+task_return_t Command::run() {
+    ackInProgress();
+    execute();
+    ackComplete();
+    return Task::DONT_RESCHEDULE;
+}
 
 }  // namespace cRIO
 }  // namespace LSST

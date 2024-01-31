@@ -1,5 +1,5 @@
 /*
- * NI Error class. Shall be thrown on any Ni-related errors.
+ * This file is part of LSST M1M3 support system package.
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -20,31 +20,48 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <spdlog/spdlog.h>
+#ifndef __cRIO_INTERRUPTWATCHERTASK__
+#define __cRIO_INTERRUPTWATCHERTASK__
 
-#include "cRIO/NiError.h"
-#include "cRIO/NiStatus.h"
+#include <chrono>
+
+#include <cRIO/FPGA.h>
+#include <cRIO/Task.h>
+#include <cRIO/Thread.h>
 
 namespace LSST {
 namespace cRIO {
 
-NiError::NiError(const std::string &msg, NiFpga_Status status)
-        : std::runtime_error(msg + ": " + NiStatus(status)) {
-    if (status != 0) {
-        SPDLOG_ERROR("FPGA error {0} in {1}: {2}", status, msg, NiStatus(status));
-    }
-}
+class InterruptWatcherThread : public Thread {
+public:
+    InterruptWatcherThread(FPGA* fpga) : _fpga(fpga) {}
+    ~InterruptWatcherThread() { stop(std::chrono::seconds(2)); }
 
-NiWarning::NiWarning(const std::string &msg, NiFpga_Status status)
-        : std::runtime_error(msg + ": " + NiStatus(status)) {
-    if (status != 0) {
-        SPDLOG_WARN("FPGA warning {0} in {1}: {2}", status, msg, NiStatus(status));
-    }
-}
+protected:
+    void run(std::unique_lock<std::mutex>& lock) override;
 
-void NiThrowError(const char *func, const char *ni_func, NiFpga_Status status) {
-    NiThrowError(std::string(func) + " " + ni_func, status);
-}
+private:
+    FPGA* _fpga;
+    uint32_t _triggeredInterrupts = 0;
+};
+
+class InterruptWatcherTask : public Task {
+public:
+    /**
+     * Construct a task for handling incoming interrupts. When interrupt is
+     * received, the task is queued into ControllerThread and run.
+     *
+     * @param triggeredIterrupts
+     */
+    InterruptWatcherTask(uint32_t triggeredIterrupts) : _triggeredInterrupts(triggeredIterrupts) {}
+
+    task_return_t run() override;
+
+private:
+    uint32_t _triggeredInterrupts;
+};
 
 }  // namespace cRIO
 }  // namespace LSST
+
+#endif /* ! __cRIO_INTERRUPTWATCHERTASK__ */

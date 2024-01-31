@@ -1,5 +1,4 @@
 /*
- *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
  * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
@@ -22,11 +21,16 @@
 #ifndef CONTROLLERTHREAD_H_
 #define CONTROLLERTHREAD_H_
 
-#include <queue>
+#include <atomic>
+#include <chrono>
+#include <memory>
 
-#include <cRIO/Command.h>
-#include <cRIO/Event.h>
+#include <cRIO/FPGA.h>
+#include <cRIO/InterruptHandler.h>
+#include <cRIO/InterruptWatcherTask.h>
 #include <cRIO/Singleton.h>
+#include <cRIO/Task.h>
+#include <cRIO/TaskQueue.h>
 #include <cRIO/Thread.h>
 
 namespace LSST {
@@ -46,18 +50,31 @@ public:
     ControllerThread(token);
     ~ControllerThread();
 
+    void startInterruptWatcherTask(FPGA* fpga);
+
     /* Put command into queue.
      *
      * @param command Command to enqueue. ControllerThread takes ownership of
      * the passed Command and will dispose it (delete it) after command is
      * executed or when queue is cleared.
      */
-    void enqueue(Command* command);
-    void enqueueEvent(Event* event);
+    void enqueue(std::shared_ptr<Task> task);
+
+    void enqueue_at(std::shared_ptr<Task> task, std::chrono::time_point<std::chrono::steady_clock> when);
+
+    /**
+     * Sets interrupt handler.
+     *
+     * @param handler new interrupt handler
+     * @param irq irq number
+     */
+    void setInterruptHandler(std::shared_ptr<InterruptHandler> handler, uint8_t irq);
 
     static void setExitRequested() { instance()._exitRequested = true; }
 
     static bool exitRequested() { return instance()._exitRequested; }
+
+    void checkInterrupts(uint32_t triggeredIterrupts);
 
 protected:
     void run(std::unique_lock<std::mutex>& lock) override;
@@ -65,16 +82,25 @@ protected:
 private:
     void _clear();
 
-    void _processEvents();
-    void _process(Event* event);
+    void _processTasks();
 
-    void _runCommands();
-    void _execute(Command* command);
+    TaskQueue _taskQueue;
 
-    std::queue<Event*> _eventQueue;
-    std::queue<Command*> _commandQueue;
+    std::atomic<bool> _exitRequested = false;
 
-    bool _exitRequested;
+    static constexpr uint8_t CRIO_INTERRUPTS = 32;
+
+    /**
+     * Tasks run at specific interrupt.
+     */
+    std::shared_ptr<InterruptHandler> _interruptHandlers[CRIO_INTERRUPTS] = {
+            nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+            nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
+            nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
+
+    InterruptWatcherThread* _interruptWatcherThread = nullptr;
+
+    friend class InterruptWatcherTask;
 };
 
 }  // namespace cRIO

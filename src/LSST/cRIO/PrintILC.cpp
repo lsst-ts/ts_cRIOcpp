@@ -103,8 +103,10 @@ void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint
 void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     clear();
 
+    static constexpr int32_t ILC_TIMEOUT = 1000;
+
     reportServerStatus(address);
-    fpga->ilcCommands(*this);
+    fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 
     switch (getLastMode(address)) {
@@ -121,18 +123,18 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
             break;
     }
 
-    fpga->ilcCommands(*this);
+    fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 
     if (getLastMode(address) != ILC::FirmwareUpdate) {
         changeILCMode(address, ILCMode::FirmwareUpdate);
-        fpga->ilcCommands(*this);
+        fpga->ilcCommands(*this, ILC_TIMEOUT);
         clear();
     }
 
     if (getLastMode(address) == ILC::Fault) {
         changeILCMode(address, ILCMode::ClearFaults);
-        fpga->ilcCommands(*this);
+        fpga->ilcCommands(*this, ILC_TIMEOUT);
         clear();
     }
 
@@ -141,7 +143,7 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     }
 
     eraseILCApplication(address);
-    fpga->ilcCommands(*this);
+    fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 
     _startAddress = 0;
@@ -152,25 +154,25 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     _writeHex(fpga, address, hex);
 
     writeApplicationStats(address, _crc.get(), _startAddress, _dataLength);
-    fpga->ilcCommands(*this);
+    fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 
     writeVerifyApplication(address);
-    fpga->ilcCommands(*this);
+    fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 
     changeILCMode(address, ILCMode::Standby);
-    fpga->ilcCommands(*this);
+    fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 
     if (getLastMode(address) == ILC::Fault) {
         changeILCMode(address, ILCMode::ClearFaults);
-        fpga->ilcCommands(*this);
+        fpga->ilcCommands(*this, ILC_TIMEOUT);
         clear();
     }
 
     changeILCMode(address, ILCMode::Disabled);
-    fpga->ilcCommands(*this);
+    fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 }
 
@@ -192,9 +194,9 @@ void PrintILC::processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAp
 void PrintILC::processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
     printBusAddress(address);
     std::cout << "Mode: " << std::to_string(mode) << " - " << getModeStr(mode) << std::endl
-              << "Status: " << std::hex << std::setw(4) << std::setfill('0') << +status
+              << "Status: " << std::hex << std::setw(4) << std::setfill('0') << +status << " "
               << fmt::format("{}", fmt::join(getStatusString(status), " | ")) << std::endl
-              << "Faults: " << std::hex << std::setw(4) << std::setfill('0') << +faults
+              << "Faults: " << std::hex << std::setw(4) << std::setfill('0') << +faults << " "
               << fmt::format("{}", fmt::join(getFaultString(faults), " | ")) << std::endl;
 }
 
@@ -312,7 +314,7 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
             startData++;
         }
         writeApplicationPage(address, dataAddress, 192, page);
-        fpga->ilcCommands(*this);
+        fpga->ilcCommands(*this, 5000);
 
         clear();
         dataAddress += 256;

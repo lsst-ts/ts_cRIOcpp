@@ -1,5 +1,5 @@
 /*
- * NI Error class. Shall be thrown on any Ni-related errors.
+ * This file is part of LSST M1M3 support system package.
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -20,31 +20,21 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <spdlog/spdlog.h>
-
-#include "cRIO/NiError.h"
-#include "cRIO/NiStatus.h"
+#ifndef __CRIO_INTERRUPTHANDLER__
+#define __CRIO_INTERRUPTHANDLER__
 
 namespace LSST {
 namespace cRIO {
 
-NiError::NiError(const std::string &msg, NiFpga_Status status)
-        : std::runtime_error(msg + ": " + NiStatus(status)) {
-    if (status != 0) {
-        SPDLOG_ERROR("FPGA error {0} in {1}: {2}", status, msg, NiStatus(status));
-    }
-}
-
-NiWarning::NiWarning(const std::string &msg, NiFpga_Status status)
-        : std::runtime_error(msg + ": " + NiStatus(status)) {
-    if (status != 0) {
-        SPDLOG_WARN("FPGA warning {0} in {1}: {2}", status, msg, NiStatus(status));
-    }
-}
-
-void NiThrowError(const char *func, const char *ni_func, NiFpga_Status status) {
-    NiThrowError(std::string(func) + " " + ni_func, status);
-}
+/**
+ * Abstract class for interrupt handlers. This design allow a Task to become an interrupt handler.
+ */
+class InterruptHandler {
+public:
+    virtual void handleInterrupt(uint8_t interrupt) = 0;
+};
 
 }  // namespace cRIO
 }  // namespace LSST
+
+#endif /* !__CRIO_INTERRUPTHANDLER__ */

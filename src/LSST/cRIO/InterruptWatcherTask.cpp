@@ -1,5 +1,5 @@
 /*
- * NI Error class. Shall be thrown on any Ni-related errors.
+ * This file is part of LSST M1M3 support system package.
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -20,31 +20,27 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <spdlog/spdlog.h>
+#include <memory>
 
-#include "cRIO/NiError.h"
-#include "cRIO/NiStatus.h"
+#include <cRIO/ControllerThread.h>
+#include <cRIO/InterruptWatcherTask.h>
 
-namespace LSST {
-namespace cRIO {
+using namespace LSST::cRIO;
 
-NiError::NiError(const std::string &msg, NiFpga_Status status)
-        : std::runtime_error(msg + ": " + NiStatus(status)) {
-    if (status != 0) {
-        SPDLOG_ERROR("FPGA error {0} in {1}: {2}", status, msg, NiStatus(status));
+void InterruptWatcherThread::run(std::unique_lock<std::mutex>& lock) {
+    while (keepRunning) {
+        lock.unlock();
+        bool timedout = false;
+        _fpga->waitOnIrqs(0xFFFFFFFF, 20, timedout, &_triggeredInterrupts);
+        if (timedout == false) {
+            ControllerThread::instance().enqueue(
+                    std::make_shared<InterruptWatcherTask>(_triggeredInterrupts));
+        }
+        lock.lock();
     }
 }
 
-NiWarning::NiWarning(const std::string &msg, NiFpga_Status status)
-        : std::runtime_error(msg + ": " + NiStatus(status)) {
-    if (status != 0) {
-        SPDLOG_WARN("FPGA warning {0} in {1}: {2}", status, msg, NiStatus(status));
-    }
+task_return_t InterruptWatcherTask::run() {
+    ControllerThread::instance().checkInterrupts(_triggeredInterrupts);
+    return Task::DONT_RESCHEDULE;
 }
-
-void NiThrowError(const char *func, const char *ni_func, NiFpga_Status status) {
-    NiThrowError(std::string(func) + " " + ni_func, status);
-}
-
-}  // namespace cRIO
-}  // namespace LSST

@@ -1,6 +1,4 @@
 /*
- * NI Error class. Shall be thrown on any Ni-related errors.
- *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
  * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
@@ -20,31 +18,31 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <spdlog/spdlog.h>
+#ifndef __TASKQUEUE_H__
+#define __TASKQUEUE_H__
 
-#include "cRIO/NiError.h"
-#include "cRIO/NiStatus.h"
+#include <chrono>
+#include <queue>
+#include <memory>
+#include <utility>
+#include <vector>
+
+#include <cRIO/Task.h>
 
 namespace LSST {
 namespace cRIO {
 
-NiError::NiError(const std::string &msg, NiFpga_Status status)
-        : std::runtime_error(msg + ": " + NiStatus(status)) {
-    if (status != 0) {
-        SPDLOG_ERROR("FPGA error {0} in {1}: {2}", status, msg, NiStatus(status));
-    }
-}
+typedef std::pair<std::chrono::time_point<std::chrono::steady_clock>, std::shared_ptr<Task>> task_t;
 
-NiWarning::NiWarning(const std::string &msg, NiFpga_Status status)
-        : std::runtime_error(msg + ": " + NiStatus(status)) {
-    if (status != 0) {
-        SPDLOG_WARN("FPGA warning {0} in {1}: {2}", status, msg, NiStatus(status));
-    }
-}
+class TaskEntry : public task_t {
+public:
+    TaskEntry(std::chrono::time_point<std::chrono::steady_clock> when, std::shared_ptr<Task> what)
+            : task_t(when, what) {}
+};
 
-void NiThrowError(const char *func, const char *ni_func, NiFpga_Status status) {
-    NiThrowError(std::string(func) + " " + ni_func, status);
-}
+class TaskQueue : public std::priority_queue<TaskEntry, std::vector<TaskEntry>, std::greater<TaskEntry>> {};
 
 }  // namespace cRIO
 }  // namespace LSST
+
+#endif /* !__TASKQUEUE_H__ */
