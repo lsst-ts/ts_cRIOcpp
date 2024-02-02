@@ -23,11 +23,24 @@
 #ifndef __Modbus_BusList__
 #define __Modbus_BusList__
 
+#include <cstdint>
+#include <functional>
+#include <map>
 #include <vector>
 
 #include <Modbus/Buffer.h>
+#include <Modbus/Parser.h>
 
 namespace Modbus {
+
+class CalledFunction {
+public:
+    CalledFunction(uint8_t address, uint8_t func) : _address(address), _func(func) {}
+
+private:
+    uint8_t _address;
+    uint8_t _func;
+};
 
 /**
  * Manages communication with ILCs. Provides methods to call function,
@@ -40,9 +53,40 @@ public:
     BusList();
 
     template <typename... dt>
-    void callFunction(uint8_t address, uint8_t func, const dt&... params) {
+    void callFunction(uint8_t address, uint8_t func, const dt &...params) {
+        called.emplace(called.end(), CalledFunction(address, func));
         emplace(end(), Buffer(address, func, params...));
     }
+
+    void parse(uint8_t *data, size_t len);
+
+    /**
+     * Add response callbacks. Both function code and error response code shall
+     * be specified.
+     *
+     * @param func callback for this function code
+     * @param action action to call when the response is found. Passed address
+     * as sole parameter. Should read response (as length of the response data
+     * is specified by function) and check CRC (see ModbusBuffer::read and
+     * ModbusBuffer::checkCRC)
+     * @param errorResponse error response code
+     * @param errorAction action to call when error is found. If no action is
+     * specified, raises ModbusBuffer::Exception. Th action receives two parameters,
+     * address and error code. CRC checking is done in processResponse. This
+     * method shall not manipulate the buffer (e.g. shall not call
+     * ModbusBuffer::read or ModbusBuffer::checkCRC).
+     *
+     * @see checkCached
+     */
+    void addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t errorResponse,
+                     std::function<void(uint8_t, uint8_t)> errorAction = nullptr);
+
+protected:
+    std::vector<CalledFunction> called;
+
+private:
+    std::map<uint8_t, std::function<void(Parser)>> _actions;
+    std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
 };
 
 }  // namespace Modbus

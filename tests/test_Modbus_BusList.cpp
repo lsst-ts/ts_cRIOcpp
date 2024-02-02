@@ -26,6 +26,33 @@
 
 using namespace Modbus;
 
+class TestList : public BusList {
+public:
+    TestList();
+
+    void processReadRegister(uint8_t address, uint16_t reg1, uint16_t reg2, uint16_t reg3);
+};
+
+TestList::TestList() {
+    addResponse(
+            3,
+            [this](Modbus::Parser parser) {
+                CHECK(parser.read<uint8_t>() == 6);
+                uint16_t reg1 = parser.read<uint16_t>();
+                uint16_t reg2 = parser.read<uint16_t>();
+                uint16_t reg3 = parser.read<uint16_t>();
+                processReadRegister(parser.address(), reg1, reg2, reg3);
+            },
+            131);
+}
+
+void TestList::processReadRegister(uint8_t address, uint16_t reg1, uint16_t reg2, uint16_t reg3) {
+    CHECK(address == 0x11);
+    CHECK(reg1 == 0xAE41);
+    CHECK(reg2 == 0x5652);
+    CHECK(reg3 == 0x4340);
+}
+
 TEST_CASE("Call functions", "[Calls]") {
     BusList buslist;
 
@@ -62,11 +89,21 @@ TEST_CASE("Call functions", "[Calls]") {
     CHECK(buslist[1][8] == 0x01);
     CHECK(buslist[1][9] == 0x23);
     CHECK(buslist[1][10] == 0x45);
-    CHECK(+buslist[1][11] == 0x67);
-    CHECK(+buslist[1][12] == 0x89);
-    CHECK(+buslist[1][13] == 0xab);
-    CHECK(+buslist[1][14] == 0xcd);
-    CHECK(+buslist[1][15] == 0xef);
-    CHECK(+buslist[1][16] == 0x0f);
-    CHECK(+buslist[1][17] == 0xfd);
+    CHECK(buslist[1][11] == 0x67);
+    CHECK(buslist[1][12] == 0x89);
+    CHECK(buslist[1][13] == 0xab);
+    CHECK(buslist[1][14] == 0xcd);
+    CHECK(buslist[1][15] == 0xef);
+    CHECK(buslist[1][16] == 0x0f);
+    CHECK(buslist[1][17] == 0xfd);
+}
+
+TEST_CASE("Call function, parser return", "[Parsing]") {
+    TestList buslist;
+
+    buslist.callFunction(11, 3, static_cast<uint16_t>(0x1234), static_cast<uint16_t>(0x0003));
+
+    std::vector<uint8_t> data({0x11, 0x03, 0x06, 0xAE, 0x41, 0x56, 0x52, 0x43, 0x40, 0x49, 0xAD});
+
+    buslist.parse(data.data(), data.size());
 }

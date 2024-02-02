@@ -29,6 +29,16 @@
 
 namespace Modbus {
 
+/***
+ * 24 bit type integer.This is used to pass some parameters to ILC calls.
+ */
+class int24_t {
+public:
+    int32_t value;
+
+    int24_t(int32_t v) { value = v; }
+};
+
 /**
  * Represents a single Modbus message. Use BusList to organize a set of Modbus
  * messages or callbacks on various functions.
