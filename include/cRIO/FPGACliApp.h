@@ -119,7 +119,7 @@ protected:
      */
     void runILCCommands(int32_t timeout) {
         for (auto ilcp : _ilcs) {
-            if (ilcp->getLength() > 0) {
+            if (ilcp->empty() == false) {
                 _fpga->ilcCommands(*ilcp, timeout);
             }
         }

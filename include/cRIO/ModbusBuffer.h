@@ -183,7 +183,6 @@ public:
     /**
      * Dumps hex data to ostring stream.
      *
-     *
      * @param
      */
     template <typename dt>

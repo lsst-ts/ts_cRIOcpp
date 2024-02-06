@@ -32,7 +32,6 @@
 
 #include <spdlog/spdlog.h>
 
-#include <cRIO/ILC.h>
 #include <cRIO/ModbusBuffer.h>
 
 namespace LSST {

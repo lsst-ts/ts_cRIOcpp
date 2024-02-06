@@ -25,21 +25,51 @@
 
 #include <cstdint>
 #include <functional>
+#include <list>
 #include <map>
 #include <vector>
+
+#include <spdlog/spdlog.h>
 
 #include <Modbus/Buffer.h>
 #include <Modbus/Parser.h>
 
 namespace Modbus {
 
-class CalledFunction {
+class MissingResponse : std::runtime_error {
 public:
-    CalledFunction(uint8_t address, uint8_t func) : _address(address), _func(func) {}
+    MissingResponse(uint8_t address, uint8_t func)
+            : std::runtime_error(fmt::format("Missing response for function {} from ILC with address {}",
+                                             func, address)) {}
+};
 
-private:
-    uint8_t _address;
-    uint8_t _func;
+class UnexpectedResponse : std::runtime_error {
+public:
+    UnexpectedResponse(uint8_t address, uint8_t func)
+            : std::runtime_error(
+                      fmt::format("Unexpected response - received {} for address {}", address, func)) {}
+};
+
+class CommandRecord {
+public:
+    CommandRecord(Buffer _buffer, uint32_t _timming) : buffer(_buffer), timming(_timming) {}
+
+    Buffer buffer;
+    uint32_t timming;
+};
+
+/**
+ * Holds callbacks for supported functions.
+ */
+class ResponseRecord {
+public:
+    ResponseRecord(uint8_t _func, std::function<void(Parser)> _action, uint8_t _error_reply,
+                   std::function<void(uint8_t, uint8_t)> _error_action)
+            : func(_func), action(_action), error_reply(_error_reply), error_action(_error_action) {}
+    const uint8_t func;
+    std::function<void(Parser)> action;
+    const uint8_t error_reply;
+    std::function<void(uint8_t, uint8_t)> error_action;
 };
 
 /**
@@ -48,17 +78,27 @@ private:
  * sub-classed to form a specialized classes for a devices and purposes (e.g. a
  * different ILC types).
  */
-class BusList : public std::vector<Buffer> {
+class BusList : public std::vector<CommandRecord> {
 public:
     BusList();
 
-    template <typename... dt>
-    void callFunction(uint8_t address, uint8_t func, const dt &...params) {
-        called.emplace(called.end(), CalledFunction(address, func));
-        emplace(end(), Buffer(address, func, params...));
+    /**
+     * Reset bus list parsing processing.
+     */
+    void reset() { _parsed_index = 0; }
+
+    void callFunction(uint8_t address, uint8_t func, uint32_t timming) {
+        emplace(end(), CommandRecord(Buffer(address, func), timming));
     }
 
-    void parse(uint8_t *data, size_t len);
+    template <typename... dt>
+    void callFunction(uint8_t address, uint8_t func, uint32_t timming, const dt &...params) {
+        emplace(end(), CommandRecord(Buffer(address, func, params...), timming));
+    }
+
+    void parse(Parser parser);
+
+    void parse(uint8_t *data, size_t len) { parse(std::vector<uint8_t>(data, data + len)); }
 
     /**
      * Add response callbacks. Both function code and error response code shall
@@ -69,8 +109,8 @@ public:
      * as sole parameter. Should read response (as length of the response data
      * is specified by function) and check CRC (see ModbusBuffer::read and
      * ModbusBuffer::checkCRC)
-     * @param errorResponse error response code
-     * @param errorAction action to call when error is found. If no action is
+     * @param error_reply error response code
+     * @param error_action action to call when error is found. If no action is
      * specified, raises ModbusBuffer::Exception. Th action receives two parameters,
      * address and error code. CRC checking is done in processResponse. This
      * method shall not manipulate the buffer (e.g. shall not call
@@ -78,15 +118,13 @@ public:
      *
      * @see checkCached
      */
-    void addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t errorResponse,
-                     std::function<void(uint8_t, uint8_t)> errorAction = nullptr);
-
-protected:
-    std::vector<CalledFunction> called;
+    void addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t error_reply,
+                     std::function<void(uint8_t, uint8_t)> error_action = nullptr);
 
 private:
-    std::map<uint8_t, std::function<void(Parser)>> _actions;
-    std::map<uint8_t, std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>> _errorActions;
+    std::list<ResponseRecord> _functions;
+
+    size_t _parsed_index = 0;
 };
 
 }  // namespace Modbus

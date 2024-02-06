@@ -24,21 +24,21 @@
 
 using namespace LSST::cRIO;
 
-ThermalILC::ThermalILC(uint8_t bus) : ILC(bus) {
-    auto thermalStatus = [this](uint8_t address) {
-        uint8_t status = read<uint8_t>();
-        float differentialTemperature = read<float>();
-        uint8_t fanRPM = read<uint8_t>();
-        float absoluteTemperature = read<float>();
-        checkCRC();
-        processThermalStatus(address, status, differentialTemperature, fanRPM, absoluteTemperature);
+ThermalILC::ThermalILC(uint8_t bus) : ILC::ILCBusList(bus) {
+    auto thermalStatus = [this](Modbus::Parser parser) {
+        uint8_t status = parser.read<uint8_t>();
+        float differentialTemperature = parser.read<float>();
+        uint8_t fanRPM = parser.read<uint8_t>();
+        float absoluteTemperature = parser.read<float>();
+        parser.checkCRC();
+        processThermalStatus(parser.address(), status, differentialTemperature, fanRPM, absoluteTemperature);
     };
 
-    auto reheaterGains = [this](uint8_t address) {
-        float proportionalGain = read<float>();
-        float integralGain = read<float>();
-        checkCRC();
-        processReHeaterGains(address, proportionalGain, integralGain);
+    auto reheaterGains = [this](Modbus::Parser parser) {
+        float proportionalGain = parser.read<float>();
+        float integralGain = parser.read<float>();
+        parser.checkCRC();
+        processReHeaterGains(parser.address(), proportionalGain, integralGain);
     };
 
     addResponse(88, thermalStatus, 216);
@@ -46,13 +46,13 @@ ThermalILC::ThermalILC(uint8_t bus) : ILC(bus) {
     addResponse(89, thermalStatus, 217);
 
     addResponse(
-            92, [this](uint8_t address) { checkCRC(); }, 220);
+            92, [this](Modbus::Parser parser) { parser.checkCRC(); }, 220);
 
     addResponse(93, reheaterGains, 221);
 }
 
 std::vector<const char*> ThermalILC::getStatusString(uint16_t status) {
-    std::vector<const char*> ret = ILC::getStatusString(status);
+    std::vector<const char*> ret = ILC::ILCBusList::getStatusString(status);
 
     // 0x0010 NA
     // 0x0020 NA
@@ -98,12 +98,12 @@ std::vector<const char*> ThermalILC::getThermalStatusString(uint8_t status) {
 }
 
 void ThermalILC::broadcastThermalDemand(uint8_t heaterPWM[NUM_TS_ILC], uint8_t fanRPM[NUM_TS_ILC]) {
-    uint8_t params[NUM_TS_ILC * 2];
+    std::vector<uint8_t> params(NUM_TS_ILC * 2);
     for (int i = 0, o = 0; i < NUM_TS_ILC; i++, o++) {
         params[o] = heaterPWM[i];
         o++;
         params[o] = fanRPM[i];
     }
 
-    broadcastFunction(250, 88, nextBroadcastCounter(), 450, params, NUM_TS_ILC * 2);
+    broadcastFunction(250, 88, 450, nextBroadcastCounter(), params);
 }

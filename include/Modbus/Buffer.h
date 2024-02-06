@@ -25,9 +25,8 @@
 
 #include <arpa/inet.h>
 #include <cstdint>
+#include <stdexcept>
 #include <vector>
-
-namespace Modbus {
 
 /***
  * 24 bit type integer.This is used to pass some parameters to ILC calls.
@@ -39,6 +38,23 @@ public:
     int24_t(int32_t v) { value = v; }
 };
 
+namespace Modbus {
+
+/**
+ * Thrown when ModBus error response is received.
+ */
+class Exception : public std::runtime_error {
+public:
+    /**
+     * The class is constructed when an Modbus's error response is received.
+     *
+     * @param address Modbus address
+     * @param func Modbus (error) function received
+     * @param exception exception code
+     */
+    Exception(uint8_t address, uint8_t func, uint8_t exception);
+};
+
 /**
  * Represents a single Modbus message. Use BusList to organize a set of Modbus
  * messages or callbacks on various functions.
@@ -46,6 +62,7 @@ public:
 class Buffer : public std::vector<uint8_t> {
 public:
     Buffer();
+    Buffer(std::vector<uint8_t> data) : std::vector<uint8_t>(data) {}
 
     /**
      * Construct buffer for a given Modbus function. Assumes subnet, data
@@ -73,6 +90,15 @@ public:
     void write(dt data);
 
     /**
+     * Writes 24bit signed integer.
+     *
+     * @param data 24bit signed integer
+     *
+     * @see write
+     */
+    void writeI24(int32_t data);
+
+    /**
      * Returns current calculcated CRC.
      *
      * @return calculated CRC
@@ -84,6 +110,9 @@ public:
      * buffer can accept more commands.
      */
     void writeCRC();
+
+    uint8_t address() { return at(0); }
+    uint8_t func() { return at(1); }
 
     /**
      * Add to buffer Modbus function. Assumes subnet, data lengths and triggers are
@@ -143,6 +172,11 @@ inline void Buffer::write(int16_t data) {
 }
 
 template <>
+inline void Buffer::write(int24_t data) {
+    writeI24(data.value);
+}
+
+template <>
 inline void Buffer::write(int32_t data) {
     int32_t d = htonl(data);
     pushBuffer(reinterpret_cast<uint8_t*>(&d), 4);
@@ -175,6 +209,13 @@ template <>
 inline void Buffer::write(float data) {
     uint32_t* db = reinterpret_cast<uint32_t*>(&data);
     write<uint32_t>(*db);
+}
+
+template <>
+inline void Buffer::write(std::vector<uint8_t> data) {
+    for (auto d : data) {
+        write<uint8_t>(d);
+    }
 }
 
 }  // namespace Modbus

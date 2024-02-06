@@ -20,10 +20,17 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <spdlog/spdlog.h>
+
 #include <Modbus/Buffer.h>
 #include <Modbus/CRC.h>
 
 using namespace Modbus;
+
+Exception::Exception(uint8_t address, uint8_t func, uint8_t exception)
+        : std::runtime_error(fmt::format(
+                  "ModBus Exception {2} (ModBus address {0}, ModBus response function {1} (0x{1:02x})).",
+                  address, func, exception)) {}
 
 Buffer::Buffer() : std::vector<uint8_t>() {}
 
@@ -32,6 +39,18 @@ Buffer::~Buffer() {}
 uint16_t Buffer::getCalcCrc() {
     CRC crc(*this);
     return crc.get();
+}
+
+void Buffer::callFunction(uint8_t address, uint8_t func) {
+    write(address);
+    write(func);
+    writeCRC();
+}
+
+void Buffer::writeI24(int32_t data) {
+    pushBuffer(data >> 16);
+    pushBuffer(data >> 8);
+    pushBuffer(data);
 }
 
 void Buffer::writeCRC() {

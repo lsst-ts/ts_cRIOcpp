@@ -39,4 +39,49 @@ TEST_CASE("Parser buffer", "[Parsing]") {
     CHECK(parser.read<uint32_t>() == 0x567890AA);
     CHECK(parser.read<uint64_t>() == 0xFFBBCCDDEE115374);
     CHECK(parser.readString(2) == "ar");
+    REQUIRE_NOTHROW(parser.checkCRC());
+}
+
+TEST_CASE("Small buffer", "[Parsing]") {
+    std::vector<uint8_t> data = {0x81, 0x11, 0x10, 0x12, 0x34};
+
+    Parser parser(data);
+
+    CHECK(parser.address() == 0x81);
+    CHECK(parser.func() == 0x11);
+    CHECK(parser.read<uint8_t>() == 0x10);
+    CHECK(parser.read<uint16_t>() == 0x1234);
+    REQUIRE_THROWS_AS(parser.read<uint8_t>(), std::out_of_range);
+}
+
+TEST_CASE("Invalid CRC", "[Parsing]") {
+    std::vector<uint8_t> data = {0x81, 0x11, 0x10, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAA, 0xFF, 0xBB,
+                                 0xCC, 0xDD, 0xEE, 0x11, 0x53, 0x74, 0x61, 0x72, 0xA7, 0x9e};
+
+    Parser parser(data);
+
+    CHECK(parser.address() == 0x81);
+    CHECK(parser.func() == 0x11);
+    CHECK(parser.read<uint8_t>() == 0x10);
+    CHECK(parser.read<uint16_t>() == 0x1234);
+    CHECK(parser.read<uint32_t>() == 0x567890AA);
+    CHECK(parser.read<uint64_t>() == 0xFFBBCCDDEE115374);
+    CHECK(parser.readString(2) == "ar");
+    REQUIRE_THROWS_AS(parser.checkCRC(), CRCError);
+}
+
+TEST_CASE("Small buffer - no CRC", "[Parsing]") {
+    std::vector<uint8_t> data = {0x81, 0x11, 0x10, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAA, 0xFF,
+                                 0xBB, 0xCC, 0xDD, 0xEE, 0x11, 0x53, 0x74, 0x61, 0x72, 0xA7};
+
+    Parser parser(data);
+
+    CHECK(parser.address() == 0x81);
+    CHECK(parser.func() == 0x11);
+    CHECK(parser.read<uint8_t>() == 0x10);
+    CHECK(parser.read<uint16_t>() == 0x1234);
+    CHECK(parser.read<uint32_t>() == 0x567890AA);
+    CHECK(parser.read<uint64_t>() == 0xFFBBCCDDEE115374);
+    CHECK(parser.readString(2) == "ar");
+    REQUIRE_THROWS_AS(parser.checkCRC(), std::out_of_range);
 }

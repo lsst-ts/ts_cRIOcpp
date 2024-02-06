@@ -20,25 +20,44 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <spdlog/spdlog.h>
+
 #include <Modbus/BusList.h>
 
 using namespace Modbus;
 
 BusList::BusList() {}
 
-void BusList::parse(uint8_t *data, size_t len) {
-    Parser parser(std::vector<uint8_t>(data, data + len));
-    for (auto action : _actions) {
-        if (action.first == parser.func()) {
-            action.second(parser);
-        }
-        return;
+void BusList::parse(Parser parser) {
+    auto exp_address = at(_parsed_index).buffer.address();
+    auto exp_func = at(_parsed_index).buffer.func();
+
+    uint8_t address = parser.address();
+    uint8_t called = parser.func();
+
+    if (address != exp_address || called != exp_func) {
+        _parsed_index++;
+        throw MissingResponse(exp_address, exp_func);
     }
+
+    for (auto func_record : _functions) {
+        if (func_record.func == called) {
+            func_record.action(parser);
+            _parsed_index++;
+            return;
+        }
+
+        if (func_record.error_reply == called) {
+            func_record.error_action(address, called);
+            _parsed_index++;
+            return;
+        }
+    }
+    throw std::runtime_error(
+            fmt::format("Unknown/unexpected Modbusi function {} for address {}", called, address));
 }
 
-void BusList::addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t errorResponse,
-                          std::function<void(uint8_t, uint8_t)> errorAction) {
-    _actions[func] = action;
-    _errorActions[errorResponse] =
-            std::pair<uint8_t, std::function<void(uint8_t, uint8_t)>>(func, errorAction);
+void BusList::addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t error_reply,
+                          std::function<void(uint8_t, uint8_t)> error_action) {
+    _functions.emplace(_functions.end(), ResponseRecord(func, action, error_reply, error_action));
 }

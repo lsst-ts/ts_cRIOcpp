@@ -25,12 +25,35 @@
 
 #include <cstdint>
 #include <cstring>
+#include <iomanip>
+#include <sstream>
 #include <stdexcept>
+#include <string>
 #include <vector>
 
 #include <Modbus/Buffer.h>
 
 namespace Modbus {
+
+/**
+ * Dumps hex data to ostring stream.
+ *
+ * @param dt buffer to print
+ * @param len length of the buffer
+ */
+template <typename dt>
+static const std::string hexDump(dt *buf, size_t len) {
+    std::ostringstream os;
+    os << std::setfill('0') << std::hex;
+    for (size_t i = 0; i < len; i++) {
+        if (i > 0) {
+            os << " ";
+        }
+        os << std::setw(sizeof(dt) * 2) << +(buf[i]);
+    }
+    os << std::dec;
+    return os.str();
+}
 
 /**
  * Exception thrown when calculated CRC doesn't match received CRC.
@@ -40,11 +63,20 @@ public:
     CRCError(uint16_t calculated, uint16_t received);
 };
 
-class Parser : std::vector<uint8_t> {
+/**
+ * Thrown when response continue after CRC.
+ */
+class LongResponse : std::runtime_error {
 public:
-    Parser(const std::vector<uint8_t> &buffer) { parse(buffer); }
+    LongResponse(uint8_t *buf, size_t len)
+            : std::runtime_error(std::string("Too long response - received ") + hexDump(buf, len)) {}
+};
 
-    void parse(const std::vector<uint8_t> &buffer);
+class Parser : public std::vector<uint8_t> {
+public:
+    Parser(std::vector<uint8_t> buffer) { parse(buffer); }
+
+    void parse(std::vector<uint8_t> buffer);
 
     /**
      * Check that accumulated data CRC matches readed CRC. Also stops recording
@@ -64,12 +96,13 @@ public:
      * @param len how many bytes shall be read
      */
     void readBuffer(void *buf, size_t len) {
-        if (_data + len > _buffer.size()) {
-            throw std::runtime_error("Trying to access data beyond buffer are.");
+        if (_data + len > size()) {
+            throw std::out_of_range("Trying to access data beyond buffer are.");
         }
-        memcpy(buf, _buffer.data() + _data, len);
+        memcpy(buf, data() + _data, len);
         _data += len;
     }
+
     /**
      * Template to read next data from message. Data length is specified with
      * template type. Handles conversion from ModBus/ILC's big endian (network order).
@@ -77,8 +110,7 @@ public:
      * Intended usage:
      *
      * @code{.cpp}
-     * ModbusBuffer b;
-     * b.setBuffer({(0x1200 | (0x0a << 1)), (0x1200 | (0x0c << 1)), (0x1200 | (0x0d << 1))}, 3);
+     * Parser p(std::vector<uint8_t>({0x0a, 0x0c, 0x0d)};
      * uint8_t p1 = b.read<uint8_t>();
      * uint16_t p2 = b.read<uint16_t>();
      * @endcode
@@ -107,17 +139,15 @@ public:
      */
     std::string readString(size_t length);
 
-    const uint8_t address() { return _buffer[0]; }
+    const uint8_t address() { return at(0); }
 
-    const uint8_t func() { return _buffer[1]; }
+    const uint8_t func() { return at(1); }
 
 private:
-    std::vector<uint8_t> _buffer;
-
     /***
      * Data pointer.
      */
-    size_t _data;
+    size_t _data = 0;
 };
 
 template <>

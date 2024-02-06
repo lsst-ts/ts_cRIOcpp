@@ -52,7 +52,7 @@ $(TEST_REQ_READLINE): %: %.cpp.o libcRIOtest.a ../lib/libcRIOcpp.a
 	@echo '[TPR] $<'
 	${co}$(CPP) -o $@ $(LIBS_FLAGS) $^ $(LIBS) $(CPP_FLAGS) -lreadline # -lhistory
 
-$(BINARIES): %: %.cpp.o ../lib/libcRIOcpp.a libcRIOtest.a
+$(BINARIES): %: %.cpp.o libcRIOtest.a ../lib/libcRIOcpp.a
 	@echo '[TPP] $<'
 	${co}$(CPP) -o $@ -Wl,--gc-sections $(LIBS_FLAGS) $^ $(LIBS) $(CPP_FLAGS)
 

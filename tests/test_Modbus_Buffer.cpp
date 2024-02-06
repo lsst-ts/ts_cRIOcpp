@@ -20,7 +20,6 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <memory>
 #include <cmath>
 #include <iostream>
 #include <vector>
@@ -28,6 +27,7 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <Modbus/Buffer.h>
+#include <Modbus/Parser.h>
 
 using namespace Modbus;
 
@@ -78,6 +78,72 @@ TEST_CASE("WriteUxx", "[Write]") {
     CHECK(mbuf[4] == 0x90);
     CHECK(mbuf[5] == 0xab);
     CHECK(mbuf[6] == 0xcd);
+}
+
+TEST_CASE("WriteIxx", "[ILC]") {
+    Buffer mbuf;
+    mbuf.write<uint8_t>(1);
+    mbuf.write<uint8_t>(2);
+    mbuf.write<int8_t>(0x12);
+    mbuf.write<int16_t>(0x3456);
+    mbuf.write<int32_t>(0x7890abcd);
+    mbuf.write<int32_t>(0xf890abcd);
+    mbuf.writeCRC();
+
+    CHECK(mbuf[0] == 0x1);
+    CHECK(mbuf[1] == 0x2);
+    CHECK(mbuf[2] == 0x12);
+    CHECK(mbuf[3] == 0x34);
+    CHECK(mbuf[4] == 0x56);
+    CHECK(mbuf[5] == 0x78);
+    CHECK(mbuf[6] == 0x90);
+    CHECK(mbuf[7] == 0xab);
+    CHECK(mbuf[8] == 0xcd);
+    CHECK(mbuf[9] == 0xf8);
+    CHECK(mbuf[10] == 0x90);
+    CHECK(mbuf[11] == 0xab);
+    CHECK(mbuf[12] == 0xcd);
+
+    Parser parser(mbuf);
+
+    CHECK(parser.address() == 1);
+    CHECK(parser.func() == 2);
+    CHECK(parser.read<uint8_t>() == 0x12);
+    CHECK(parser.read<uint16_t>() == 0x3456);
+    CHECK(parser.read<uint32_t>() == 0x7890abcd);
+    CHECK(parser.read<uint32_t>() == 0xf890abcd);
+
+    REQUIRE_NOTHROW(parser.checkCRC());
+}
+
+TEST_CASE("WriteSGL", "[ModbusBuffer]") {
+    Buffer mbuf;
+    mbuf.write<uint8_t>(1);
+    mbuf.write<uint8_t>(2);
+    mbuf.write<float>(0.123);
+    mbuf.write(-6758.1234f);
+    mbuf.writeCRC();
+
+    CHECK(mbuf[0] == 1);
+    CHECK(mbuf[1] == 2);
+
+    CHECK(mbuf[2] == 0x3d);
+    CHECK(mbuf[3] == 0xfb);
+    CHECK(mbuf[4] == 0xe7);
+    CHECK(mbuf[5] == 0x6d);
+
+    CHECK(mbuf[6] == 0xc5);
+    CHECK(mbuf[7] == 0xd3);
+    CHECK(mbuf[8] == 0x30);
+    CHECK(mbuf[9] == 0xfd);
+
+    Parser parser(mbuf);
+
+    CHECK(parser.address() == 1);
+    CHECK(parser.func() == 2);
+    CHECK(parser.read<float>() == 0.123f);
+    CHECK(parser.read<float>() == -6758.1234f);
+    REQUIRE_NOTHROW(parser.checkCRC());
 }
 
 TEST_CASE("Call function with arguments", "[Call]") {

@@ -37,11 +37,11 @@ int disabledCount = 0;
 std::vector<std::pair<int, int>> disabled;
 
 void testAction(ILCUnit u) {
-    REQUIRE(!(u.first->getBus() == 1 && u.second == 20));
-    REQUIRE(!(u.first->getBus() == 4 && u.second == 2));
+    CHECK(!(u.first->getBus() == 1 && u.second == 20));
+    CHECK(!(u.first->getBus() == 4 && u.second == 2));
 
     for (auto d : disabled) {
-        REQUIRE(!(u.first->getBus() == d.first && u.second == d.second));
+        CHECK(!(u.first->getBus() == d.first && u.second == d.second));
         disabledCount++;
     }
 
@@ -84,8 +84,8 @@ ILCUnits AClass::getILCs(command_vec arguments) {
 }
 
 void AClass::test() {
-    REQUIRE(getILC(0)->getBus() == 1);
-    REQUIRE(getILC(1)->getBus() == 4);
+    CHECK(getILC(0)->getBus() == 1);
+    CHECK(getILC(1)->getBus() == 4);
 }
 
 TEST_CASE("Test CliApp", "[FPGACliApp]") {
@@ -98,7 +98,7 @@ TEST_CASE("Test getILCs", "[FPGACliApp]") {
     AClass cli("name", "description");
 
     auto ilcs = cli.getILCs(command_vec{});
-    REQUIRE(ilcs.size() == 4);
+    CHECK(ilcs.size() == 4);
 }
 
 TEST_CASE("Test disable/enable ILC", "[FPGACliApp]") {
@@ -106,29 +106,29 @@ TEST_CASE("Test disable/enable ILC", "[FPGACliApp]") {
 
     REQUIRE_NOTHROW(cli.processCmdVector({"open"}));
 
-    REQUIRE(testRuns == 0);
+    CHECK(testRuns == 0);
     REQUIRE_NOTHROW(cli.processCmdVector({"test", "0/2"}));
-    REQUIRE(testRuns == 1);
+    CHECK(testRuns == 1);
 
     disabled.push_back(std::pair<int, int>(1, 2));
     REQUIRE_NOTHROW(cli.processCmdVector({"@disable", "0/2"}));
-    REQUIRE(testRuns == 1);
+    CHECK(testRuns == 1);
 
-    REQUIRE(disabledCount == 0);
+    CHECK(disabledCount == 0);
     REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
-    REQUIRE(testRuns == 4);
-    REQUIRE(disabledCount == 3);
+    CHECK(testRuns == 4);
+    CHECK(disabledCount == 3);
 
     testRuns = 0;
     disabledCount = 0;
     REQUIRE_NOTHROW(cli.processCmdVector({"@enable", "0/2"}));
-    REQUIRE(testRuns == 0);
+    CHECK(testRuns == 0);
 
     disabled.clear();
 
     REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
-    REQUIRE(testRuns == 4);
-    REQUIRE(disabledCount == 0);
+    CHECK(testRuns == 4);
+    CHECK(disabledCount == 0);
 }
 
 TEST_CASE("Tests multiple disable/enable", "[FPGACliApp]") {
@@ -141,12 +141,12 @@ TEST_CASE("Tests multiple disable/enable", "[FPGACliApp]") {
 
     disabled.push_back(std::pair<int, int>(4, 10));
     REQUIRE_NOTHROW(cli.processCmdVector({"@disable", "1/10"}));
-    REQUIRE(testRuns == 0);
-    REQUIRE(disabledCount == 0);
+    CHECK(testRuns == 0);
+    CHECK(disabledCount == 0);
 
     REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
-    REQUIRE(testRuns == 3);
-    REQUIRE(disabledCount == 3);
+    CHECK(testRuns == 3);
+    CHECK(disabledCount == 3);
 
     REQUIRE_NOTHROW(cli.processCmdVector({"@disable", "0/2"}));
 
@@ -154,8 +154,8 @@ TEST_CASE("Tests multiple disable/enable", "[FPGACliApp]") {
     disabledCount = 0;
 
     REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
-    REQUIRE(testRuns == 2);
-    REQUIRE(disabledCount == 2);
+    CHECK(testRuns == 2);
+    CHECK(disabledCount == 2);
 
     REQUIRE_NOTHROW(cli.processCmdVector({"@disable", "0/3"}));
 
@@ -163,8 +163,8 @@ TEST_CASE("Tests multiple disable/enable", "[FPGACliApp]") {
     disabledCount = 0;
 
     REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
-    REQUIRE(testRuns == 1);
-    REQUIRE(disabledCount == 1);
+    CHECK(testRuns == 1);
+    CHECK(disabledCount == 1);
 
     REQUIRE_NOTHROW(cli.processCmdVector({"@disable", "1/11"}));
 
@@ -172,8 +172,8 @@ TEST_CASE("Tests multiple disable/enable", "[FPGACliApp]") {
     disabledCount = 0;
 
     REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
-    REQUIRE(testRuns == 0);
-    REQUIRE(disabledCount == 0);
+    CHECK(testRuns == 0);
+    CHECK(disabledCount == 0);
 
     REQUIRE_NOTHROW(cli.processCmdVector({"@enable", "1/11"}));
 
@@ -181,8 +181,8 @@ TEST_CASE("Tests multiple disable/enable", "[FPGACliApp]") {
     disabledCount = 0;
 
     REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
-    REQUIRE(testRuns == 1);
-    REQUIRE(disabledCount == 1);
+    CHECK(testRuns == 1);
+    CHECK(disabledCount == 1);
 
     REQUIRE_NOTHROW(cli.processCmdVector({"@enable"}));
 
@@ -191,6 +191,6 @@ TEST_CASE("Tests multiple disable/enable", "[FPGACliApp]") {
     disabled.clear();
 
     REQUIRE_NOTHROW(cli.processCmdVector({"test"}));
-    REQUIRE(testRuns == 4);
-    REQUIRE(disabledCount == 0);
+    CHECK(testRuns == 4);
+    CHECK(disabledCount == 0);
 }

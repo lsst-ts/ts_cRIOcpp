@@ -23,7 +23,7 @@
 #ifndef _cRIO_ThermalILC_h
 #define _cRIO_ThermalILC_h
 
-#include <cRIO/ILC.h>
+#include <ILC/ILCBusList.h>
 
 namespace LSST {
 namespace cRIO {
@@ -38,14 +38,14 @@ constexpr int NUM_TS_ILC = 96;
  *
  * Replies received from ILCs shall be processed with ILC::processResponse method.
  */
-class ThermalILC : public virtual ILC {
+class ThermalILC : public virtual ILC::ILCBusList {
 public:
     /**
      * Populate responses for known ILC functions.
      *
-     * @param bus ILC bus number (1..). Defaults to 1.
+     * @param bus ILC bus number (1..).
      */
-    ThermalILC(uint8_t bus = 1);
+    ThermalILC(uint8_t bus);
 
     std::vector<const char*> getStatusString(uint16_t status) override;
 

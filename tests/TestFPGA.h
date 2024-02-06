@@ -30,12 +30,13 @@
 #include <cRIO/FPGA.h>
 #include <cRIO/PrintILC.h>
 #include <cRIO/SimulatedILC.h>
+#include <ILC/ILCBusList.h>
 
 enum FPGAAddress { MODBUS_A_RX = 21, MODBUS_A_TX = 25, HEARTBEAT = 62 };  // namespace FPGAAddress
 
 class TestILC : public LSST::cRIO::PrintILC {
 public:
-    TestILC(uint8_t bus) : LSST::cRIO::PrintILC(bus) {}
+    TestILC(uint8_t bus) : ILC::ILCBusList(bus), LSST::cRIO::PrintILC(bus) {}
 
 protected:
     void processChangeILCMode(uint8_t address, uint16_t mode) override;

@@ -63,16 +63,16 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
     addILCCommand(
             "status", [](ILCUnit u) { u.first->reportServerStatus(u.second); }, "Print ILC status");
     addILCCommand(
-            "standby", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::Standby); },
+            "standby", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::Standby); },
             "Change to standby mode");
     addILCCommand(
-            "disable", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::Disabled); },
+            "disable", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::Disabled); },
             "Change to disabled mode");
     addILCCommand(
-            "enable", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::Enabled); },
+            "enable", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::Enabled); },
             "Change to enabled mode");
     addILCCommand(
-            "clear-faults", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::ILCMode::ClearFaults); },
+            "clear-faults", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::ClearFaults); },
             "Clear ILC faults");
     addILCCommand(
             "reset", [](ILCUnit u) { u.first->resetServer(u.second); }, "Reset server");

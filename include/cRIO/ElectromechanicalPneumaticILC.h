@@ -23,7 +23,7 @@
 #ifndef _cRIO_ElectromechanicalPneumaticILC_h
 #define _cRIO_ElectromechanicalPneumaticILC_h
 
-#include <cRIO/ILC.h>
+#include <ILC/ILCBusList.h>
 
 namespace LSST {
 namespace cRIO {
@@ -33,14 +33,14 @@ namespace cRIO {
  *
  * Replies received from ILCs shall be processed with ILC::processResponse method.
  */
-class ElectromechanicalPneumaticILC : public virtual ILC {
+class ElectromechanicalPneumaticILC : public virtual ILC::ILCBusList {
 public:
     /**
      * Populate responses for known ILC functions.
      *
-     * @param bus ILC bus number (1..). Defaults to 1.
+     * @param bus ILC bus number (1..).
      */
-    ElectromechanicalPneumaticILC(uint8_t bus = 1);
+    ElectromechanicalPneumaticILC(uint8_t bus);
 
     /**
      * Unicast command to command stepper motor moves.
