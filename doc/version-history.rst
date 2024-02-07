@@ -2,6 +2,11 @@
 Version History
 ###############
 
+v1.11.0
+-------
+* Modbus::, ILC::ILCBusList classes. Communication code moved from ModbusBuffer
+  to FPGA class.
+
 v1.10.1
 -------
 
