@@ -60,10 +60,10 @@ void TestList::processReadRegister(uint8_t address, uint16_t reg1, uint16_t reg2
 TEST_CASE("Call functions", "[Calls]") {
     BusList buslist;
 
-    buslist.callFunction(123, 17, static_cast<uint8_t>(0xfe), static_cast<uint16_t>(0xffcc),
+    buslist.callFunction(123, 17, 200, static_cast<uint8_t>(0xfe), static_cast<uint16_t>(0xffcc),
                          static_cast<float>(22.33));
 
-    buslist.callFunction(43, 86, static_cast<float>(0.1122), static_cast<int16_t>(-1234),
+    buslist.callFunction(43, 86, 200, static_cast<float>(0.1122), static_cast<int16_t>(-1234),
                          static_cast<uint64_t>(0x0123456789abcdef));
 
     REQUIRE(buslist.size() == 2);
@@ -105,7 +105,7 @@ TEST_CASE("Call functions", "[Calls]") {
 TEST_CASE("Call function, parser return", "[Parsing]") {
     TestList buslist(0x11);
 
-    buslist.callFunction(0x11, 0x3, static_cast<uint16_t>(0x1234), static_cast<uint16_t>(0x0003));
+    buslist.callFunction(0x11, 0x3, 200, static_cast<uint16_t>(0x1234), static_cast<uint16_t>(0x0003));
 
     std::vector<uint8_t> data({0x11, 0x03, 0x06, 0xAE, 0x41, 0x56, 0x52, 0x43, 0x40, 0x49, 0xAD});
 
@@ -122,7 +122,7 @@ TEST_CASE("Call 10 functions, parser return", "[Parsing]") {
     };
 
     for (int address = 1; address < 10; address++) {
-        buslist.callFunction(address, 3, static_cast<uint16_t>(0x1234), static_cast<uint16_t>(0x0003));
+        buslist.callFunction(address, 3, 200, static_cast<uint16_t>(0x1234), static_cast<uint16_t>(0x0003));
     }
 
     for (int address = 1; address < 10; address++) {
@@ -141,7 +141,7 @@ TEST_CASE("Missing response", "[BusListErrors]") {
     };
 
     for (uint8_t address = 1; address < 10; address++) {
-        buslist.callFunction(address, 3, static_cast<uint16_t>(0x1234), static_cast<uint16_t>(0x0003));
+        buslist.callFunction(address, 3, 200, static_cast<uint16_t>(0x1234), static_cast<uint16_t>(0x0003));
     }
 
     for (uint8_t address = 1; address < 10; address++) {
