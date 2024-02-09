@@ -21,7 +21,9 @@
  */
 
 #include <catch2/catch_test_macros.hpp>
-#include <string.h>
+#include <cstring>
+
+#include <Modbus/CRC.h>
 
 #include <TestFPGA.h>
 
@@ -35,7 +37,8 @@ void TestILC::processChangeILCMode(uint8_t address, uint16_t mode) {
 }
 
 TestFPGA::TestFPGA()
-        : FPGA(fpgaType::SS),
+        : ILC::ILCBusList(1),
+          FPGA(fpgaType::SS),
           PrintILC(1),
           _response(),
           _U16ResponseStatus(IDLE),
@@ -135,64 +138,85 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
     // 8 bytes of end timestap (& FIFO::RX_TIMESTAMP)
     _response.writeFPGATimestamp(_currentTimestamp++);
 
-    TestILC buf(1);
-    buf.setBuffer(data, length);
-    while (!buf.endOfBuffer()) {
-        uint16_t p = buf.peek();
-        if ((p & FIFO::CMD_MASK) != FIFO::WRITE) {
-            buf.next();
+    uint16_t* d = data;
+
+    auto read_data = [](uint16_t*& v, std::vector<uint8_t>& buf) -> uint8_t {
+        uint8_t d = static_cast<uint8_t>((*v >> 1) & 0xFF);
+        v++;
+        buf.push_back(d);
+        return d;
+    };
+
+    auto read_u16 = [read_data](uint16_t*& v, std::vector<uint8_t>& buf) -> uint16_t {
+        uint16_t ret = read_data(v, buf);
+        ret <<= 8;
+        ret |= read_data(v, buf);
+        return ret;
+    };
+
+    auto check_CRC = [read_data, read_u16](std::vector<uint8_t>& buf, uint16_t*& v) {
+        Modbus::CRC crc(buf);
+        uint16_t received = be16toh(read_u16(v, buf));
+        CHECK(crc.get() == received);
+    };
+
+    while (static_cast<size_t>(d - data) < length) {
+        if ((*d & FIFO::CMD_MASK) != FIFO::WRITE) {
+            d++;
             continue;
         }
 
-        uint8_t address = buf.read<uint8_t>();
-        REQUIRE(address == 8);
-        uint8_t func = buf.read<uint8_t>();
+        std::vector<uint8_t> buf;
+
+        uint8_t address = read_data(d, buf);
+        CHECK(address == 8);
+        uint8_t func = read_data(d, buf);
         switch (func) {
             case 18:
-                buf.checkCRC();
-                processServerStatus(address, ILCMode::Standby, 0, 0);
+                check_CRC(buf, d);
+                processServerStatus(address, ILC::Mode::Standby, 0, 0);
                 break;
             case 65:
-                currentMode = buf.read<uint16_t>();
-                buf.checkCRC();
+                currentMode = read_u16(d, buf);
+                check_CRC(buf, d);
                 processChangeILCMode(address, currentMode);
                 break;
             case 100: {
-                uint16_t dataCRC = buf.read<uint16_t>();
-                REQUIRE(dataCRC == 0x0495);
-                uint16_t startAddress = buf.read<uint16_t>();
-                REQUIRE(startAddress == 0);
-                uint16_t length = buf.read<uint16_t>();
-                REQUIRE(length == 67);
-                uint16_t crc = buf.read<uint16_t>();
-                REQUIRE(crc == 0x3BAB);
-                buf.checkCRC();
+                uint16_t dataCRC = read_u16(d, buf);
+                CHECK(dataCRC == 0x0495);
+                uint16_t startAddress = read_u16(d, buf);
+                CHECK(startAddress == 0);
+                uint16_t length = read_u16(d, buf);
+                CHECK(length == 67);
+                uint16_t crc = read_u16(d, buf);
+                CHECK(crc == 0x3BAB);
+                check_CRC(buf, d);
                 _ackFunction(address, 100);
                 break;
             }
 
             case 101: {
-                buf.checkCRC();
+                check_CRC(buf, d);
                 _ackFunction(address, func);
                 break;
             }
 
             case 102: {
-                uint16_t startAddress = buf.read<uint16_t>();
-                REQUIRE(startAddress == 0);
-                uint16_t length = buf.read<uint16_t>();
-                REQUIRE(length == 192);
+                uint16_t startAddress = read_u16(d, buf);
+                CHECK(startAddress == 0);
+                uint16_t length = read_u16(d, buf);
+                CHECK(length == 192);
                 uint8_t fw[192];
-                buf.readBuffer(fw, 192);
-                for (size_t i = 0; i < length; i++) {
-                    REQUIRE(fw[i] == _pages[i]);
+                for (size_t i = 0; i < 192; i++) {
+                    fw[i] = read_data(d, buf);
+                    CHECK(fw[i] == _pages[i]);
                 }
-                buf.checkCRC();
+                check_CRC(buf, d);
                 processWriteApplicationPage(address);
                 break;
             }
             case 103: {
-                buf.checkCRC();
+                check_CRC(buf, d);
                 processVerifyUserApplication(address, 0);
                 break;
             }

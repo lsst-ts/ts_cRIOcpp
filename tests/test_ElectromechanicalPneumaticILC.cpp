@@ -34,7 +34,7 @@ using Catch::Approx;
 
 class TestElectromechanicalPneumaticILC : public ElectromechanicalPneumaticILC {
 public:
-    TestElectromechanicalPneumaticILC() {
+    TestElectromechanicalPneumaticILC() : ILC::ILCBusList(1), ElectromechanicalPneumaticILC(1) {
         auto set_nan = [](float a[4]) {
             for (int i = 0; i < 4; i++) {
                 a[i] = std::nan("f");
@@ -46,13 +46,10 @@ public:
         set_nan(responseBackupADCK);
         set_nan(responseBackupOffset);
         set_nan(responseBackupSensitivity);
-
-        primaryForce = NAN;
-        secondaryForce = NAN;
     }
 
-    float primaryForce;
-    float secondaryForce;
+    float primaryForce = NAN;
+    float secondaryForce = NAN;
 
     float responseMainADCK[4];
     float responseMainOffset[4];
@@ -74,8 +71,8 @@ protected:
 
     void processResetServer(uint8_t address) override {}
 
-    void processHardpointForceStatus(uint8_t address, uint8_t status, int32_t encoderPosition,
-                                     float loadCellForce) override {}
+    void processStepperForceStatus(uint8_t address, uint8_t status, int32_t encoderPosition,
+                                   float loadCellForce) override {}
 
     void processDCAGain(uint8_t address, float primaryGain, float secondaryGain) override {}
 
@@ -119,19 +116,19 @@ void TestElectromechanicalPneumaticILC::processMezzaninePressure(uint8_t address
 }
 
 TEST_CASE("Test SSA force set", "[ElectromechanicalPneumaticILC]") {
-    TestElectromechanicalPneumaticILC ilc, response;
+    TestElectromechanicalPneumaticILC ilc;
 
     ilc.setSAAForceOffset(18, true, 31.45);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 18);
-    REQUIRE(ilc.read<uint8_t>() == 75);
-    REQUIRE(ilc.read<uint8_t>() == 0xFF);
-    REQUIRE(ilc.read<int24_t>().value == 31450);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readWaitForRx() == 1800);
+    REQUIRE(parser.address() == 18);
+    REQUIRE(parser.func() == 75);
+    REQUIRE(parser.read<uint8_t>() == 0xFF);
+    REQUIRE(parser.read<int24_t>().value == 31450);
+    REQUIRE_NOTHROW(parser.checkCRC());
+
+    Modbus::Buffer response;
 
     response.write<uint8_t>(18);
     response.write<uint8_t>(75);
@@ -139,30 +136,30 @@ TEST_CASE("Test SSA force set", "[ElectromechanicalPneumaticILC]") {
     response.write<float>(31.45);
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+    REQUIRE_NOTHROW(ilc.parse(response));
 
     REQUIRE(ilc.primaryForce == Approx(31.45));
     REQUIRE(std::isnan(ilc.secondaryForce));
 }
 
 TEST_CASE("Test DAA force set", "[ElectromechanicalPneumaticILC]") {
-    TestElectromechanicalPneumaticILC ilc, response;
+    TestElectromechanicalPneumaticILC ilc;
 
     ilc.setDAAForceOffset(212, false, -123.45, 345.10);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 212);
-    REQUIRE(ilc.read<uint8_t>() == 75);
-    REQUIRE(ilc.read<uint8_t>() == 0x00);
-    REQUIRE(ilc.read<int24_t>().value == -123450);
+    REQUIRE(parser.address() == 212);
+    REQUIRE(parser.func() == 75);
+    REQUIRE(parser.read<uint8_t>() == 0x00);
+    REQUIRE(parser.read<int24_t>().value == -123450);
     // hex(345100) = 0x05 44 0C
-    REQUIRE(ilc.read<uint8_t>() == 0x05);
-    REQUIRE(ilc.read<uint8_t>() == 0x44);
-    REQUIRE(ilc.read<uint8_t>() == 0x0C);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readWaitForRx() == 1800);
+    REQUIRE(parser.read<uint8_t>() == 0x05);
+    REQUIRE(parser.read<uint8_t>() == 0x44);
+    REQUIRE(parser.read<uint8_t>() == 0x0C);
+    REQUIRE_NOTHROW(parser.checkCRC());
+
+    Modbus::Buffer response;
 
     response.write<uint8_t>(212);
     response.write<uint8_t>(75);
@@ -171,24 +168,24 @@ TEST_CASE("Test DAA force set", "[ElectromechanicalPneumaticILC]") {
     response.write<float>(345.10);
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+    REQUIRE_NOTHROW(ilc.parse(response.data(), response.size()));
 
     REQUIRE(ilc.primaryForce == Approx(-123.45));
     REQUIRE(ilc.secondaryForce == Approx(345.10));
 }
 
 TEST_CASE("Test SAA force actuator readout", "[ElectromechanicalPneumaticILC]") {
-    TestElectromechanicalPneumaticILC ilc, response;
+    TestElectromechanicalPneumaticILC ilc;
 
     ilc.reportForceActuatorForceStatus(18);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 18);
-    REQUIRE(ilc.read<uint8_t>() == 76);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readWaitForRx() == 1800);
+    REQUIRE(parser.address() == 18);
+    REQUIRE(parser.func() == 76);
+    REQUIRE_NOTHROW(parser.checkCRC());
+
+    Modbus::Buffer response;
 
     response.write<uint8_t>(18);
     response.write<uint8_t>(76);
@@ -196,24 +193,24 @@ TEST_CASE("Test SAA force actuator readout", "[ElectromechanicalPneumaticILC]") 
     response.write<float>(13.7);
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+    REQUIRE_NOTHROW(ilc.parse(response.data(), response.size()));
 
     REQUIRE(ilc.primaryForce == Approx(13.7));
     REQUIRE(std::isnan(ilc.secondaryForce));
 }
 
 TEST_CASE("Test DAA force actuator readout", "[ElectromechanicalPneumaticILC]") {
-    TestElectromechanicalPneumaticILC ilc, response;
+    TestElectromechanicalPneumaticILC ilc;
 
     ilc.reportForceActuatorForceStatus(23);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 23);
-    REQUIRE(ilc.read<uint8_t>() == 76);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readWaitForRx() == 1800);
+    REQUIRE(parser.address() == 23);
+    REQUIRE(parser.func() == 76);
+    REQUIRE_NOTHROW(parser.checkCRC());
+
+    Modbus::Buffer response;
 
     response.write<uint8_t>(23);
     response.write<uint8_t>(76);
@@ -222,7 +219,7 @@ TEST_CASE("Test DAA force actuator readout", "[ElectromechanicalPneumaticILC]") 
     response.write<float>(-67.4);
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+    REQUIRE_NOTHROW(ilc.parse(response.data(), response.size()));
 
     REQUIRE(ilc.primaryForce == Approx(15.9));
     REQUIRE(ilc.secondaryForce == Approx(-67.4));
@@ -233,30 +230,28 @@ TEST_CASE("Test set offset and sensitivity", "[ElectromechanicalPneumaticILC]") 
 
     ilc.setOffsetAndSensitivity(231, 1, 2.34, -4.56);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 231);
-    REQUIRE(ilc.read<uint8_t>() == 81);
-    REQUIRE(ilc.read<uint8_t>() == 1);
-    REQUIRE(ilc.read<float>() == 2.34f);
-    REQUIRE(ilc.read<float>() == -4.56f);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readWaitForRx() == 37000);
+    REQUIRE(parser.address() == 231);
+    REQUIRE(parser.func() == 81);
+    REQUIRE(parser.read<uint8_t>() == 1);
+    REQUIRE(parser.read<float>() == 2.34f);
+    REQUIRE(parser.read<float>() == -4.56f);
+    REQUIRE_NOTHROW(parser.checkCRC());
 }
 
 TEST_CASE("Test parsing of calibration data", "[ElectromechanicalPneumaticILC]") {
-    TestElectromechanicalPneumaticILC ilc, response;
+    TestElectromechanicalPneumaticILC ilc;
 
     ilc.reportCalibrationData(17);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 17);
-    REQUIRE(ilc.read<uint8_t>() == 110);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readWaitForRx() == 1800);
+    REQUIRE(parser.address() == 17);
+    REQUIRE(parser.func() == 110);
+    REQUIRE_NOTHROW(parser.checkCRC());
+
+    Modbus::Buffer response;
 
     response.write<uint8_t>(17);
     response.write<uint8_t>(110);
@@ -275,7 +270,7 @@ TEST_CASE("Test parsing of calibration data", "[ElectromechanicalPneumaticILC]")
 
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+    REQUIRE_NOTHROW(ilc.parse(response.data(), response.size()));
 
     auto check4 = [](float base, float values[4]) {
         for (int i = 0; i < 4; i++) {
@@ -292,17 +287,17 @@ TEST_CASE("Test parsing of calibration data", "[ElectromechanicalPneumaticILC]")
 }
 
 TEST_CASE("Test parsing of pressure data", "[ElectromechanicalPneumaticILC]") {
-    TestElectromechanicalPneumaticILC ilc, response;
+    TestElectromechanicalPneumaticILC ilc;
 
     ilc.reportMezzaninePressure(18);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 18);
-    REQUIRE(ilc.read<uint8_t>() == 119);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readWaitForRx() == 1800);
+    REQUIRE(parser.address() == 18);
+    REQUIRE(parser.func() == 119);
+    REQUIRE_NOTHROW(parser.checkCRC());
+
+    Modbus::Buffer response;
 
     response.write<uint8_t>(18);
     response.write<uint8_t>(119);
@@ -314,5 +309,5 @@ TEST_CASE("Test parsing of pressure data", "[ElectromechanicalPneumaticILC]") {
 
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+    REQUIRE_NOTHROW(ilc.parse(response.data(), response.size()));
 }

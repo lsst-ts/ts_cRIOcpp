@@ -27,8 +27,8 @@
 #include <stddef.h>
 #include <stdint.h>
 
-#include <cRIO/ILC.h>
 #include <cRIO/SimpleFPGA.h>
+#include <ILC/ILCBusList.h>
 
 using namespace std::chrono_literals;
 
@@ -92,11 +92,11 @@ public:
      * ILC::getBus() method returns bus used for communication.
      * @param timeout
      *
-     * @see ILC
-     * @see ILC::getBus()
-     * @see ILC::processResponse()
+     * @see ILC::ILCBusLIst
+     * @see ILC::ILCBusList::getBus()
+     * @see ILC::ILCBusList::processResponse()
      */
-    void ilcCommands(ILC& ilc, int32_t timeout);
+    virtual void ilcCommands(ILC::ILCBusList& ilc, int32_t timeout);
 
     /**
      * Sends MPU commands to command FIFO. MPU command buffer must be filled

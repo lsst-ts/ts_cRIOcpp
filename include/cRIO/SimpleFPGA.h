@@ -32,17 +32,17 @@
 
 #include <spdlog/spdlog.h>
 
-#include <cRIO/ILC.h>
 #include <cRIO/ModbusBuffer.h>
 
 namespace LSST {
 namespace cRIO {
 
 /**
- * FPGA Type. SS (Static Support), TS (Thermal System) or VMS (Vibration
- * Monitoring System) are known and supported.
+ * FPGA Type. SS (M1M3 Static Support), TS (M1M3 Thermal System), M2 (M2
+ * Control System) or VMS (Vibration Monitoring System) are known and
+ * supported.
  */
-typedef enum { SS, TS, VMS } fpgaType;
+typedef enum { SS, TS, M2, VMS } fpgaType;
 
 /**
  * Interface class for cRIO FPGA. Subclasses can talk either to the real HW, or
@@ -101,7 +101,7 @@ public:
     void writeDebugFile(const char* message);
 
     template <typename dt>
-    const void writeDebugFile(const char* message, dt *buf, size_t length) {
+    const void writeDebugFile(const char* message, dt* buf, size_t length) {
         if (_debug_stream.is_open()) {
             try {
                 auto now = std::chrono::system_clock::now();

@@ -40,32 +40,44 @@ FPGA::FPGA(fpgaType type) : SimpleFPGA(type) {
         case TS:
             _modbusSoftwareTrigger = 252;
             break;
+        case M2:
+            _modbusSoftwareTrigger = 1;
         case VMS:
             _modbusSoftwareTrigger = 0;
             break;
     }
 }
 
-void FPGA::ilcCommands(ILC &ilc, int32_t timeout) {
-    size_t requestLen = ilc.getLength();
-    if (requestLen == 0) {
+void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
+    // no messages to send
+    if (ilc.size() == 0) {
         return;
     }
-    requestLen += 6;
-
-    uint16_t data[requestLen];
+    // construct buffer to send
+    std::vector<uint16_t> data;
 
     uint8_t bus = ilc.getBus();
 
-    data[0] = getTxCommand(bus);
-    data[1] = ilc.getLength() + 3;
-    data[2] = FIFO::TX_WAIT_TRIGGER;
-    data[3] = FIFO::TX_TIMESTAMP;
-    memcpy(data + 4, ilc.getBuffer(), ilc.getLength() * sizeof(uint16_t));
-    data[requestLen - 2] = FIFO::TX_IRQTRIGGER;
-    data[requestLen - 1] = _modbusSoftwareTrigger;
+    data.push_back(getTxCommand(bus));
+    data.push_back(0);
+    data.push_back(FIFO::TX_WAIT_TRIGGER);
+    data.push_back(FIFO::TX_TIMESTAMP);
 
-    writeCommandFIFO(data, requestLen, 0);
+    for (auto cmd : ilc) {
+        for (auto b : cmd.buffer) {
+            data.push_back(FIFO::TX_MASK | ((static_cast<uint16_t>(b)) << 1));
+        }
+        data.push_back(FIFO::TX_FRAMEEND);
+        data.push_back(cmd.timming > 0x0FFF ? ((0x0FFF & ((cmd.timming / 1000) + 1)) | FIFO::TX_WAIT_LONG_RX)
+                                            : (cmd.timming | FIFO::TX_WAIT_RX));
+    }
+
+    data.push_back(FIFO::TX_IRQTRIGGER);
+    data[1] = data.size() - 2;
+
+    data.push_back(_modbusSoftwareTrigger);
+
+    writeCommandFIFO(data.data(), data.size(), 0);
 
     uint32_t irq = getIrq(bus);
 
@@ -101,14 +113,14 @@ void FPGA::ilcCommands(ILC &ilc, int32_t timeout) {
     uint64_t endTs = 0;
     int endTsShift = 0;
 
-    uint16_t *dataStart = NULL;
+    ilc.reset();
+
+    std::vector<uint8_t> decoded;
     for (uint16_t *p = buffer + 4; p < buffer + responseLen; p++) {
         switch (*p & 0xF000) {
             // data..
             case FIFO::RX_MASK & 0xF000:
-                if (dataStart == NULL) {
-                    dataStart = p;
-                }
+                decoded.push_back(static_cast<uint8_t>((*p >> 1) & 0xFF));
                 break;
             case FIFO::RX_TIMESTAMP:
                 if (endTsShift == 64) {
@@ -119,9 +131,9 @@ void FPGA::ilcCommands(ILC &ilc, int32_t timeout) {
                 endTsShift += 8;
                 // don't break here - data also ends when timestamp is received
             case FIFO::RX_ENDFRAME:
-                if (dataStart) {
-                    ilc.processResponse(dataStart, p - dataStart);
-                    dataStart = NULL;
+                if (decoded.empty() == false) {
+                    ilc.parse(decoded);
+                    decoded.clear();
                     reportTime(beginTs, endTs);
                     beginTs = endTs;
                     endTs = 0;
@@ -133,7 +145,7 @@ void FPGA::ilcCommands(ILC &ilc, int32_t timeout) {
         }
     }
 
-    ilc.checkCommandedEmpty();
+    // ilc.checkCommandedEmpty();
 
     reportTime(beginTs, endTs);
 }

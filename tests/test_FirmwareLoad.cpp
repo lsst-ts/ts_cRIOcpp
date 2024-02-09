@@ -29,7 +29,6 @@
 #include <cRIO/CliApp.h>
 #include <cRIO/FPGA.h>
 #include <cRIO/IntelHex.h>
-#include <cRIO/ILC.h>
 #include <cRIO/PrintILC.h>
 #include <cRIO/SimulatedILC.h>
 
@@ -37,7 +36,7 @@ using namespace LSST::cRIO;
 
 class TestILC : public PrintILC {
 public:
-    TestILC(uint8_t bus) : PrintILC(bus) {}
+    TestILC(uint8_t bus) : ILC::ILCBusList(bus), PrintILC(bus) {}
 };
 
 class TestFPGA : public FPGA {
@@ -139,7 +138,7 @@ void TestFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, b
     if (cmp) {
         std::string l;
         std::getline(_outStream, l);
-        REQUIRE(l == ss.str());
+        CHECK(l == ss.str());
     }
     std::cout << ss.str() << std::endl;
 }
