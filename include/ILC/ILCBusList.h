@@ -117,6 +117,13 @@ protected:
     uint8_t nextBroadcastCounter();
 
     /**
+     * Return current broadcast counter value.
+     *
+     * @return current broadcast counter value
+     */
+    uint8_t getBroadcastCounter() { return _broadcastCounter; }
+
+    /**
      * Return string with current mode description.
      *
      * @param mode ILC mode, as returned by function 18.
