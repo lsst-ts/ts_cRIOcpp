@@ -85,3 +85,9 @@ TEST_CASE("Small buffer - no CRC", "[Parsing]") {
     CHECK(parser.readString(2) == "ar");
     REQUIRE_THROWS_AS(parser.checkCRC(), std::out_of_range);
 }
+
+TEST_CASE("Test transform functions", "[Transformation]") {
+    REQUIRE(Modbus::Parser::u8tou16(0, 0xCA) == 0xCA00);
+    REQUIRE(Modbus::Parser::u8tou16(0xCA, 0x12) == 0x12CA);
+    REQUIRE(Modbus::Parser::u8tou16(0x12, 0) == 0x12);
+}

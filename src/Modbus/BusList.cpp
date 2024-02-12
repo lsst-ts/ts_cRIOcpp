@@ -26,7 +26,7 @@
 
 using namespace Modbus;
 
-BusList::BusList() {}
+BusList::BusList(uint8_t bus) : _bus(bus) {}
 
 void BusList::parse(Parser parser) {
     auto exp_address = at(_parsed_index).buffer.address();

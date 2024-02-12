@@ -33,289 +33,124 @@ MPU::IRQTimeout::IRQTimeout(std::vector<uint8_t> _data)
                                          ModbusBuffer::hexDump(_data.data(), _data.size()))),
           data(_data) {}
 
-MPU::MPU(uint8_t bus, uint8_t mpu_address) : _bus(bus), _mpu_address(mpu_address), _contains_read(false) {
-    _loop_state = loop_state_t::WRITE;
+MPU::MPU(uint8_t bus) : Modbus::BusList(bus) {
+    _loop_state = loop_state_t::WAIT_WRITE;
 
     addResponse(
             2,
-            [this](uint8_t address) {
-                if (_readInputStatus.empty()) {
-                    throw std::runtime_error("Empty read input status");
-                }
-                auto req = _readInputStatus.front();
-                if (address != _mpu_address) {
-                    throw std::runtime_error(
-                            fmt::format("Invalid ModBus address {}, expected {}", address, _mpu_address));
-                }
-                uint8_t len = read<uint8_t>();
-                if (len != ceil(req.second / 8.0)) {
+            [this](Modbus::Parser parser) {
+                uint8_t len = parser.read<uint8_t>();
+                uint16_t inputs_address = requestBufferU16(2);
+                uint16_t inputs_len = requestBufferU16(4);
+                if (len > ceil(inputs_len / 8.0)) {
                     throw std::runtime_error(fmt::format(
                             "Invalid length for inputs starting at {:04x} - received {}, expected {}",
-                            req.first, len, req.second));
+                            inputs_address, len, inputs_len));
                 }
-                uint16_t start_address = req.first;
-                uint16_t end_address = start_address + req.second;
+                uint16_t end_address = inputs_address + inputs_len;
                 uint8_t data = 0x00;
-                for (uint16_t a = start_address; a < end_address; a++) {
-                    if ((a - start_address) % 8 == 0) {
-                        data = read<uint8_t>();
+                for (uint16_t a = inputs_address; a < end_address; a++) {
+                    if ((a - inputs_address) % 8 == 0) {
+                        data = parser.read<uint8_t>();
                     }
-                    _inputStatus[a] = data & 0x01;
+                    _inputStatus[std::pair(parser.address(), a)] = data & 0x01;
                     data >>= 1;
                 }
-                _readInputStatus.pop_front();
-                checkCRC();
+                parser.checkCRC();
             },
             0x82);
 
     addResponse(
             3,
-            [this](uint8_t address) {
-                if (address != _mpu_address) {
-                    throw std::runtime_error(
-                            fmt::format("Invalid ModBus address {}, expected {}", address, _mpu_address));
-                }
-                uint8_t len = read<uint8_t>();
+            [this](Modbus::Parser parser) {
+                uint8_t len = parser.read<uint8_t>();
 
+                uint16_t request_address = requestBufferU16(2);
+                uint16_t request_len = requestBufferU16(4);
+                if (len != (request_len * 2)) {
+                    throw std::runtime_error(
+                            fmt::format("Invalid respond length for address {} - expected {}, received {}",
+                                        parser.address(), len, request_len * 2));
+                }
                 {
                     std::lock_guard<std::mutex> lg(_registerMutex);
                     for (size_t i = 0; i < len; i += 2) {
-                        if (_readRegisters.empty()) {
-                            throw std::runtime_error("Too big response");
-                        }
-                        uint16_t reg = _readRegisters.front();
-                        uint16_t val = read<uint16_t>();
-                        _registers[reg] = val;
-                        _readRegisters.pop_front();
+                        uint16_t val = parser.read<uint16_t>();
+                        _registers[std::pair(parser.address(), request_address)] = val;
+                        request_address++;
                     }
                 }
-                checkCRC();
+                parser.checkCRC();
             },
             0x83);
 
     addResponse(
             6,
-            [this](uint8_t address) {
-                if (address != _mpu_address) {
-                    throw std::runtime_error(
-                            fmt::format("Invalid ModBus address {}, expected {}", address, _mpu_address));
+            [this](Modbus::Parser parser) {
+                uint16_t register_address = parser.read<uint16_t>();
+                uint16_t value = parser.read<uint16_t>();
+
+                uint16_t request_address = requestBufferU16(2);
+                uint16_t request_value = requestBufferU16(4);
+
+                if (register_address != request_address) {
+                    throw std::runtime_error(fmt::format(
+                            "Invalid register address for address {} - expected {:04x}, received {:04x}",
+                            parser.address(), request_address, register_address));
                 }
-                uint16_t reg = read<uint16_t>();
-                uint16_t value = read<uint16_t>();
-                auto preset = _presetRegister.front();
-                _presetRegister.pop_front();
-                if (reg != preset.first) {
-                    throw std::runtime_error(
-                            fmt::format("Invalid register {:04x}, expected {:04x}", reg, preset.first));
+
+                if (value != request_value) {
+                    throw std::runtime_error(fmt::format(
+                            "Invalid value for address {} register {:04x} - expected {}, received {}",
+                            parser.address(), register_address, request_value, value));
                 }
-                if (value != preset.second) {
-                    throw std::runtime_error(fmt::format("Invalid value {} for address {:04x}, expected {}",
-                                                         value, reg, preset.second));
-                }
-                checkCRC();
+                parser.checkCRC();
             },
             0x86);
 
     addResponse(
             16,
-            [this](uint8_t address) {
-                if (address != _mpu_address) {
+            [this](Modbus::Parser parser) {
+                uint16_t register_address = parser.read<uint16_t>();
+                uint16_t len = parser.read<uint16_t>();
+
+                uint16_t request_address = requestBufferU16(2);
+                uint16_t request_len = requestBufferU16(4);
+                if (register_address != request_address) {
                     throw std::runtime_error(
-                            fmt::format("Invalid ModBus address {}, expected {}", address, _mpu_address));
+                            fmt::format("Invalid register for address {} - expected {:04x}, received {:04x}",
+                                        parser.address(), request_address, register_address));
                 }
-                uint16_t reg = read<uint16_t>();
-                uint16_t len = read<uint16_t>();
-                auto preset = _presetRegisters.front();
-                _presetRegisters.pop_front();
-                if (reg != preset.first) {
+                if (len != request_len) {
                     throw std::runtime_error(
-                            fmt::format("Invalid register {:04x}, expected {:04x}", reg, preset.first));
+                            fmt::format("Invalid lenght for address {} register - expected {}, received {}",
+                                        parser.address(), register_address, request_len, len));
                 }
-                if (len != preset.second) {
-                    throw std::runtime_error(
-                            fmt::format("Invalid lenght {}, expected {}", len, preset.second));
-                }
-                checkCRC();
+                parser.checkCRC();
             },
             0x90);
 }
 
-void MPU::clearCommanded() {
-    clear();
+void MPU::reset() {
+    _loop_state = loop_state_t::WAIT_WRITE;
 
-    _loop_state = loop_state_t::WRITE;
-
-    _commands.clear();
-
-    _readInputStatus.clear();
-    _readRegisters.clear();
-    _presetRegister.clear();
-    _presetRegisters.clear();
+    _inputStatus.clear();
+    _registers.clear();
 }
 
-void MPU::resetBus() { _commands.push_back(MPUCommands::RESET); }
-
-void MPU::waitUs(uint16_t us) {
-    _commands.push_back(MPUCommands::WAIT_US);
-    _pushTimeout(us);
-}
-
-void MPU::waitMs(uint16_t ms) {
-    _commands.push_back(MPUCommands::WAIT_MS);
-    _pushTimeout(ms);
-}
-
-void MPU::readInputStatus(uint16_t address, uint16_t count, uint16_t timeout) {
-    callFunction(_mpu_address, 2, 0, address, count);
-
-    // write request
-    _commands.push_back(MPUCommands::WRITE);
-    _commands.push_back(getLength());
-    for (auto b : getBufferVector()) {
-        _commands.push_back(b);
-    }
-
-    // read response
-    _commands.push_back(MPUCommands::READ_MS);
-    _contains_read = true;
-    // extras: device address, function, length (all 1 byte), CRC (2 bytes) = 5 total
-    _commands.push_back(5 + ceil(count / 8.0));
-    _pushTimeout(timeout);
-
-    _readInputStatus.push_back(std::pair<uint16_t, uint16_t>(address, count));
-}
-
-void MPU::readHoldingRegisters(uint16_t address, uint16_t count, uint16_t timeout) {
-    clear(true);
-
-    callFunction(_mpu_address, 3, 0, address, count);
-
-    // write request
-    _commands.push_back(MPUCommands::WRITE);
-    _commands.push_back(getLength());
-    for (auto b : getBufferVector()) {
-        _commands.push_back(b);
-    }
-
-    // read response
-    _commands.push_back(MPUCommands::READ_MS);
-    _contains_read = true;
-    // extras: device address, function, length (all 1 byte), CRC (2 bytes) = 5 total
-    _commands.push_back(5 + count * 2);
-    _pushTimeout(timeout);
-
-    for (uint16_t add = address; add < address + count; add++) {
-        _readRegisters.push_back(add);
-    }
-}
-
-void MPU::presetHoldingRegister(uint16_t address, uint16_t value, uint16_t timeout) {
-    write(_mpu_address);
-    write<uint8_t>(6);
-    write(address);
-    write<uint16_t>(value);
-
-    writeCRC();
-    writeEndOfFrame();
-    writeWaitForRx(0);
-
-    pushCommanded(_mpu_address, 6);
-
-    // write request
-    _commands.push_back(MPUCommands::WRITE);
-    _commands.push_back(getLength());
-    for (auto b : getBufferVector()) {
-        _commands.push_back(b);
-    }
-
-    // read response
-    _commands.push_back(MPUCommands::READ_MS);
-    _contains_read = true;
-    // extras: device address, function (all 1 byte), address, number of registers written, CRC (2 bytes)
-    _commands.push_back(8);
-    _pushTimeout(timeout);
-
-    _presetRegister.push_back(std::pair<uint16_t, uint16_t>(address, value));
-}
-
-void MPU::presetHoldingRegisters(uint16_t address, uint16_t* values, uint8_t count, uint16_t timeout) {
-    write(_mpu_address);
-    write<uint8_t>(16);
-    write(address);
-    write<uint16_t>(count);
-    write<uint8_t>(count * 2);
+void MPU::presetHoldingRegisters(uint8_t address, uint16_t register_address, uint16_t* values, uint8_t count,
+                                 uint16_t timeout) {
+    Modbus::Buffer mbus;
+    mbus.write<uint8_t>(address);
+    mbus.write<uint8_t>(16);
+    mbus.write<uint16_t>(register_address);
+    mbus.write<uint16_t>(count);
+    mbus.write<uint8_t>(count * 2);
 
     for (uint8_t i = 0; i < count; i++) {
-        write<uint16_t>(values[i]);
+        mbus.write<uint16_t>(values[i]);
     }
 
-    writeCRC();
-
-    pushCommanded(_mpu_address, 16);
-
-    // write request
-    _commands.push_back(MPUCommands::WRITE);
-    _commands.push_back(getLength());
-    for (auto b : getBufferVector()) {
-        _commands.push_back(b);
-    }
-
-    // read response
-    _commands.push_back(MPUCommands::READ_MS);
-    // extras: device address, function (all 1 byte), address, number of registers written, CRC (2 bytes)
-    _commands.push_back(8);
-    _pushTimeout(timeout);
-
-    _presetRegisters.push_back(std::pair<uint16_t, uint16_t>(address, count));
-}
-
-std::vector<uint8_t> MPU::getCommandVector() {
-    _commands.push_back(MPUCommands::IRQ);
-    return _commands;
-}
-
-bool MPU::runLoop(FPGA& fpga) {
-    switch (_loop_state) {
-        case loop_state_t::WRITE:
-            _loop_next_read = std::chrono::steady_clock::now() + _loop_timeout;
-            loopWrite();
-            fpga.writeMPUFIFO(*this);
-            _loop_state = loop_state_t::READ;
-            break;
-        case loop_state_t::READ: {
-            bool timedout;
-            fpga.waitOnIrqs(getIrq(), 0, timedout);
-            if (timedout) {
-                // there is still time to retrieve data, wait for IRQ
-                if (_loop_next_read > std::chrono::steady_clock::now()) {
-                    return false;
-                }
-                auto data = fpga.readMPUFIFO(*this);
-                clearCommanded();
-                resetBus();
-                fpga.writeMPUFIFO(*this);
-                fpga.waitOnIrqs(getIrq(), 100, timedout);
-                fpga.ackIrqs(getIrq());
-                throw IRQTimeout(data);
-            } else {
-                fpga.ackIrqs(getIrq());
-                fpga.readMPUFIFO(*this);
-            }
-
-            loopRead(timedout);
-            _loop_state = loop_state_t::IDLE;
-        } break;
-        case loop_state_t::IDLE:
-            if (_loop_next_read > std::chrono::steady_clock::now()) {
-                return false;
-            }
-            _loop_state = loop_state_t::WRITE;
-            return true;
-    }
-    return false;
-}
-
-void MPU::_pushTimeout(uint16_t timeout) {
-    _commands.push_back(timeout >> 8 & 0xff);
-    _commands.push_back(timeout & 0xff);
+    mbus.writeCRC();
+    emplace(end(), Modbus::CommandRecord(mbus, timeout));
 }

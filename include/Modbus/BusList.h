@@ -80,12 +80,14 @@ public:
  */
 class BusList : public std::vector<CommandRecord> {
 public:
-    BusList();
+    BusList(uint8_t bus);
+
+    const uint8_t getBus() { return _bus; }
 
     /**
      * Reset bus list parsing processing.
      */
-    void reset() { _parsed_index = 0; }
+    virtual void reset() { _parsed_index = 0; }
 
     void callFunction(uint8_t address, uint8_t func, uint32_t timming) {
         emplace(end(), CommandRecord(Buffer(address, func), timming));
@@ -121,10 +123,18 @@ public:
     void addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t error_reply,
                      std::function<void(uint8_t, uint8_t)> error_action = nullptr);
 
+    uint8_t requestBuffer(uint8_t index) { return at(_parsed_index).buffer[index]; }
+    uint16_t requestBufferU16(uint8_t index) {
+        return Parser::u8tou16(requestBuffer(index + 1), requestBuffer(index));
+    }
+
+protected:
+    size_t _parsed_index = 0;
+
 private:
     std::list<ResponseRecord> _functions;
 
-    size_t _parsed_index = 0;
+    const uint8_t _bus;
 };
 
 }  // namespace Modbus

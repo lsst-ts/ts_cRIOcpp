@@ -88,6 +88,11 @@ public:
      */
     void checkCRC();
 
+    static const uint16_t u8tou16(uint8_t hb, uint8_t lb) {
+        uint16_t ret = hb;
+        return ntohs(ret << 8 | lb);
+    }
+
     /**
      * Reads data from buffer. Size of * receiving buffer is assumed to be
      * equal or greater than len.

@@ -40,8 +40,6 @@ public:
     ILCBusList(uint8_t bus);
     virtual ~ILCBusList();
 
-    const uint8_t getBus() { return _bus; }
-
     /**
      * Calls function 17 (0x11), ask for ILC identity.
      *
@@ -290,8 +288,6 @@ protected:
     virtual void processResetServer(uint8_t address) = 0;
 
 private:
-    const uint8_t _bus;
-
     // last know ILC mode
     std::map<uint8_t, uint8_t> _lastMode;
     uint8_t _broadcastCounter = 0;

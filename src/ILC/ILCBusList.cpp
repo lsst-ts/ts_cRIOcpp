@@ -26,7 +26,7 @@
 
 using namespace ILC;
 
-ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
+ILCBusList::ILCBusList(uint8_t bus) : Modbus::BusList(bus) {
     addResponse(
             17,
             [this](Modbus::Parser parser) {

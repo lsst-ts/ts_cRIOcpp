@@ -106,16 +106,17 @@ public:
      * @param mpu Modbus Processing Unit containing the commands.
      * @param timeout timeout to sleep before reading. Default to 500ms.
      */
-    void mpuCommands(MPU& mpu, const std::chrono::duration<double>& timeout = 500ms);
+    void mpuCommands(MPU& mpu);
 
     /**
      * Commands FPGA to write to MPU commands buffer. Data to write are passed
      * along in mpu parameter - you need to fill the MPU commands prior to
      * calling this method.
      *
-     * @param mpu Modbus Processing Unit to write
+     * @param bus
+     * @param mpu_data
      */
-    virtual void writeMPUFIFO(MPU& mpu) = 0;
+    virtual void writeMPUFIFO(uint8_t bus, std::vector<uint8_t> mpu_data) = 0;
 
     /**
      * Commands FPGA to copy MPU output FIFO to FPGA-C/C++ output FIFO. This
