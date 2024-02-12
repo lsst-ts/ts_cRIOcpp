@@ -102,7 +102,7 @@ public:
      */
     void readBuffer(void *buf, size_t len) {
         if (_data + len > size()) {
-            throw std::out_of_range("Trying to access data beyond buffer are.");
+            throw std::out_of_range("Trying to access data beyond buffer end.");
         }
         memcpy(buf, data() + _data, len);
         _data += len;
