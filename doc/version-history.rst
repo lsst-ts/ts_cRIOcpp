@@ -2,12 +2,18 @@
 Version History
 ###############
 
+v1.11.0
+-------
+* Modbus::, ILC::ILCBusList classes. Communication code moved from ModbusBuffer
+  to FPGA class.
+
 v1.10.1
 -------
 
 * Set and read DCA Gain commands (ILC code 73 and 74)
 * Add NiWarning class, improve Ni error reporting
 * FPGA communication debugging
+* support for M2 command line client
 
 v1.10.0
 -------

@@ -31,7 +31,7 @@ using namespace LSST::cRIO;
 
 class TestThermalILC : public ThermalILC {
 public:
-    TestThermalILC() {
+    TestThermalILC() : ILC::ILCBusList(1), ThermalILC(1) {
         responseStatus = 0;
         responseDifferentialTemperature = NAN;
         responseFanRPM = 0;
@@ -80,16 +80,15 @@ TEST_CASE("Test setThermalStatus", "[ThermalILC]") {
     TestThermalILC ilc;
 
     ilc.setThermalDemand(211, 222, 111);
+    REQUIRE(ilc.size() == 1);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 211);
-    REQUIRE(ilc.read<uint8_t>() == 88);
-    REQUIRE(ilc.read<uint8_t>() == 222);
-    REQUIRE(ilc.read<uint8_t>() == 111);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readWaitForRx() == 500);
+    CHECK(parser.address() == 211);
+    CHECK(parser.func() == 88);
+    CHECK(parser.read<uint8_t>() == 222);
+    CHECK(parser.read<uint8_t>() == 111);
+    REQUIRE_NOTHROW(parser.checkCRC());
 }
 
 TEST_CASE("Broadcast set heater & fan target values", "[ThermalILC]") {
@@ -101,33 +100,33 @@ TEST_CASE("Broadcast set heater & fan target values", "[ThermalILC]") {
     TestThermalILC ilc;
 
     ilc.broadcastThermalDemand(values, values);
+    REQUIRE(ilc.size() == 1);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 250);
-    REQUIRE(ilc.read<uint8_t>() == 88);
-    REQUIRE(ilc.read<uint8_t>() == 1);
+    CHECK(parser.address() == 250);
+    CHECK(parser.func() == 88);
+    CHECK(parser.read<uint8_t>() == 1);
     for (int i = 0; i < NUM_TS_ILC; i++) {
-        REQUIRE(ilc.read<uint8_t>() == i);
-        REQUIRE(ilc.read<uint8_t>() == i);
+        CHECK(parser.read<uint8_t>() == i);
+        CHECK(parser.read<uint8_t>() == i);
     }
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readDelay() == 450);
+    REQUIRE_NOTHROW(parser.checkCRC());
 }
 
 TEST_CASE("Test parsing of thermal status response", "[ThermalILC]") {
-    TestThermalILC ilc, response;
+    TestThermalILC ilc;
 
     ilc.reportThermalStatus(77);
+    REQUIRE(ilc.size() == 1);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 77);
-    REQUIRE(ilc.read<uint8_t>() == 89);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readWaitForRx() == 300);
+    CHECK(parser.address() == 77);
+    CHECK(parser.func() == 89);
+    REQUIRE_NOTHROW(parser.checkCRC());
+
+    Modbus::Buffer response;
 
     response.write<uint8_t>(77);
     response.write<uint8_t>(89);
@@ -137,26 +136,27 @@ TEST_CASE("Test parsing of thermal status response", "[ThermalILC]") {
     response.write<float>(215.567f);
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+    REQUIRE_NOTHROW(ilc.parse(response));
 
-    REQUIRE(ilc.responseStatus == 1);
-    REQUIRE(ilc.responseDifferentialTemperature == 34.567f);
-    REQUIRE(ilc.responseFanRPM == 0xff);
-    REQUIRE(ilc.responseAbsoluteTemperature == 215.567f);
+    CHECK(ilc.responseStatus == 1);
+    CHECK(ilc.responseDifferentialTemperature == 34.567f);
+    CHECK(ilc.responseFanRPM == 0xff);
+    CHECK(ilc.responseAbsoluteTemperature == 215.567f);
 }
 
 TEST_CASE("Test parsing of thermal re-heater gains response", "[ThermalILC]") {
-    TestThermalILC ilc, response;
+    TestThermalILC ilc;
 
     ilc.reportReHeaterGains(78);
+    REQUIRE(ilc.size() == 1);
 
-    ilc.reset();
+    Modbus::Parser parser(ilc[0].buffer);
 
-    REQUIRE(ilc.read<uint8_t>() == 78);
-    REQUIRE(ilc.read<uint8_t>() == 93);
-    REQUIRE_NOTHROW(ilc.checkCRC());
-    REQUIRE_NOTHROW(ilc.readEndOfFrame());
-    REQUIRE(ilc.readWaitForRx() == 300);
+    CHECK(parser.address() == 78);
+    CHECK(parser.func() == 93);
+    REQUIRE_NOTHROW(parser.checkCRC());
+
+    Modbus::Buffer response;
 
     response.write<uint8_t>(78);
     response.write<uint8_t>(93);
@@ -164,8 +164,8 @@ TEST_CASE("Test parsing of thermal re-heater gains response", "[ThermalILC]") {
     response.write<float>(678.234f);
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.processResponse(response.getBuffer(), response.getLength()));
+    REQUIRE_NOTHROW(ilc.parse(response));
 
-    REQUIRE(ilc.responseProportionalGain == 31.355f);
-    REQUIRE(ilc.responseIntegralGain == 678.234f);
+    CHECK(ilc.responseProportionalGain == 31.355f);
+    CHECK(ilc.responseIntegralGain == 678.234f);
 }

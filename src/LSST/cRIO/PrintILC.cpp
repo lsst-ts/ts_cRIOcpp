@@ -31,39 +31,21 @@
 
 using namespace LSST::cRIO;
 
-PrintILC::PrintILC(uint8_t bus) : ILC(bus), _printout(0), _lastAddress(0) {
-    setAlwaysTrigger(true);
+PrintILC::PrintILC(uint8_t bus) : ILCBusList(bus), _printout(0), _lastAddress(0) {
+    addResponse(
+            100, [this](Modbus::Parser parser) { processWriteApplicationStats(parser.address()); }, 228);
 
     addResponse(
-            100,
-            [this](uint8_t address) {
-                checkCRC();
-                processWriteApplicationStats(address);
-            },
-            228);
+            101, [this](Modbus::Parser parser) { processEraseILCApplication(parser.address()); }, 229);
 
     addResponse(
-            101,
-            [this](uint8_t address) {
-                checkCRC();
-                processEraseILCApplication(address);
-            },
-            229);
-
-    addResponse(
-            102,
-            [this](uint8_t address) {
-                checkCRC();
-                processWriteApplicationPage(address);
-            },
-            238);
+            102, [this](Modbus::Parser parser) { processWriteApplicationPage(parser.address()); }, 238);
 
     addResponse(
             103,
-            [this](uint8_t address) {
-                uint16_t status = read<uint16_t>();
-                checkCRC();
-                processVerifyUserApplication(address, status);
+            [this](Modbus::Parser parser) {
+                uint16_t status = parser.read<uint16_t>();
+                processVerifyUserApplication(parser.address(), status);
             },
             231);
 }
@@ -87,19 +69,6 @@ void PrintILC::writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t
     callFunction(address, 100, 500000, dataCRC, startAddress, dataLength, buf.getCalcCrc());
 }
 
-void PrintILC::writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length, uint8_t *data) {
-    write(address);
-    write<uint8_t>(102);
-    write(startAddress);
-    write(length);
-    writeBuffer(data, length);
-    writeCRC();
-    writeEndOfFrame();
-    writeWaitForRx(500000);
-
-    pushCommanded(address, 102);
-}
-
 void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     clear();
 
@@ -111,13 +80,13 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
 
     switch (getLastMode(address)) {
         // those modes need fault first
-        case ILCMode::Enabled:
-            changeILCMode(address, ILCMode::Disabled);
-        case ILCMode::Disabled:
-            changeILCMode(address, ILCMode::Standby);
+        case ILC::Mode::Enabled:
+            changeILCMode(address, ILC::Mode::Disabled);
+        case ILC::Mode::Disabled:
+            changeILCMode(address, ILC::Mode::Standby);
             break;
-        case ILC::ILCMode::Fault:
-            changeILCMode(address, ILCMode::ClearFaults);
+        case ILC::Mode::Fault:
+            changeILCMode(address, ILC::Mode::ClearFaults);
             break;
         default:
             break;
@@ -126,19 +95,19 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 
-    if (getLastMode(address) != ILC::FirmwareUpdate) {
-        changeILCMode(address, ILCMode::FirmwareUpdate);
+    if (getLastMode(address) != ILC::Mode::FirmwareUpdate) {
+        changeILCMode(address, ILC::Mode::FirmwareUpdate);
         fpga->ilcCommands(*this, ILC_TIMEOUT);
         clear();
     }
 
-    if (getLastMode(address) == ILC::Fault) {
-        changeILCMode(address, ILCMode::ClearFaults);
+    if (getLastMode(address) == ILC::Mode::Fault) {
+        changeILCMode(address, ILC::Mode::ClearFaults);
         fpga->ilcCommands(*this, ILC_TIMEOUT);
         clear();
     }
 
-    if (getLastMode(address) != ILC::FirmwareUpdate) {
+    if (getLastMode(address) != ILC::Mode::FirmwareUpdate) {
         throw std::runtime_error("Cannot transition to FirmwareUpdate mode");
     }
 
@@ -161,17 +130,17 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 
-    changeILCMode(address, ILCMode::Standby);
+    changeILCMode(address, ILC::Mode::Standby);
     fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 
     if (getLastMode(address) == ILC::Fault) {
-        changeILCMode(address, ILCMode::ClearFaults);
+        changeILCMode(address, ILC::Mode::ClearFaults);
         fpga->ilcCommands(*this, ILC_TIMEOUT);
         clear();
     }
 
-    changeILCMode(address, ILCMode::Disabled);
+    changeILCMode(address, ILC::Mode::Disabled);
     fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 }
@@ -255,7 +224,7 @@ void PrintILC::processVerifyUserApplication(uint8_t address, uint16_t status) {
             exception = 4;
             break;
     }
-    throw Exception(address, 102, exception);
+    throw Modbus::Exception(address, 102, exception);
 }
 
 void PrintILC::printBusAddress(uint8_t address) {
@@ -302,7 +271,7 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
     uint8_t *endData = data.data() + data.size();
     uint16_t dataAddress = _startAddress;
     while (startData < endData) {
-        uint8_t page[192];
+        std::vector<uint8_t> page(192);
         int i = 0;
         while (i < 192) {
             for (int j = 0; j < 3; j++) {

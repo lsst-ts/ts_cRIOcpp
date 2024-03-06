@@ -25,7 +25,6 @@
 #include <catch2/catch_test_macros.hpp>
 
 #include <cRIO/IntelHex.h>
-#include <cRIO/ILC.h>
 
 #include <TestFPGA.h>
 

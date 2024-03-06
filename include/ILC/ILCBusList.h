@@ -1,5 +1,5 @@
 /*
- * Implements generic ILC functions.
+ * ILC Bus List handling communication (receiving and
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -20,87 +20,25 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef _cRIO_ILC_
-#define _cRIO_ILC_
+#ifndef __ILC_BusList__
+#define __ILC_BusList__
 
-#include <map>
+#include <string>
 
-#include <cRIO/ModbusBuffer.h>
-#include <cRIO/IntelHex.h>
+#include <Modbus/BusList.h>
 
-namespace LSST {
-namespace cRIO {
+namespace ILC {
+
+enum Mode { Standby = 0, Disabled = 1, Enabled = 2, FirmwareUpdate = 3, Fault = 4, ClearFaults = 5 };
 
 /**
- * Class filling ModbusBuffer with commands. Should serve single subnet, so
- * allows sending messages with different node addresses. Subnet=network=bus is
- * provided in constructor and accessible via getBus() method.
- *
- * Functions timeouts (for writing on command line as RxWait) is specified in
- * calls to callFunction.
- *
- * Provides function to write and read cRIO FIFO (FPGA) Modbus buffers. Modbus
- * serial bus is serviced inside FPGA with
- * [Common_FPGA_Modbus](https://github.com/lsst-ts/Common_FPGA_Modbus) module.
- *
- * 8bit data are stored as 16bit values. Real data are left shifted by 1. Last
- * bit (0, transmitted first) is start bit, always 0 for ILC communication.
- * First data bit (transmitted last) is stop bit, shall be 1. So uint8_t data d
- * needs to be written as:
- *
- * (0x1200 | (d << 1))
- * (TX_MASK | (d << 1))
- *
- * and response from FPGA ResponseFIFOs is coming with 0x9200 prefix, so:
- *
- * (0x9200 | (d << 1))
- * (RX_MASK | (d << 1))
- *
- * Please see ModbusBuffer::simulateReponse() for details of how to change
- * prefix.
+ * Handles basic ILC communication. Provides methods to run ILC functions and
+ * callback for responses.
  */
-class ILC : public ModbusBuffer {
+class ILCBusList : public Modbus::BusList {
 public:
-    /**
-     * Populate responses for know ILC functions.
-     *
-     * @param bus ILC bus number (1..). Defaults to 1.
-     */
-    ILC(uint8_t bus = 1);
-
-    void writeEndOfFrame() override;
-
-    void writeWaitForRx(uint32_t timeoutMicros) override;
-
-    void writeRxEndFrame() override;
-
-    void readEndOfFrame() override;
-
-    /**
-     * Returns wait for receive timeout.
-     *
-     * @return timeout in us (microseconds)
-     *
-     * @throw std::runtime_error if wait for rx delay command isn't present
-     */
-    uint32_t readWaitForRx();
-
-    /**
-     * Sets simulate mode.
-     *
-     * @param simulate true if buffer shall product simulated replies
-     */
-    void simulateResponse(bool simulate);
-
-    /**
-     * Returns bus number. 1 based (1-5). 1=A,2=B,..5=E bus.
-     */
-    uint8_t getBus() { return _bus; }
-
-    /**
-     * Set whenever all received data will trigger callback calls.
-     */
-    void setAlwaysTrigger(bool newAlwaysTrigger) { _alwaysTrigger = newAlwaysTrigger; }
+    ILCBusList(uint8_t bus);
+    virtual ~ILCBusList();
 
     /**
      * Calls function 17 (0x11), ask for ILC identity.
@@ -115,8 +53,6 @@ public:
      * @param address ILC address
      */
     void reportServerStatus(uint8_t address) { callFunction(address, 18, 270); }
-
-    enum ILCMode { Standby = 0, Disabled = 1, Enabled = 2, FirmwareUpdate = 3, Fault = 4, ClearFaults = 5 };
 
     /**
      * Change ILC mode. Calls function 65 (0x41). Supported ILC modes are:
@@ -156,11 +92,34 @@ public:
     void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
 
 protected:
-    uint16_t getByteInstruction(uint8_t data) override;
+    /**
+     * Call broadcast function.
+     *
+     * @param address broadcast address. Shall be 0, 148, 149 or 250. Not checked if in correct range
+     * @param func function to call
+     * @param delay delay in us (microseconds) for broadcast processing. Bus will remain silence for this
+     * number of us to allow ModBus process the broadcast function
+     * @param counter broadcast counter. ModBus provides method to retrieve this
+     * in unicast function to verify the broadcast was received and processed
+     * @param data function parameters. Usually device's bus ID indexed array
+     * of values to pass to the devices
+     */
+    void broadcastFunction(uint8_t address, uint8_t func, uint32_t delay, uint8_t counter,
+                           std::vector<uint8_t> data);
 
-    uint8_t readInstructionByte() override;
+    /**
+     * Return next bus broadcast counter.
+     *
+     * @return next broadcast counter value
+     */
+    uint8_t nextBroadcastCounter();
 
-    uint8_t getLastMode(uint8_t address) { return _lastMode.at(address); }
+    /**
+     * Return current broadcast counter value.
+     *
+     * @return current broadcast counter value
+     */
+    uint8_t getBroadcastCounter() { return _broadcastCounter; }
 
     /**
      * Return string with current mode description.
@@ -181,6 +140,17 @@ protected:
     virtual std::vector<const char *> getStatusString(uint16_t status);
 
     enum ILCStatus { MajorFault = 0x0001, MinorFault = 0x0002, FaultOverride = 0x0008 };
+
+    /**
+     * Returns last know mode (state) of the ILC at the address.
+     *
+     * @param address ILC node address
+     *
+     * @return last know ILC state
+     *
+     * @throw std::out_of_range when ILC mode is not known
+     */
+    uint8_t getLastMode(uint8_t address) { return _lastMode.at(address); }
 
     /**
      * Return ILC fault textual description.
@@ -317,50 +287,12 @@ protected:
      */
     virtual void processResetServer(uint8_t address) = 0;
 
-    /**
-     * Return counter for broadcast commands.
-     *
-     * @return broadcast counter (shall be in range 0-15)
-     */
-    uint8_t getBroadcastCounter() { return _broadcastCounter; }
-
-    /**
-     * Return next broadcast counter.
-     */
-    uint8_t nextBroadcastCounter();
-
-    /**
-     * Cache management function. Search for cached response. If none is
-     * found, create entry in cache. Use cache entry for
-     * ModbusBuffer::checkRecording call.
-     *
-     * Example code in test_ILC.cpp hopefully explain how to use the function.
-     *
-     * @param address called ILC address
-     * @param func called ILC function code
-     *
-     * @return true if cached response matches last parsed response
-     *
-     * @see ModbusBuffer::recordChanges
-     * @see ModbusBuffer::pauseRecordChanges
-     * @see ModbusBuffer::checkRecording
-     */
-    bool responseMatchCached(uint8_t address, uint8_t func);
-
 private:
-    uint8_t _bus;
-
-    uint8_t _broadcastCounter;
-    unsigned int _timestampShift;
-
-    bool _alwaysTrigger;
-    std::map<uint8_t, std::map<uint8_t, std::vector<uint8_t>>> _cachedResponse;
-
     // last know ILC mode
     std::map<uint8_t, uint8_t> _lastMode;
+    uint8_t _broadcastCounter = 0;
 };
 
-}  // namespace cRIO
-}  // namespace LSST
+}  // namespace ILC
 
-#endif  // !_cRIO_ILC_
+#endif /* !__ILC_BusList__ */

@@ -39,21 +39,20 @@ namespace LSST {
 namespace cRIO {
 
 /**
- * Modbus Processing Unit (MPU) commands. Please see
- * https://github.com/lsst-ts/ts_M1M3Thermal/blob/develop/doc/version-history.rst
+ * Modbus Processing Unit (MPU) commands.
  */
-namespace MPUCommands {
-const static uint8_t WRITE = 1;
-const static uint8_t READ_US = 2;
-const static uint8_t READ_MS = 3;
-const static uint8_t WAIT_US = 100;
-const static uint8_t WAIT_MS = 101;
-const static uint8_t IRQ = 240;
-const static uint8_t TELEMETRY = 254;
-const static uint8_t RESET = 255;
-}  // namespace MPUCommands
+typedef enum {
+    MPU_WRITE = 1,
+    MPU_READ_US = 2,
+    MPU_READ_MS = 3,
+    MPU_WAIT_US = 100,
+    MPU_WAIT_MS = 101,
+    MPU_IRQ = 240,
+    MPU_TELEMETRY = 254,
+    MPU_RESET = 255
+} MPUCommands;
 
-typedef enum { WRITE, READ, IDLE } loop_state_t;
+typedef enum { WAIT_WRITE, WAIT_READ, WAIT_IDLE } loop_state_t;
 
 /**
  * The Modbus Processing Unit class. Prepares buffer with commands to send to
@@ -66,22 +65,16 @@ typedef enum { WRITE, READ, IDLE } loop_state_t;
  * If FPGA is instructed to raise an interrupt during (most likely at the end
  * of) buffer execution with the 240 opcode,
  */
-class MPU : public ModbusBuffer {
+class MPU : public Modbus::BusList {
 public:
     /**
      * Contruct MPU class.
      *
      * @param bus MPU bus number (internal FPGA identifier)
-     * @param mpu_address MPU ModBus address
      */
-    MPU(uint8_t bus, uint8_t mpu_address);
+    MPU(uint8_t bus);
 
-    void clearCommanded();
-
-    /**
-     * Reset bus. Clear all FIFOs.
-     */
-    void resetBus();
+    void reset() override;
 
     /**
      * Wait for given number of microseonds.
@@ -97,54 +90,50 @@ public:
      */
     void waitMs(uint16_t ms);
 
-    /**
-     * Returns bus number (internal FPGA identifier).
-     *
-     * @return MPU bus number
-     */
-    uint8_t getBus() { return _bus; }
-
     virtual uint32_t getIrq() { return 1 << (10 + getBus()); }
 
-    void setAddress(uint8_t address) { _mpu_address = address; }
-
-    bool containsRead() { return _contains_read; }
-
-    void writeEndOfFrame() override {}
-    void writeWaitForRx(uint32_t timeoutMicros) override {}
-    void writeRxEndFrame() override {}
-
-    void readEndOfFrame() override {}
-
-    void readInputStatus(uint16_t address, uint16_t count = 1, uint16_t timeout = 100);
+    void readInputStatus(uint8_t address, uint16_t register_address, uint16_t count = 1,
+                         uint16_t timeout = 100) {
+        callFunction(address, 2, timeout, register_address, count);
+    }
 
     /**
      * Reads holding register(s).
      *
-     * @param address register address
+     * @param address modbus unit address
+     * @param register_address register address
      * @param count number of registers to read
      * @param timeout timeout for register readout (in ms)
      */
-    void readHoldingRegisters(uint16_t address, uint16_t count, uint16_t timeout = 100);
+    void readHoldingRegisters(uint8_t address, uint16_t register_address, uint16_t count,
+                              uint16_t timeout = 100) {
+        callFunction(address, 3, timeout, register_address, count);
+    }
 
     /**
      * Write single register.
      *
-     * @param address register address
+     * @param address modbus unit address
+     * @param register_address register address
      * @param value register value
      * @param timeout timeout (in ms)
      */
-    void presetHoldingRegister(uint16_t address, uint16_t value, uint16_t timeout = 100);
+    void presetHoldingRegister(uint8_t address, uint16_t register_address, uint16_t value,
+                               uint16_t timeout = 100) {
+        callFunction(address, 6, timeout, register_address, value);
+    }
 
     /**
      * Sets modbus holding registers.
      *
-     * @param address register address
+     * @param address modbus unit address
+     * @param register_address register address
      * @param values register values
      * @param count number of registers to write
      * @param timeout timeout (in ms)
      */
-    void presetHoldingRegisters(uint16_t address, uint16_t *values, uint8_t count, uint16_t timeout = 100);
+    void presetHoldingRegisters(uint8_t address, uint16_t register_address, uint16_t *values, uint8_t count,
+                                uint16_t timeout = 100);
 
     /**
      * Returns commands buffer.
@@ -199,7 +188,7 @@ public:
 
     loop_state_t getLoopState() { return _loop_state; }
 
-    /***
+    /**
      * Returns cached input state. Input state shall be cached - queried with
      * readInputStatus method.
      *
@@ -210,45 +199,35 @@ public:
      * @throws std::out_of_range if the address isn't cached
      */
 
-    bool getInputStatus(uint16_t address) { return _inputStatus.at(address); }
+    bool getInputStatus(uint8_t address, uint16_t input_address) {
+        return _inputStatus.at(std::pair(address, input_address));
+    }
 
-    /***
+    /**
      * Returns register value. This access only cached values - register shall be first read
      * using readHoldingRegisters method.
      *
-     * @param address register address
+     * @param address device modbus address
+     * @param register register address
      *
      * @return cached regiter value
      *
      * @throws std::runtime_error when register value isn't cached
      */
-    uint16_t getRegister(uint16_t address) {
+    uint16_t getRegister(uint8_t address, uint16_t register_address) {
         std::lock_guard<std::mutex> lg(_registerMutex);
         try {
-            return _registers.at(address);
+            return _registers.at(std::pair(address, register_address));
         } catch (std::out_of_range &e) {
             throw std::runtime_error(fmt::format("Cannot retrieve holding register {}", address));
         }
     }
 
 private:
-    void _pushTimeout(uint16_t timeout);
-
-    std::vector<uint8_t> _commands;
-    uint8_t _bus;
-    uint8_t _mpu_address;
-
     std::mutex _registerMutex;
 
-    bool _contains_read;
-
-    std::list<std::pair<uint16_t, uint16_t>> _readInputStatus;
-    std::list<uint16_t> _readRegisters;
-    std::list<std::pair<uint16_t, uint16_t>> _presetRegister;
-    std::list<std::pair<uint16_t, uint16_t>> _presetRegisters;
-
-    std::map<uint16_t, bool> _inputStatus;
-    std::map<uint16_t, uint16_t> _registers;
+    std::map<std::pair<uint8_t, uint16_t>, bool> _inputStatus;
+    std::map<std::pair<uint8_t, uint16_t>, uint16_t> _registers;
 
     std::chrono::microseconds _loop_timeout;
     std::chrono::time_point<std::chrono::steady_clock> _loop_next_read;

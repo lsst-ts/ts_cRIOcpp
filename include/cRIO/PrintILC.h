@@ -23,8 +23,9 @@
 #ifndef _cRIO_PrintILC_
 #define _cRIO_PrintILC_
 
-#include <cRIO/ILC.h>
 #include <cRIO/FPGA.h>
+#include <cRIO/IntelHex.h>
+#include <ILC/ILCBusList.h>
 
 namespace LSST {
 namespace cRIO {
@@ -34,7 +35,7 @@ namespace cRIO {
  * commands. Intended for command line applications. Adds functions to program
  * ILC from provided Intel Hex File.
  */
-class PrintILC : public virtual ILC {
+class PrintILC : public virtual ILC::ILCBusList {
 public:
     PrintILC(uint8_t bus);
 
@@ -70,7 +71,10 @@ public:
      *
      * @see programILC
      */
-    void writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length, uint8_t *data);
+    void writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length,
+                              std::vector<uint8_t> data) {
+        callFunction(address, 102, 500000, startAddress, length, data);
+    }
 
     /**
      * Verifies firmware upload.
