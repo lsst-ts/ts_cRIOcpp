@@ -105,6 +105,8 @@ public:
      * Report re-heater gains. Command code 93 (0x5D).
      *
      * @param address ILC address to query.
+     *
+     * @note processThermalStatus method is called for replies
      */
     void reportReHeaterGains(uint8_t address) { callFunction(address, 93, 300); }
 

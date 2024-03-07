@@ -53,8 +53,7 @@ void BusList::parse(Parser parser) {
             return;
         }
     }
-    throw std::runtime_error(
-            fmt::format("Unknown/unexpected Modbusi function {} for address {}", called, address));
+    throw UnexpectedResponse(address, called);
 }
 
 void BusList::addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t error_reply,
