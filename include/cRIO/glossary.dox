@@ -1,0 +1,54 @@
+/*
+ * Electromechanical and Pneumatic ILC functions.
+ *
+ * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
+ * This product includes software developed by the Vera C.Rubin Observatory Project
+ * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
+ * this distribution for details of code ownership.
+ *
+ * This program is free software: you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License as published by the Free
+ * Software Foundation, either version 3 of the License, or (at your option)
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
+ * more details.
+ *
+ * You should have received a copy of the GNU General Public License along with
+ * this program. If not, see <https://www.gnu.org/licenses/>.
+ */
+
+/**
+ * @page GLOSSARY cRIO Acronyms & Glossary
+ *
+ * Purpose of this glossary is to (mostly) expand the acronyms used in the
+ * text. Please consult M1M3 and M2 electronics and mechanical documentation to
+ * understand purpose and operation of the parts denoted by the acronyms.
+ *
+ * Rubin's documents LTS-646 (M1M3 ILC Coumminication) and LTS-346 (M2 ILC
+ * Communication) are particularly usefull to understand details of the
+ * ILC-cRIO communication.
+ *
+ * @section GLOSSARY_DCA DCA
+ * Digitally Controlled Amplifier
+ *
+ * @section GLOSSARY_ILC ILC
+ * Inner Loop Controller
+ *
+ * @section GLOSSARY_LVDT LVDT
+ * Linear Variable Differential Transformer
+ *
+ * @section GLOSSARY_FCU FCU
+ * Fan Coil Unit
+ *
+ * @section GLOSSARY_RPM RPM
+ * Revolutions Per Minute
+ *
+ * @section GLOSSARY_FPGA
+ * Field Programmable Gate Array
+ *
+ * @section GLOSSARY_FIFO
+ * First In First Out
+ */

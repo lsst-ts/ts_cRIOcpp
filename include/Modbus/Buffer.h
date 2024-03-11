@@ -28,17 +28,22 @@
 #include <stdexcept>
 #include <vector>
 
-/***
- * 24 bit type integer.This is used to pass some parameters to ILC calls.
+namespace Modbus {
+
+/**
+ * 24 bit (3 bytes) integer. This is used to pass some parameters to ILC calls.
  */
 class int24_t {
 public:
-    int32_t value;
+    int32_t value;  ///< value stored in the class
 
+    /**
+     * Construct int24_t value.
+     *
+     * @param v integer value
+     */
     int24_t(int32_t v) { value = v; }
 };
-
-namespace Modbus {
 
 /**
  * Thrown when ModBus error response is received.
@@ -61,7 +66,16 @@ public:
  */
 class Buffer : public std::vector<uint8_t> {
 public:
+    /**
+     * Construct an empty buffer.
+     */
     Buffer();
+
+    /**
+     * Fill newly constructed buffer with data.
+     *
+     * @param data Buffer's data
+     */
     Buffer(std::vector<uint8_t> data) : std::vector<uint8_t>(data) {}
 
     /**
@@ -70,12 +84,16 @@ public:
      *
      * @param address ModBus address on subnet
      * @param func ModBus function to call
+     * @param params ModBus command arguments.
      */
     template <typename... dt>
     Buffer(uint8_t address, uint8_t func, const dt&... params) {
         callFunction(address, func, params...);
     }
 
+    /**
+     * Destruct buffer instance.
+     */
     virtual ~Buffer();
 
     /**
@@ -111,7 +129,20 @@ public:
      */
     void writeCRC();
 
+    /**
+     * Return address stored in the Modbus buffer. Essentially returns the
+     * first byte.
+     *
+     * @return Buffer command address
+     */
     uint8_t address() { return at(0); }
+
+    /**
+     * Return function call stored in the Modbus buffer. Essentially returns
+     * the second byte.
+     *
+     * @return Function call code
+     */
     uint8_t func() { return at(1); }
 
     /**
@@ -160,11 +191,21 @@ private:
     }
 };
 
+/**
+ * Write 8 bit signed integer to the end of the buffer.
+ *
+ * @param data 8 bit signed integer to write
+ */
 template <>
 inline void Buffer::write(int8_t data) {
     pushBuffer(reinterpret_cast<uint8_t*>(&data), 1);
 }
 
+/**
+ * Write 16 bit signed integer to the end of the buffer.
+ *
+ * @param data 16 bit signed integer to write
+ */
 template <>
 inline void Buffer::write(int16_t data) {
     int16_t d = htons(data);

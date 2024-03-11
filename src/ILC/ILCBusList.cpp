@@ -28,12 +28,12 @@ using namespace ILC;
 
 ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
     addResponse(
-            17,
+            ILC_CMD::SERVER_ID,
             [this](Modbus::Parser parser) {
                 uint8_t fnLen = parser.read<uint8_t>();
                 if (fnLen < 12) {
                     throw std::runtime_error(fmt::format(
-                            "invalid ILC function 17 response length - except at least 12, got {}", fnLen));
+                            "invalid ILC function 17 response length - expect at least 12, got {}", fnLen));
                 }
                 fnLen -= 12;
 
@@ -52,7 +52,7 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
             145);
 
     addResponse(
-            18,
+            ILC_CMD::SERVER_STATUS,
             [this](Modbus::Parser parser) {
                 uint8_t mode = parser.read<uint8_t>();
                 uint16_t status = parser.read<uint16_t>();
@@ -64,7 +64,7 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
             146);
 
     addResponse(
-            65,
+            ILC_CMD::CHANGE_MODE,
             [this](Modbus::Parser parser) {
                 uint16_t mode = parser.read<uint16_t>();
                 parser.checkCRC();
@@ -74,7 +74,7 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
             193);
 
     addResponse(
-            72,
+            ILC_CMD::SET_TEMP_ADDRESS,
             [this](Modbus::Parser parser) {
                 uint8_t newAddress = parser.read<uint8_t>();
                 parser.checkCRC();
@@ -83,7 +83,7 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
             200);
 
     addResponse(
-            107,
+            ILC_CMD::RESET_SERVER,
             [this](Modbus::Parser parser) {
                 parser.checkCRC();
                 processResetServer(parser.address());
@@ -195,5 +195,5 @@ void ILCBusList::changeILCMode(uint8_t address, uint16_t mode) {
         }
     } catch (std::out_of_range &err) {
     }
-    callFunction(address, 65, timeout, mode);
+    callFunction(address, ILC_CMD::CHANGE_MODE, timeout, mode);
 }

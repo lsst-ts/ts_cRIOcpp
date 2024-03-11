@@ -33,16 +33,19 @@ using namespace LSST::cRIO;
 
 PrintILC::PrintILC(uint8_t bus) : ILCBusList(bus), _printout(0), _lastAddress(0) {
     addResponse(
-            100, [this](Modbus::Parser parser) { processWriteApplicationStats(parser.address()); }, 228);
+            ILC_CLI_CMD::WRITE_APPLICATION_STATS,
+            [this](Modbus::Parser parser) { processWriteApplicationStats(parser.address()); }, 228);
 
     addResponse(
-            101, [this](Modbus::Parser parser) { processEraseILCApplication(parser.address()); }, 229);
+            ILC_CLI_CMD::ERASE_APPLICATION,
+            [this](Modbus::Parser parser) { processEraseILCApplication(parser.address()); }, 229);
 
     addResponse(
-            102, [this](Modbus::Parser parser) { processWriteApplicationPage(parser.address()); }, 238);
+            ILC_CLI_CMD::WRITE_APPLICATION_PAGE,
+            [this](Modbus::Parser parser) { processWriteApplicationPage(parser.address()); }, 238);
 
     addResponse(
-            103,
+            ILC_CLI_CMD::WRITE_VERIFY_APPLICATION,
             [this](Modbus::Parser parser) {
                 uint16_t status = parser.read<uint16_t>();
                 processVerifyUserApplication(parser.address(), status);
@@ -66,7 +69,8 @@ void PrintILC::writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t
     buf.writeBuffer(reinterpret_cast<uint8_t *>(&v), 2);
     buf.write<uint16_t>(0);
 
-    callFunction(address, 100, 500000, dataCRC, startAddress, dataLength, buf.getCalcCrc());
+    callFunction(address, ILC_CLI_CMD::WRITE_APPLICATION_STATS, 500000, dataCRC, startAddress, dataLength,
+                 buf.getCalcCrc());
 }
 
 void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
