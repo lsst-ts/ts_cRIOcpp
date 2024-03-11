@@ -37,7 +37,7 @@
 namespace Modbus {
 
 /**
- * Error thrown when a response is missing. This is mostly caused by an ILC on
+ * Error thrown when a response is missing. This is mostly caused by an @glos{ILC} on
  * the bus being dead/not reacting to the command send.
  */
 class MissingResponse : std::runtime_error {
@@ -45,8 +45,8 @@ public:
     /**
      * Construct missing response exception.
      *
-     * @param address Expected ILC address, for which response wasn't received
-     * @param func Expected function which wasn't responded by the ILC
+     * @param address Expected @glos{ILC} address, for which response wasn't received
+     * @param func Expected function which wasn't responded by the @glos{ILC}
      */
     MissingResponse(uint8_t address, uint8_t func)
             : std::runtime_error(fmt::format("Missing response for function {} from ILC with address {}",
@@ -115,23 +115,23 @@ public:
 
 /**
  * Manages communication with devices on the ModBus bus. Provides methods to
- * call function, construct a buffer to send to FPGA, and handles FPGA
- * response. Should be sub-classed to form a specialized classes for a devices
- * and purposes (e.g. a different ILC types).
+ * call function, construct a buffer to send to the @glos{FPGA}, and handles
+ * the @glos{FPGA} response. Should be sub-classed to form a specialized
+ * classes for a devices and purposes (e.g. a different @glos{ILC} types).
  *
  * When functions are scheduled to be called, the record of the call is stored
  * in the classs. When response buffer is parsed, the class check if the passed
  * response address and function code matches expected values.
  *
  * The BusList is ideally suited to send a repated message patterns. Take for
- * example the M1M3. The loop to operate the mirror sends to ILC those
+ * example the M1M3. The loop to operate the mirror sends to @glos{ILC} those
  * commands:
  *
  * 1. Broadcast command to set actuators target values. Use of the broadcast,
- * which doesn't require any response from the ILCs, significantly decreases
- * time needed to send the target values to ILCs.
+ * which doesn't require any response from the @glos{ILC}s, significantly decreases
+ * time needed to send the target values to @glos{ILC}s.
  *
- * 2. Query all ILCs in unicast fashion (adressing all ILCs on the bus). The
+ * 2. Query all @glos{ILC}s in unicast fashion (adressing all @glos{ILC}s on the bus). The
  * responses are checked against target and safe values.
  *
  * As the second set of commands is the same (query is 4 bytes, address,
@@ -139,12 +139,12 @@ public:
  * stored and hence no CRC computation is executed in the loop. Only the
  * broadcast command is constructed every time the loop executes.
  *
- * Usually the commands are send on the FIFO along with communication-specific
+ * Usually the commands are send on the @glos{FIFO} along with communication-specific
  * data, e.g. time the port communication logic shall wait for the reply and
  * expected length of the reply. So the list is formed in the loop, passed in
- * FIFO to FPGA. The FPGA executes commands, and store responses in a FIFO.
- * This approach distrubutes communication logic to FPGA, leaving CPU free to
- * perform other tasks.
+ * FIFO to the @glos{FPGA}. The @glos{FPGA} executes commands, and store
+ * responses in a FIFO.  This approach distrubutes communication logic to the
+ * @glos{FPGA}, leaving CPU free to perform other tasks.
  *
  * When parsing responses, the class check if responses's addresses matches
  * expected addresses.
@@ -160,13 +160,14 @@ public:
     void reset() { _parsed_index = 0; }
 
     /**
-     * Calls Modbus function. Timing parameter is passed to FPGA, which is
-     * responsible to properly use it. Timing parameter is passed to FPGA,
-     * which is responsible to pass it to the hardware controller.
+     * Calls Modbus function. Timing parameter is passed to the @glos{FPGA},
+     * which is responsible to properly use it. Timing parameter is passed to
+     * the @glos{FPGA}, which is responsible to pass it to the hardware
+     * controller.
      *
-     * @param address ModBus/ILC address
-     * @param func ModBus/ILC function code
-     * @param timing function call timing in microseconds (1/10^-6 second)
+     * @param address ModBus/@glos{ILC} address @param func ModBus/@glos{ILC}
+     * function code @param timing function call timing in microseconds
+     * (1/10^-6 second)
      */
     void callFunction(uint8_t address, uint8_t func, uint32_t timming) {
         emplace(end(), CommandRecord(Buffer(address, func), timming));
@@ -175,11 +176,11 @@ public:
     /**
      * Template to call Modbus function with variable arguments. Argument types
      * are used to encode data as Modbus command, including possible endian
-     * conversion. Timing parameter is passed to FPGA, which is responsible to
+     * conversion. Timing parameter is passed to the @glos{FPGA}, which is responsible to
      * pass it to the hardware controller.
      *
-     * @param address ModBus/ILC address
-     * @param func ModBus/ILC function code
+     * @param address ModBus/@glos{ILC} address
+     * @param func ModBus/@glos{ILC} function code
      * @param timming function call timing in microseconds (1/10^-6 second)
      * @param ...params
      *
@@ -201,12 +202,12 @@ public:
     }
 
     /**
-     * Process ILC response. Address and function of the response are checked if
+     * Process @glos{ILC} response. Address and function of the response are checked if
      *
      * @throw MissingResponse when response for the address is missing. The
      * calling code can catch the exception, pass the same response again, and
-     * if it pass, then the ILC did not respond to command and can (if that's
-     * safe) disable the failing ILC.
+     * if it pass, then the @glos{ILC} did not respond to command and can (if that's
+     * safe) disable the failing @glos{ILC}.
      *
      * @throw UnexpectedResponse Throwed when the bus list action for the
      * address/function (set with the addResponse call) wasn't set.

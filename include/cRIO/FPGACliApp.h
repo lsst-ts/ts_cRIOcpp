@@ -34,14 +34,14 @@ typedef std::pair<std::shared_ptr<PrintILC>, uint8_t> ILCUnit;
 typedef std::list<ILCUnit> ILCUnits;
 
 /**
- * Prints ILCUnit bus address and ILC address.
+ * Prints ILCUnit bus address and @glos{ILC} address.
  */
 std::ostream& operator<<(std::ostream& stream, ILCUnit const& u);
 
 /**
  * Class for Command Line Client applications requiring access to FPGA.
  * Provides generic hook functions, allowing customizing by providing creating
- * custom FPGA and ILCs. ILCs are stored in list, as a ILC class address ILCs
+ * custom FPGA and ILCs. ILCs are stored in list, as a @glos{ILC} class address ILCs
  * on single bus.
  */
 class FPGACliApp : public CliApp {
@@ -103,7 +103,7 @@ protected:
     std::shared_ptr<MPU> getMPU(std::string name);
 
     /**
-     * Clears ILC buffers. Shall be called before new instructions are added to
+     * Clears @glos{ILC} buffers. Shall be called before new instructions are added to
      * the buffer.
      */
     void clearILCs() {
@@ -113,9 +113,9 @@ protected:
     }
 
     /**
-     * Run prepared ILC commands on ILC busses.
+     * Run prepared @glos{ILC} commands on @glos{ILC} busses.
      *
-     * @param timeout ILC timeout (in ms)
+     * @param timeout @glos{ILC} timeout (in ms)
      */
     void runILCCommands(int32_t timeout) {
         for (auto ilcp : _ilcs) {
@@ -128,14 +128,14 @@ protected:
     /**
      * Disable given ILC.
      *
-     * @param u ILC unit to disable.
+     * @param u @glos{ILC} unit to disable.
      */
     void disableILC(ILCUnit u);
 
     /**
      * Enables given ILC.
      *
-     * @param u ILC unit to enable.
+     * @param u @glos{ILC} unit to enable.
      */
     void enableILC(ILCUnit u);
 

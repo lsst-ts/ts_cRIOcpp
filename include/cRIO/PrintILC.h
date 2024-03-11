@@ -31,9 +31,9 @@ namespace LSST {
 namespace cRIO {
 
 /**
- * Virtual class printing out ILC responses to basic (implemented in all ILCs)
+ * Virtual class printing out @glos{ILC} responses to basic (implemented in all ILCs)
  * commands. Intended for command line applications. Adds functions to program
- * ILC from provided Intel Hex File.
+ * @glos{ILC} from provided Intel Hex File.
  */
 class PrintILC : public virtual ILC::ILCBusList {
 public:
@@ -41,10 +41,10 @@ public:
 
     /**
      * Writes newly programmed application statistics and CRCs. Calculates
-     * fourth ILC function 100 argument - ModBus 16bit CRC from input
+     * fourth @glos{ILC} function 100 argument - ModBus 16bit CRC from input
      * arguments.
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      * @param dataCRC data ModBus 16bit CRC. This is calculated fom
      * @param startAddress start memory address. Lowest start address from all function 103 calls.
      * @param dataLength data length (unshrunk). Highest start address from all function 103 + 256.
@@ -54,17 +54,17 @@ public:
     void writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress, uint16_t dataLength);
 
     /**
-     * Erase ILC application.
+     * Erase @glos{ILC} application.
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      */
     void eraseILCApplication(uint8_t address) { callFunction(address, 101, 500000); }
 
     /**
-     * Writes ILC firmware page. Calls functions 103. Please note that every
+     * Writes @glos{ILC} firmware page. Calls functions 103. Please note that every
      * fourth byte from hexfile is skipped.
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      * @param startAddress firmware start address
      * @param length data length. Shall be 192
      * @param data firmware data
@@ -79,24 +79,24 @@ public:
     /**
      * Verifies firmware upload.
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      */
     void writeVerifyApplication(uint8_t address) { callFunction(address, 103, 500000); }
 
     /**
      * Programs ILC. Executes a sequence of commands as follow:
      *
-     * 1. put ILC into standby mode
-     * 2. put ILC into firmware update mode
-     * 3. clears ILC faults
-     * 4. erase ILC application
-     * 5. write ILC application
-     * 6. write ILC application statistics
+     * 1. put @glos{ILC} into standby mode
+     * 2. put @glos{ILC} into firmware update mode
+     * 3. clears @glos{ILC} faults
+     * 4. erase @glos{ILC} application
+     * 5. write @glos{ILC} application
+     * 6. write @glos{ILC} application statistics
      * 7. verify applications
-     * 8. put ILC into standby mode
-     * 9. put ILC into disabled mode
+     * 8. put @glos{ILC} into standby mode
+     * 9. put @glos{ILC} into disabled mode
      *
-     * @note Every fourth byte in input hex file is unused. ILC bootloader
+     * @note Every fourth byte in input hex file is unused. @glos{ILC} bootloader
      * expand input pages, adds 0x00 after every third byte. Control checksum
      * passed in function call 100 (Write Application Stats), addresses passed
      * in functions 100 and 102 (Write Application Page) are calculated and
@@ -104,7 +104,7 @@ public:
      * written in hex file).
      *
      * @param fpga FPGA object
-     * @param address ILC address
+     * @param address @glos{ILC} address
      * @param hex Intel Hex file to load into ILC
      */
     void programILC(FPGA *fpga, uint8_t address, IntelHex &hex);
@@ -123,23 +123,23 @@ protected:
     void processResetServer(uint8_t address) override;
 
     /**
-     * Called when Erase ILC Application (ILC function 101) is acknowledged.
+     * Called when Erase @glos{ILC} Application (@glos{ILC} function 101) is acknowledged.
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      */
     virtual void processEraseILCApplication(uint8_t address);
 
     /**
      * Called when Write Application Stats (ILC function 100) is acknowledged.
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      */
     virtual void processWriteApplicationStats(uint8_t address);
 
     /**
      * Called when Write Application Page (ILC function 102) is acknowledged.
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      */
     virtual void processWriteApplicationPage(uint8_t address);
 
@@ -154,15 +154,16 @@ protected:
      *   <li><b>0xFFFF</b> application stats and application error</li>
      * </ol>
      *
-     * @param address ILC address
-     * @param status program ILC status
+     * @param address @glos{ILC} address
+     * @param status program @glos{ILC} status
      */
     virtual void processVerifyUserApplication(uint8_t address, uint16_t status);
 
     /**
-     * Prints bus and ILC address. Used inside various responses to print out which ILC replied.
+     * Prints bus and @glos{ILC} address. Used inside various responses to
+     * print out which @glos{ILC} replied.
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      */
     virtual void printBusAddress(uint8_t address);
 

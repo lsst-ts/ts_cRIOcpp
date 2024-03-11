@@ -125,7 +125,7 @@ protected:
      * @param address status returned from this ILC
      * @param status ILC status. See LTS-646 for details.
      * @param differentialTemperature differential temperature (degC)
-     * @param fanRPM measure fan RPM - 0 to 255 = 0 to 2550 RPM in 10 RPM increments
+     * @param fanRPM measure fan @glos{RPM} - 0 to 255 = 0 to 2550 @glos{RPM} in 10 @glos{RPM} increments
      * @param absoluteTemperature absolute temperature (degC)
      */
     virtual void processThermalStatus(uint8_t address, uint8_t status, float differentialTemperature,

@@ -26,6 +26,12 @@
 #include <ILC/ILCBusList.h>
 #include <Modbus/Buffer.h>
 
+/**
+ * @defgroup M1M3_fa M1M3 force actuators functions
+ * @defgroup M1M3_hp M1M3 hardpoints functions
+ * @defgroup M2 M2 stepper motor actuators functions
+ */
+
 namespace LSST {
 namespace cRIO {
 
@@ -36,24 +42,20 @@ namespace cRIO {
  * end users which methods will be implemented.
  *
  * Replies received from ILCs shall be processed with ILC::processResponse method.
- *
- * @defgroup M1M3_fa used on M1M3 force actuators
- * @defgroup M1M3_hp used on M1M3 hardpoints
- * @defgroup M2 used on M2 stepper motor actuators
  */
 class ElectromechanicalPneumaticILC : public virtual ILC::ILCBusList {
 public:
     /**
-     * Populate responses for known ILC functions.
+     * Populate responses for known @glos{ILC} functions.
      *
-     * @param bus ILC bus number (1..).
+     * @param bus @glos{ILC} bus number (1..).
      */
     ElectromechanicalPneumaticILC(uint8_t bus);
 
     /**
      * Unicast command to command stepper motor moves.
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      * @param steps commanded steps
      *
      * @note processStepperForceStatus method is called to process replies
@@ -64,11 +66,11 @@ public:
     void setStepperSteps(uint8_t address, int8_t steps) { callFunction(address, 66, 1800, steps); }
 
     /**
-     * Unicast Stepper motor ILC Force [N] and Status Request. ILC command
+     * Unicast Stepper motor @glos{ILC} Force [N] and Status Request. @glos{ILC} command
      * code 67 (0x43). Applies for M2 tangent and axials controllers, as well
      * as M1M3 hardpoints.
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      *
      * @note processStepperForceStatus method is called to process replies
      *
@@ -80,8 +82,8 @@ public:
     /**
      * Unicast command to set a single force actuator force offset.
      *
-     * @param address ILC address
-     * @param slewFlag DCA booster valve
+     * @param address @glos{ILC} address
+     * @param slewFlag @glos{DCA} booster valve
      * @param primary primary actuator force offset (N)
      *
      * @ingroup M1M3_fa
@@ -94,8 +96,8 @@ public:
     /**
      * Unicast command to set a dual force actuator force offsets.
      *
-     * @param address ILC address
-     * @param slewFlag DCA booster valve
+     * @param address @glos{ILC} address
+     * @param slewFlag @glos{DCA} booster valve
      * @param primary primary actuator force offset (N)
      * @param secondary secondary actuator force offset (N)
      *
@@ -109,20 +111,20 @@ public:
     /**
      * Reports force actuator status.
      *
-     * @params address ILC address
+     * @params address @glos{ILC} address
      *
      * @ingroup M1M3_fa
      */
     void reportForceActuatorForceStatus(uint8_t address) { callFunction(address, 76, 1800); }
 
     /**
-     * Unicast to set DCA Gain. ILC Command code 73 (0x49).
+     * Unicast to set @glos{DCA} Gain. @glos{ILC} Command code 73 (0x49).
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      * @param orimaryGain axial booster valve gain
      * @param secondaryGain lateral booster valve gain
      *
-     * @note no method is called for response, as this only sets the ILC paremeters
+     * @note no method is called for response, as this only sets the @glos{ILC} paremeters
      *
      * @ingroup M1M3_fa
      */
@@ -131,9 +133,9 @@ public:
     }
 
     /**
-     * Read DCA Gain. ILC Command code 74 (0x4A).
+     * Read @glos{DCA} Gain. @glos{ILC} command code 74 (0x4A).
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      *
      * @note processDCAGain method is called to process replies
      *
@@ -142,14 +144,14 @@ public:
     void reportDCAGain(uint8_t address) { callFunction(address, 74, 2000); }
 
     /**
-     * Unicast ADC Channel Offset and Sensitivity. ILC command code 81 (0x51).
+     * Unicast ADC Channel Offset and Sensitivity. @glos{ILC} command code 81 (0x51).
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      * @param channel ADC channel (1-4)
      * @param offset ADC offset value
      * @param sensitivity ADC sensitivity value
      *
-     * @note no method is called for response, as this only sets the ILC paremeters
+     * @note no method is called for response, as this only sets the @glos{ILC} paremeters
      *
      * @ingroup M1M3_fa
      * @ingroup M2
@@ -159,9 +161,9 @@ public:
     }
 
     /**
-     * Read ILC calibration data. ILC command code 110 (0x6E).
+     * Read @glos{ILC} calibration data. @glos{ILC} command code 110 (0x6E).
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      *
      * @note processCalibrationData method is called to process replies
      *
@@ -172,18 +174,18 @@ public:
     void reportCalibrationData(uint8_t address) { callFunction(address, 110, 1800); }
 
     /**
-     * Read ILC mezzanine pressure. ILC command code 119 (0x77).
+     * Read @glos{ILC} mezzanine pressure. @glos{ILC} command code 119 (0x77).
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      *
      * @ingroup M1M3_hp
      */
     void reportMezzaninePressure(uint8_t address) { callFunction(address, 119, 1800); }
 
     /**
-     * Unicast command to read hardpoint LVDT. ILC command 122 (0x7a).
+     * Unicast command to read hardpoint @glos{LVDT}. @glos{ILC} command 122 (0x7a).
      *
-     * @param address ILC address
+     * @param address @glos{ILC} address
      *
      * @note processHardpointLVDT method is called to process replies
      *
@@ -220,9 +222,9 @@ protected:
     /**
      * Called when response from call to command 122 (0x7a) is read.
      *
-     * @param address returned from this ILC
-     * @param breakawayLVDT breakway LVDT value
-     * @param displacementLVDT displacement LVDT value
+     * @param address returned from this @glos{ILC}
+     * @param breakawayLVDT breakway @glos{LVDT} value
+     * @param displacementLVDT displacement @{LVDT} value
      *
      * @ingroup M1M3_hp
      */
