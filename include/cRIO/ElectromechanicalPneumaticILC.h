@@ -42,6 +42,9 @@ namespace cRIO {
  * end users which methods will be implemented.
  *
  * Replies received from ILCs shall be processed with ILC::processResponse method.
+ *
+ * @note When command numbers are referenced in the documentation, plese
+ * consult the relavant LTS - LTS-346 and LTS-646 - for details.
  */
 class ElectromechanicalPneumaticILC : public virtual ILC::ILCBusList {
 public:
@@ -63,7 +66,9 @@ public:
      * @ingroup M1M3_hp
      * @ingroup M2
      */
-    void setStepperSteps(uint8_t address, int8_t steps) { callFunction(address, 66, 1800, steps); }
+    void setStepperSteps(uint8_t address, int8_t steps) {
+        callFunction(address, ILC_EM_CMD::SET_STEPPER_STEPS, 1800, steps);
+    }
 
     /**
      * Unicast Stepper motor @glos{ILC} Force [N] and Status Request. @glos{ILC} command
@@ -77,45 +82,9 @@ public:
      * @ingroup M1M3_hp
      * @ingroup M2
      */
-    void reportStepperForceStatus(uint8_t address) { callFunction(address, 67, 1800); }
-
-    /**
-     * Unicast command to set a single force actuator force offset.
-     *
-     * @param address @glos{ILC} address
-     * @param slewFlag @glos{DCA} booster valve
-     * @param primary primary actuator force offset (N)
-     *
-     * @ingroup M1M3_fa
-     */
-    void setSAAForceOffset(uint8_t address, bool slewFlag, float primary) {
-        callFunction(address, 75, 1800, static_cast<uint8_t>(slewFlag ? 0xFF : 0x00),
-                     Modbus::int24_t(primary * 1000));
+    void reportStepperForceStatus(uint8_t address) {
+        callFunction(address, ILC_EM_CMD::STEPPER_FORCE_STATUS, 1800);
     }
-
-    /**
-     * Unicast command to set a dual force actuator force offsets.
-     *
-     * @param address @glos{ILC} address
-     * @param slewFlag @glos{DCA} booster valve
-     * @param primary primary actuator force offset (N)
-     * @param secondary secondary actuator force offset (N)
-     *
-     * @ingroup M1M3_fa
-     */
-    void setDAAForceOffset(uint8_t address, bool slewFlag, float primary, float secondary) {
-        callFunction(address, 75, 1800, static_cast<uint8_t>(slewFlag ? 0xFF : 0x00),
-                     Modbus::int24_t(primary * 1000), Modbus::int24_t(secondary * 1000));
-    }
-
-    /**
-     * Reports force actuator status.
-     *
-     * @params address @glos{ILC} address
-     *
-     * @ingroup M1M3_fa
-     */
-    void reportForceActuatorForceStatus(uint8_t address) { callFunction(address, 76, 1800); }
 
     /**
      * Unicast to set @glos{DCA} Gain. @glos{ILC} Command code 73 (0x49).
@@ -129,7 +98,7 @@ public:
      * @ingroup M1M3_fa
      */
     void setDCAGain(uint8_t address, float primaryGain, float secondaryGain) {
-        callFunction(address, 73, 40000, primaryGain, secondaryGain);
+        callFunction(address, ILC_EM_CMD::SET_DCA_GAIN, 40000, primaryGain, secondaryGain);
     }
 
     /**
@@ -141,7 +110,48 @@ public:
      *
      * @ingroup M1M3_fa
      */
-    void reportDCAGain(uint8_t address) { callFunction(address, 74, 2000); }
+    void reportDCAGain(uint8_t address) { callFunction(address, ILC_EM_CMD::REPORT_DCA_GAIN, 2000); }
+
+    /**
+     * Unicast command to set a single force actuator force offset.
+     *
+     * @param address @glos{ILC} address
+     * @param slewFlag @glos{DCA} booster valve
+     * @param primary primary actuator force offset (N)
+     *
+     * @ingroup M1M3_fa
+     */
+    void setSAAForceOffset(uint8_t address, bool slewFlag, float primary) {
+        callFunction(address, ILC_EM_CMD::SET_FORCE_OFFSET, 1800,
+                     static_cast<uint8_t>(slewFlag ? 0xFF : 0x00), Modbus::int24_t(primary * 1000));
+    }
+
+    /**
+     * Unicast command to set a dual force actuator force offsets.
+     *
+     * @param address @glos{ILC} address
+     * @param slewFlag @glos{DCA} booster valve
+     * @param primary primary actuator force offset (N)
+     * @param secondary secondary actuator force offset (N)
+     *
+     * @ingroup M1M3_fa
+     */
+    void setDAAForceOffset(uint8_t address, bool slewFlag, float primary, float secondary) {
+        callFunction(address, ILC_EM_CMD::SET_FORCE_OFFSET, 1800,
+                     static_cast<uint8_t>(slewFlag ? 0xFF : 0x00), Modbus::int24_t(primary * 1000),
+                     Modbus::int24_t(secondary * 1000));
+    }
+
+    /**
+     * Reports force actuator status.
+     *
+     * @params address @glos{ILC} address
+     *
+     * @ingroup M1M3_fa
+     */
+    void reportForceActuatorForceStatus(uint8_t address) {
+        callFunction(address, ILC_EM_CMD::REPORT_FA_FORCE_STATUS, 1800);
+    }
 
     /**
      * Unicast ADC Channel Offset and Sensitivity. @glos{ILC} command code 81 (0x51).
@@ -157,7 +167,7 @@ public:
      * @ingroup M2
      */
     void setOffsetAndSensitivity(uint8_t address, uint8_t channel, float offset, float sensitivity) {
-        callFunction(address, 81, 36500, channel, offset, sensitivity);
+        callFunction(address, ILC_EM_CMD::SET_OFFSET_AND_SENSITIVITY, 36500, channel, offset, sensitivity);
     }
 
     /**
@@ -171,7 +181,9 @@ public:
      * @ingroup M1M3_hp
      * @ingroup M2
      */
-    void reportCalibrationData(uint8_t address) { callFunction(address, 110, 1800); }
+    void reportCalibrationData(uint8_t address) {
+        callFunction(address, ILC_EM_CMD::REPORT_CALIBRATION_DATA, 1800);
+    }
 
     /**
      * Read @glos{ILC} mezzanine pressure. @glos{ILC} command code 119 (0x77).
@@ -180,7 +192,9 @@ public:
      *
      * @ingroup M1M3_hp
      */
-    void reportMezzaninePressure(uint8_t address) { callFunction(address, 119, 1800); }
+    void reportMezzaninePressure(uint8_t address) {
+        callFunction(address, ILC_EM_CMD::REPORT_MEZZANINE_PRESSURE, 1800);
+    }
 
     /**
      * Unicast command to read hardpoint @glos{LVDT}. @glos{ILC} command 122 (0x7a).
@@ -191,7 +205,9 @@ public:
      *
      * @ingroup M1M3_hp
      */
-    void reportHardpointLVDT(uint8_t address) { callFunction(address, 122, 400); }
+    void reportHardpointLVDT(uint8_t address) {
+        callFunction(address, ILC_EM_CMD::REPORT_HARDPOINT_LVDT, 400);
+    }
 
 protected:
     /**
@@ -288,6 +304,23 @@ protected:
      */
     virtual void processMezzaninePressure(uint8_t address, float primaryPush, float primaryPull,
                                           float secondaryPush, float secondaryPull) = 0;
+
+private:
+    /**
+     * Electromechanical ILC commands. See LTS-346 and LTS-646 for details.
+     */
+    enum ILC_EM_CMD {
+        SET_STEPPER_STEPS = 66,
+        STEPPER_FORCE_STATUS = 67,
+        SET_DCA_GAIN = 73,
+        REPORT_DCA_GAIN = 74,
+        SET_FORCE_OFFSET = 75,
+        REPORT_FA_FORCE_STATUS = 76,
+        SET_OFFSET_AND_SENSITIVITY = 81,
+        REPORT_CALIBRATION_DATA = 110,
+        REPORT_MEZZANINE_PRESSURE = 119,
+        REPORT_HARDPOINT_LVDT = 122
+    };
 };
 
 }  // namespace cRIO

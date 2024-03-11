@@ -80,7 +80,7 @@ public:
      * @param fanRPM commanded fan RPM values (0-2550)
      */
     void setThermalDemand(uint8_t address, uint8_t heaterPWM, uint8_t fanRPM) {
-        callFunction(address, 88, 500, heaterPWM, fanRPM);
+        callFunction(address, ILC_THERMAL_CMD::SET_THERMAL_DEMAND, 500, heaterPWM, fanRPM);
     }
 
     /**
@@ -88,7 +88,9 @@ public:
      *
      * @param address ILC address to query.
      */
-    void reportThermalStatus(uint8_t address) { callFunction(address, 89, 300); }
+    void reportThermalStatus(uint8_t address) {
+        callFunction(address, ILC_THERMAL_CMD::REPORT_THERMAL_STATUS, 300);
+    }
 
     /**
      * Set new re-heater gains.
@@ -98,7 +100,7 @@ public:
      * @param integralGain Commanded integral gain
      */
     void setReHeaterGains(uint8_t address, float proportionalGain, float integralGain) {
-        callFunction(address, 92, 500000, proportionalGain, integralGain);
+        callFunction(address, ILC_THERMAL_CMD::SET_REHEATER_GAINS, 500000, proportionalGain, integralGain);
     }
 
     /**
@@ -108,7 +110,9 @@ public:
      *
      * @note processThermalStatus method is called for replies
      */
-    void reportReHeaterGains(uint8_t address) { callFunction(address, 93, 300); }
+    void reportReHeaterGains(uint8_t address) {
+        callFunction(address, ILC_THERMAL_CMD::REPORT_REHEATER_GAINS, 300);
+    }
 
     /**
      * Broadcast heater PWM and fan RPM. ILC command code 88 (0x58).
@@ -139,6 +143,17 @@ protected:
      * @param integralGain Re-Heater integral gain
      */
     virtual void processReHeaterGains(uint8_t address, float proportionalGain, float integralGain) = 0;
+
+private:
+    /**
+     * Thermal ILC command numbers. Please consult LTS-646 for details.
+     */
+    enum ILC_THERMAL_CMD {
+        SET_THERMAL_DEMAND = 88,
+        REPORT_THERMAL_STATUS = 89,
+        SET_REHEATER_GAINS = 92,
+        REPORT_REHEATER_GAINS = 93
+    };
 };
 
 }  // namespace cRIO

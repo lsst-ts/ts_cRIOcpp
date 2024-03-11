@@ -58,7 +58,9 @@ public:
      *
      * @param address @glos{ILC} address
      */
-    void eraseILCApplication(uint8_t address) { callFunction(address, 101, 500000); }
+    void eraseILCApplication(uint8_t address) {
+        callFunction(address, ILC_CLI_CMD::ERASE_APPLICATION, 500000);
+    }
 
     /**
      * Writes @glos{ILC} firmware page. Calls functions 103. Please note that every
@@ -73,7 +75,7 @@ public:
      */
     void writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length,
                               std::vector<uint8_t> data) {
-        callFunction(address, 102, 500000, startAddress, length, data);
+        callFunction(address, ILC_CLI_CMD::WRITE_APPLICATION_PAGE, 500000, startAddress, length, data);
     }
 
     /**
@@ -81,7 +83,9 @@ public:
      *
      * @param address @glos{ILC} address
      */
-    void writeVerifyApplication(uint8_t address) { callFunction(address, 103, 500000); }
+    void writeVerifyApplication(uint8_t address) {
+        callFunction(address, ILC_CLI_CMD::WRITE_VERIFY_APPLICATION, 500000);
+    }
 
     /**
      * Programs ILC. Executes a sequence of commands as follow:
@@ -170,6 +174,16 @@ protected:
     virtual void printSepline();
 
 private:
+    /**
+     * Please consult LTS-646 for details about the ILC commands.
+     */
+    enum ILC_CLI_CMD {
+        WRITE_APPLICATION_STATS = 100,
+        ERASE_APPLICATION = 101,
+        WRITE_APPLICATION_PAGE = 102,
+        WRITE_VERIFY_APPLICATION = 103
+    };
+
     int _printout;
     uint8_t _lastAddress;
     ModbusBuffer::CRC _crc;
