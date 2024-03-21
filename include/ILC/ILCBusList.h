@@ -29,7 +29,7 @@
 
 namespace ILC {
 
-enum Mode { Standby = 0, Disabled = 1, Enabled = 2, FirmwareUpdate = 3, Fault = 4, ClearFaults = 5 };
+enum Mode { Standby = 0, Disabled = 1, Enabled = 2, Bootloader = 3, Fault = 4, ClearFaults = 5 };
 
 /**
  * Handles basic @glos{ILC} communication. Provides methods to run @glos{ILC}
@@ -113,6 +113,17 @@ public:
      * @param address @glos{ICL} address
      */
     void resetServer(uint8_t address) { callFunction(address, ILC_CMD::RESET_SERVER, 86840); }
+
+    /**
+     * ILC commands numbers. See LTS-346 and LTS-646 for details.
+     */
+    enum ILC_CMD {
+        SERVER_ID = 17,
+        SERVER_STATUS = 18,
+        CHANGE_MODE = 65,
+        SET_TEMP_ADDRESS = 72,
+        RESET_SERVER = 107
+    };
 
 protected:
     /**
@@ -315,17 +326,6 @@ private:
 
     std::map<uint8_t, uint8_t> _lastMode;  ///< last know @glos{ILC} mode
     uint8_t _broadcastCounter = 0;
-
-    /**
-     * ILC commands numbers. See LTS-346 and LTS-646 for details.
-     */
-    enum ILC_CMD {
-        SERVER_ID = 17,
-        SERVER_STATUS = 18,
-        CHANGE_MODE = 65,
-        SET_TEMP_ADDRESS = 72,
-        RESET_SERVER = 107
-    };
 };
 
 }  // namespace ILC

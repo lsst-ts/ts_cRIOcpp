@@ -56,6 +56,22 @@ public:
     ElectromechanicalPneumaticILC(uint8_t bus);
 
     /**
+     * Electromechanical ILC commands. See LTS-346 and LTS-646 for details.
+     */
+    enum ILC_EM_CMD {
+        SET_STEPPER_STEPS = 66,
+        STEPPER_FORCE_STATUS = 67,
+        SET_DCA_GAIN = 73,
+        REPORT_DCA_GAIN = 74,
+        SET_FORCE_OFFSET = 75,
+        REPORT_FA_FORCE_STATUS = 76,
+        SET_OFFSET_AND_SENSITIVITY = 81,
+        REPORT_CALIBRATION_DATA = 110,
+        REPORT_MEZZANINE_PRESSURE = 119,
+        REPORT_HARDPOINT_LVDT = 122
+    };
+
+    /**
      * Unicast command to command stepper motor moves.
      *
      * @param address @glos{ILC} address
@@ -304,23 +320,6 @@ protected:
      */
     virtual void processMezzaninePressure(uint8_t address, float primaryPush, float primaryPull,
                                           float secondaryPush, float secondaryPull) = 0;
-
-private:
-    /**
-     * Electromechanical ILC commands. See LTS-346 and LTS-646 for details.
-     */
-    enum ILC_EM_CMD {
-        SET_STEPPER_STEPS = 66,
-        STEPPER_FORCE_STATUS = 67,
-        SET_DCA_GAIN = 73,
-        REPORT_DCA_GAIN = 74,
-        SET_FORCE_OFFSET = 75,
-        REPORT_FA_FORCE_STATUS = 76,
-        SET_OFFSET_AND_SENSITIVITY = 81,
-        REPORT_CALIBRATION_DATA = 110,
-        REPORT_MEZZANINE_PRESSURE = 119,
-        REPORT_HARDPOINT_LVDT = 122
-    };
 };
 
 }  // namespace cRIO

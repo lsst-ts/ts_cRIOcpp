@@ -99,8 +99,8 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     fpga->ilcCommands(*this, ILC_TIMEOUT);
     clear();
 
-    if (getLastMode(address) != ILC::Mode::FirmwareUpdate) {
-        changeILCMode(address, ILC::Mode::FirmwareUpdate);
+    if (getLastMode(address) != ILC::Mode::Bootloader) {
+        changeILCMode(address, ILC::Mode::Bootloader);
         fpga->ilcCommands(*this, ILC_TIMEOUT);
         clear();
     }
@@ -111,8 +111,8 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
         clear();
     }
 
-    if (getLastMode(address) != ILC::Mode::FirmwareUpdate) {
-        throw std::runtime_error("Cannot transition to FirmwareUpdate mode");
+    if (getLastMode(address) != ILC::Mode::Bootloader) {
+        throw std::runtime_error("Cannot transition to Bootloader mode");
     }
 
     eraseILCApplication(address);

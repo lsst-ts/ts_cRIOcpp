@@ -73,6 +73,16 @@ public:
     };
 
     /**
+     * Thermal ILC command numbers. Please consult LTS-646 for details.
+     */
+    enum ILC_THERMAL_CMD {
+        SET_THERMAL_DEMAND = 88,
+        REPORT_THERMAL_STATUS = 89,
+        SET_REHEATER_GAINS = 92,
+        REPORT_REHEATER_GAINS = 93
+    };
+
+    /**
      * Unicast heater PWM and fan RPM. ILC command code 88 (0x58)
      *
      * @param address ILC address
@@ -143,17 +153,6 @@ protected:
      * @param integralGain Re-Heater integral gain
      */
     virtual void processReHeaterGains(uint8_t address, float proportionalGain, float integralGain) = 0;
-
-private:
-    /**
-     * Thermal ILC command numbers. Please consult LTS-646 for details.
-     */
-    enum ILC_THERMAL_CMD {
-        SET_THERMAL_DEMAND = 88,
-        REPORT_THERMAL_STATUS = 89,
-        SET_REHEATER_GAINS = 92,
-        REPORT_REHEATER_GAINS = 93
-    };
 };
 
 }  // namespace cRIO
