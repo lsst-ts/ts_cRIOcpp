@@ -225,6 +225,12 @@ public:
         callFunction(address, ILC_EM_CMD::REPORT_HARDPOINT_LVDT, 400);
     }
 
+    /**
+     * Number of values stored in calibration registers. The index is used for
+     * different acctuators/load cells connected to the ILC.
+     */
+    static constexpr int CALIBRATION_LENGTH = 4;
+
 protected:
     /**
      * Called when response from call to command unicast 66 (0x42) and 67
@@ -292,20 +298,23 @@ protected:
      * Called when response from call to command 110 (0x6E) is read.
      *
      * @param address status returned from this ILC
-     * @param mainADCK[4] main ADC calibration Kn
-     * @param mainOffset[4] main sensor n offset
-     * @param mainSensitivity[4] main sensor n sensitivity
-     * @param backupADCK[4] backup ADC calibration Kn
-     * @param backupOffset[4] backup sensor n offset
-     * @param backupSensitivity[4] backup sensor n sensitivity
+     * @param mainADCK[CALIBRATION_LENGTH] main ADC calibration Kn
+     * @param mainOffset[CALIBRATION_LENGTH] main sensor n offset
+     * @param mainSensitivity[CALIBRATION_LENGTH] main sensor n sensitivity
+     * @param backupADCK[CALIBRATION_LENGTH] backup ADC calibration Kn
+     * @param backupOffset[CALIBRATION_LENGTH] backup sensor n offset
+     * @param backupSensitivity[CALIBRATION_LENGTH] backup sensor n sensitivity
      *
      * @ingroup M1M3_fa
      * @ingroup M1M3_hp
      * @ingroup M2
      */
-    virtual void processCalibrationData(uint8_t address, float mainADCK[4], float mainOffset[4],
-                                        float mainSensitivity[4], float backupADCK[4], float backupOffset[4],
-                                        float backupSensitivity[4]) = 0;
+    virtual void processCalibrationData(uint8_t address, float mainADCK[CALIBRATION_LENGTH],
+                                        float mainOffset[CALIBRATION_LENGTH],
+                                        float mainSensitivity[CALIBRATION_LENGTH],
+                                        float backupADCK[CALIBRATION_LENGTH],
+                                        float backupOffset[CALIBRATION_LENGTH],
+                                        float backupSensitivity[CALIBRATION_LENGTH]) = 0;
 
     /**
      * Called when response from call to command 119 is read.

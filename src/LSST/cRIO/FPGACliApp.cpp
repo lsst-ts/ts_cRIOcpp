@@ -73,7 +73,7 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
             "Change ILC mode to enabled");
     addILCCommand(
             "bootloader", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::Bootloader); },
-            "Change ILC mode to booloader"); 
+            "Change ILC mode to booloader");
     addILCCommand(
             "clear-faults", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::ClearFaults); },
             "Clear ILC faults");

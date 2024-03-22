@@ -7,6 +7,7 @@ v1.11.0
 * Modbus::, ILC::ILCBusList classes. Communication code moved from ModbusBuffer
   to FPGA class.
 * Improved documentation.
+* Public constants to explain meaning of the numbers
 
 v1.10.1
 -------
