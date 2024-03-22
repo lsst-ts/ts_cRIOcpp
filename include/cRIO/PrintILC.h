@@ -113,6 +113,16 @@ public:
      */
     void programILC(FPGA *fpga, uint8_t address, IntelHex &hex);
 
+    /**
+     * Please consult LTS-646 for details about the ILC commands.
+     */
+    enum ILC_CLI_CMD {
+        WRITE_APPLICATION_STATS = 100,
+        ERASE_APPLICATION = 101,
+        WRITE_APPLICATION_PAGE = 102,
+        WRITE_VERIFY_APPLICATION = 103
+    };
+
 protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
                          uint8_t ilcSelectedOptions, uint8_t networkNodeOptions, uint8_t majorRev,
@@ -174,16 +184,6 @@ protected:
     virtual void printSepline();
 
 private:
-    /**
-     * Please consult LTS-646 for details about the ILC commands.
-     */
-    enum ILC_CLI_CMD {
-        WRITE_APPLICATION_STATS = 100,
-        ERASE_APPLICATION = 101,
-        WRITE_APPLICATION_PAGE = 102,
-        WRITE_VERIFY_APPLICATION = 103
-    };
-
     int _printout;
     uint8_t _lastAddress;
     ModbusBuffer::CRC _crc;

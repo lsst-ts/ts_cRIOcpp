@@ -114,12 +114,12 @@ const char *ILCBusList::getModeStr(uint8_t mode) {
             return "Disabled";
         case Mode::Enabled:
             return "Enabled";
-        case Mode::FirmwareUpdate:
-            return "Firmware Updade";
+        case Mode::Bootloader:
+            return "Bootloader";
         case Mode::Fault:
             return "Fault";
         default:
-            return "unknow";
+            return "unknown";
     }
 }
 
@@ -189,8 +189,8 @@ std::vector<const char *> ILCBusList::getFaultString(uint16_t fault) {
 void ILCBusList::changeILCMode(uint8_t address, uint16_t mode) {
     uint32_t timeout = 335;
     try {
-        if ((getLastMode(address) == Mode::Standby && mode == Mode::FirmwareUpdate) ||
-            (getLastMode(address) == Mode::FirmwareUpdate && mode == Mode::Standby)) {
+        if ((getLastMode(address) == Mode::Standby && mode == Mode::Bootloader) ||
+            (getLastMode(address) == Mode::Bootloader && mode == Mode::Standby)) {
             timeout = 100000;
         }
     } catch (std::out_of_range &err) {
