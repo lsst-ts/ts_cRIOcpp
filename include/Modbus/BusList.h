@@ -165,9 +165,9 @@ public:
      * the @glos{FPGA}, which is responsible to pass it to the hardware
      * controller.
      *
-     * @param address ModBus/@glos{ILC} address @param func ModBus/@glos{ILC}
-     * function code @param timing function call timing in microseconds
-     * (1/10^-6 second)
+     * @param address ModBus/@glos{ILC} address
+     * @param func ModBus/@glos{ILC} function code
+     * @param timing function call timing in microseconds (1/10^-6 second)
      */
     void callFunction(uint8_t address, uint8_t func, uint32_t timming) {
         emplace(end(), CommandRecord(Buffer(address, func), timming));

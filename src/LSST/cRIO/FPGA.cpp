@@ -41,7 +41,6 @@ FPGA::FPGA(fpgaType type) : SimpleFPGA(type) {
             _modbusSoftwareTrigger = 252;
             break;
         case M2:
-            _modbusSoftwareTrigger = 1;
         case VMS:
             _modbusSoftwareTrigger = 0;
             break;
@@ -152,13 +151,7 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
 
 void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
     writeMPUFIFO(mpu);
-
-    if (mpu.containsRead()) {
-        std::this_thread::sleep_for(timeout);
-        readMPUFIFO(mpu);
-    }
-
-    mpu.checkCommandedEmpty();
+    readMPUFIFO(mpu);
 }
 
 }  // namespace cRIO

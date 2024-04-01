@@ -29,295 +29,261 @@ using namespace LSST::cRIO;
 class TestMPU : public MPU {
 public:
     TestMPU(uint8_t bus, uint8_t mpu_address) : MPU(bus, mpu_address) {}
-
-    void loopWrite() override {}
-    void loopRead(bool timedout) override {}
 };
 
 TEST_CASE("Test MPU read input status", "[MPU]") {
     TestMPU mpu(1, 0x11);
     mpu.readInputStatus(0x00C4, 0x0016, 108);
 
-    auto commands = mpu.getCommandVector();
+    CHECK(mpu.size() == 1);
 
-    REQUIRE(commands.size() == 15);
+    auto commands = mpu[0].buffer;
 
-    REQUIRE(commands[0] == MPUCommands::WRITE);
-    REQUIRE(commands[1] == 8);
-    REQUIRE(commands[2] == 0x11);
-    REQUIRE(commands[3] == 0x02);
-    REQUIRE(commands[4] == 0x00);
-    REQUIRE(commands[5] == 0xC4);
-    REQUIRE(commands[6] == 0x00);
-    REQUIRE(commands[7] == 0x16);
-    REQUIRE(commands[8] == 0xBA);
-    REQUIRE(commands[9] == 0xA9);
-    REQUIRE(commands[10] == MPUCommands::READ_MS);
-    REQUIRE(commands[11] == 8);
-    REQUIRE(commands[12] == 0);
-    REQUIRE(commands[13] == 108);
-    REQUIRE(commands[14] == MPUCommands::IRQ);
+    CHECK(commands.size() == 8);
 
-    std::vector<uint16_t> res = {0x11, 0x02, 0x03, 0xAC, 0xDB, 0x35, 0x20, 0x18};
+    CHECK(commands[0] == 0x11);
+    CHECK(commands[1] == 0x02);
+    CHECK(commands[2] == 0x00);
+    CHECK(commands[3] == 0xC4);
+    CHECK(commands[4] == 0x00);
+    CHECK(commands[5] == 0x16);
+    CHECK(commands[6] == 0xBA);
+    CHECK(commands[7] == 0xA9);
 
-    REQUIRE_NOTHROW(mpu.processResponse(res.data(), res.size()));
+    CHECK_NOTHROW(mpu.parse(std::vector<uint8_t>({0x11, 0x02, 0x03, 0xAC, 0xDB, 0x35, 0x20, 0x18})));
 
     // input status is not 10001 offseted
-    REQUIRE_THROWS(mpu.getInputStatus(195));
+    CHECK_THROWS(mpu.getInputStatus(195));
 
     // first byte
-    REQUIRE(mpu.getInputStatus(196) == false);
-    REQUIRE(mpu.getInputStatus(197) == false);
-    REQUIRE(mpu.getInputStatus(198) == true);
-    REQUIRE(mpu.getInputStatus(199) == true);
+    CHECK(mpu.getInputStatus(196) == false);
+    CHECK(mpu.getInputStatus(197) == false);
+    CHECK(mpu.getInputStatus(198) == true);
+    CHECK(mpu.getInputStatus(199) == true);
 
-    REQUIRE(mpu.getInputStatus(200) == false);
-    REQUIRE(mpu.getInputStatus(201) == true);
-    REQUIRE(mpu.getInputStatus(202) == false);
-    REQUIRE(mpu.getInputStatus(203) == true);
+    CHECK(mpu.getInputStatus(200) == false);
+    CHECK(mpu.getInputStatus(201) == true);
+    CHECK(mpu.getInputStatus(202) == false);
+    CHECK(mpu.getInputStatus(203) == true);
 
     // second byte
-    REQUIRE(mpu.getInputStatus(204) == true);
-    REQUIRE(mpu.getInputStatus(205) == true);
-    REQUIRE(mpu.getInputStatus(206) == false);
-    REQUIRE(mpu.getInputStatus(207) == true);
+    CHECK(mpu.getInputStatus(204) == true);
+    CHECK(mpu.getInputStatus(205) == true);
+    CHECK(mpu.getInputStatus(206) == false);
+    CHECK(mpu.getInputStatus(207) == true);
 
-    REQUIRE(mpu.getInputStatus(208) == true);
-    REQUIRE(mpu.getInputStatus(209) == false);
-    REQUIRE(mpu.getInputStatus(210) == true);
-    REQUIRE(mpu.getInputStatus(211) == true);
+    CHECK(mpu.getInputStatus(208) == true);
+    CHECK(mpu.getInputStatus(209) == false);
+    CHECK(mpu.getInputStatus(210) == true);
+    CHECK(mpu.getInputStatus(211) == true);
 
     // third byte
-    REQUIRE(mpu.getInputStatus(212) == true);
-    REQUIRE(mpu.getInputStatus(213) == false);
-    REQUIRE(mpu.getInputStatus(214) == true);
-    REQUIRE(mpu.getInputStatus(215) == false);
+    CHECK(mpu.getInputStatus(212) == true);
+    CHECK(mpu.getInputStatus(213) == false);
+    CHECK(mpu.getInputStatus(214) == true);
+    CHECK(mpu.getInputStatus(215) == false);
 
-    REQUIRE(mpu.getInputStatus(216) == true);
-    REQUIRE(mpu.getInputStatus(217) == true);
-    REQUIRE_THROWS(mpu.getInputStatus(218));
-    REQUIRE_THROWS(mpu.getInputStatus(219));
+    CHECK(mpu.getInputStatus(216) == true);
+    CHECK(mpu.getInputStatus(217) == true);
+    CHECK_THROWS(mpu.getInputStatus(218));
+    CHECK_THROWS(mpu.getInputStatus(219));
 }
 
 TEST_CASE("Test MPU read holding registers", "[MPU]") {
     TestMPU mpu(1, 12);
     mpu.readHoldingRegisters(3, 10, 101);
 
-    auto commands = mpu.getCommandVector();
+    CHECK(mpu.size() == 1);
 
-    REQUIRE(commands.size() == 15);
+    auto commands = mpu[0].buffer;
 
-    REQUIRE(commands[0] == MPUCommands::WRITE);
-    REQUIRE(commands[1] == 8);
-    REQUIRE(commands[2] == 12);
-    REQUIRE(commands[3] == 3);
-    REQUIRE(commands[4] == 0);
-    REQUIRE(commands[5] == 3);
-    REQUIRE(commands[6] == 0);
-    REQUIRE(commands[7] == 10);
-    REQUIRE(commands[8] == 0x34);
-    REQUIRE(commands[9] == 0xD0);
-    REQUIRE(commands[10] == MPUCommands::READ_MS);
-    REQUIRE(commands[11] == 25);
-    REQUIRE(commands[12] == 0);
-    REQUIRE(commands[13] == 101);
-    REQUIRE(commands[14] == MPUCommands::IRQ);
+    CHECK(commands.size() == 8);
 
-    std::vector<uint16_t> res = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
-                                 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
+    CHECK(commands[0] == 12);
+    CHECK(commands[1] == 3);
+    CHECK(commands[2] == 0);
+    CHECK(commands[3] == 3);
+    CHECK(commands[4] == 0);
+    CHECK(commands[5] == 10);
+    CHECK(commands[6] == 0x34);
+    CHECK(commands[7] == 0xD0);
 
-    REQUIRE_NOTHROW(mpu.processResponse(res.data(), res.size()));
+    std::vector<uint8_t> res = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
+                                11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
 
-    REQUIRE_THROWS(mpu.getRegister(1));
-    REQUIRE_THROWS(mpu.getRegister(2));
+    CHECK_NOTHROW(mpu.parse(res));
 
-    REQUIRE(mpu.getRegister(3) == 0x0102);
-    REQUIRE(mpu.getRegister(4) == 0x0304);
-    REQUIRE(mpu.getRegister(5) == 0x0506);
-    REQUIRE(mpu.getRegister(6) == 0x0708);
-    REQUIRE(mpu.getRegister(7) == 0x090a);
-    REQUIRE(mpu.getRegister(8) == 0x0b0c);
-    REQUIRE(mpu.getRegister(9) == 0x0d0e);
-    REQUIRE(mpu.getRegister(10) == 0x0f10);
-    REQUIRE(mpu.getRegister(11) == 0x1112);
-    REQUIRE(mpu.getRegister(12) == 0x1314);
+    CHECK_THROWS(mpu.getRegister(1));
+    CHECK_THROWS(mpu.getRegister(2));
 
-    REQUIRE_THROWS(mpu.getRegister(13));
-    REQUIRE_THROWS(mpu.getRegister(14));
+    CHECK(mpu.getRegister(3) == 0x0102);
+    CHECK(mpu.getRegister(4) == 0x0304);
+    CHECK(mpu.getRegister(5) == 0x0506);
+    CHECK(mpu.getRegister(6) == 0x0708);
+    CHECK(mpu.getRegister(7) == 0x090a);
+    CHECK(mpu.getRegister(8) == 0x0b0c);
+    CHECK(mpu.getRegister(9) == 0x0d0e);
+    CHECK(mpu.getRegister(10) == 0x0f10);
+    CHECK(mpu.getRegister(11) == 0x1112);
+    CHECK(mpu.getRegister(12) == 0x1314);
+
+    CHECK_THROWS(mpu.getRegister(13));
+    CHECK_THROWS(mpu.getRegister(14));
 }
 
 TEST_CASE("Test MPU reading multiple registers - failed response", "[MPU]") {
     TestMPU mpu(1, 12);
     mpu.readHoldingRegisters(3, 10, 101);
+
+    CHECK(mpu.size() == 1);
+
+    auto commands = mpu[0].buffer;
+
+    CHECK(commands.size() == 8);
+
+    CHECK(commands[0] == 12);
+    CHECK(commands[1] == 3);
+    CHECK(commands[2] == 0);
+    CHECK(commands[3] == 3);
+    CHECK(commands[4] == 0);
+    CHECK(commands[5] == 10);
+    CHECK(commands[6] == 0x34);
+    CHECK(commands[7] == 0xD0);
+
+    std::vector<uint8_t> res1 = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
+                                 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
+
+    CHECK_NOTHROW(mpu.parse(res1));
+
+    CHECK_THROWS(mpu.getRegister(1));
+    CHECK_THROWS(mpu.getRegister(2));
+
+    CHECK(mpu.getRegister(3) == 0x0102);
+    CHECK(mpu.getRegister(4) == 0x0304);
+    CHECK(mpu.getRegister(5) == 0x0506);
+    CHECK(mpu.getRegister(6) == 0x0708);
+    CHECK(mpu.getRegister(7) == 0x090a);
+    CHECK(mpu.getRegister(8) == 0x0b0c);
+    CHECK(mpu.getRegister(9) == 0x0d0e);
+    CHECK(mpu.getRegister(10) == 0x0f10);
+    CHECK(mpu.getRegister(11) == 0x1112);
+    CHECK(mpu.getRegister(12) == 0x1314);
+
+    CHECK_THROWS(mpu.getRegister(13));
+    CHECK_THROWS(mpu.getRegister(14));
+
+    CHECK_THROWS(mpu.getRegister(103));
+    CHECK_THROWS(mpu.getRegister(104));
+
+    mpu.clear();
     mpu.readHoldingRegisters(103, 10, 101);
 
-    auto commands = mpu.getCommandVector();
+    CHECK(mpu.size() == 1);
 
-    REQUIRE(commands.size() == 29);
+    commands = mpu[0].buffer;
 
-    REQUIRE(commands[0] == MPUCommands::WRITE);
-    REQUIRE(commands[1] == 8);
-    REQUIRE(commands[2] == 12);
-    REQUIRE(commands[3] == 3);
-    REQUIRE(commands[4] == 0);
-    REQUIRE(commands[5] == 3);
-    REQUIRE(commands[6] == 0);
-    REQUIRE(commands[7] == 10);
-    REQUIRE(commands[8] == 0x34);
-    REQUIRE(commands[9] == 0xD0);
-    REQUIRE(commands[10] == MPUCommands::READ_MS);
-    REQUIRE(commands[11] == 25);
-    REQUIRE(commands[12] == 0);
-    REQUIRE(commands[13] == 101);
+    CHECK(commands.size() == 8);
 
-    REQUIRE(commands[14] == MPUCommands::WRITE);
-    REQUIRE(commands[15] == 8);
-    REQUIRE(commands[16] == 12);
-    REQUIRE(commands[17] == 3);
-    REQUIRE(commands[18] == 0);
-    REQUIRE(commands[19] == 103);
-    REQUIRE(commands[20] == 0);
-    REQUIRE(commands[21] == 10);
-    REQUIRE(commands[22] == 0x75);
-    REQUIRE(commands[23] == 0x0F);
-    REQUIRE(commands[24] == MPUCommands::READ_MS);
-    REQUIRE(commands[25] == 25);
-    REQUIRE(commands[26] == 0);
-    REQUIRE(commands[27] == 101);
-
-    REQUIRE(commands[28] == MPUCommands::IRQ);
-
-    std::vector<uint16_t> res1 = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
-                                  11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
-
-    REQUIRE_NOTHROW(mpu.processResponse(res1.data(), res1.size()));
-
-    REQUIRE_THROWS(mpu.getRegister(1));
-    REQUIRE_THROWS(mpu.getRegister(2));
-
-    REQUIRE(mpu.getRegister(3) == 0x0102);
-    REQUIRE(mpu.getRegister(4) == 0x0304);
-    REQUIRE(mpu.getRegister(5) == 0x0506);
-    REQUIRE(mpu.getRegister(6) == 0x0708);
-    REQUIRE(mpu.getRegister(7) == 0x090a);
-    REQUIRE(mpu.getRegister(8) == 0x0b0c);
-    REQUIRE(mpu.getRegister(9) == 0x0d0e);
-    REQUIRE(mpu.getRegister(10) == 0x0f10);
-    REQUIRE(mpu.getRegister(11) == 0x1112);
-    REQUIRE(mpu.getRegister(12) == 0x1314);
-
-    REQUIRE_THROWS(mpu.getRegister(13));
-    REQUIRE_THROWS(mpu.getRegister(14));
-
-    REQUIRE_THROWS(mpu.getRegister(103));
-    REQUIRE_THROWS(mpu.getRegister(104));
-
-    REQUIRE_THROWS(mpu.checkCommandedEmpty());
+    CHECK(commands[0] == 12);
+    CHECK(commands[1] == 3);
+    CHECK(commands[2] == 0);
+    CHECK(commands[3] == 103);
+    CHECK(commands[4] == 0);
+    CHECK(commands[5] == 10);
+    CHECK(commands[6] == 0x75);
+    CHECK(commands[7] == 0x0F);
 }
 
 TEST_CASE("Test MPU reading multiple registers - successful response", "[MPU]") {
     TestMPU mpu(1, 12);
     mpu.readHoldingRegisters(3, 10, 101);
+
+    auto commands = mpu[0].buffer;
+
+    CHECK(commands.size() == 8);
+
+    CHECK(commands[0] == 12);
+    CHECK(commands[1] == 3);
+    CHECK(commands[2] == 0);
+    CHECK(commands[3] == 3);
+    CHECK(commands[4] == 0);
+    CHECK(commands[5] == 10);
+    CHECK(commands[6] == 0x34);
+    CHECK(commands[7] == 0xD0);
+
+    CHECK_NOTHROW(mpu.parse(std::vector<uint8_t>(
+            {12, 3, 20, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde})));
+
+    CHECK_THROWS(mpu.getRegister(1));
+    CHECK_THROWS(mpu.getRegister(2));
+
+    CHECK(mpu.getRegister(3) == 0x0102);
+    CHECK(mpu.getRegister(4) == 0x0304);
+    CHECK(mpu.getRegister(5) == 0x0506);
+    CHECK(mpu.getRegister(6) == 0x0708);
+    CHECK(mpu.getRegister(7) == 0x090a);
+    CHECK(mpu.getRegister(8) == 0x0b0c);
+    CHECK(mpu.getRegister(9) == 0x0d0e);
+    CHECK(mpu.getRegister(10) == 0x0f10);
+    CHECK(mpu.getRegister(11) == 0x1112);
+    CHECK(mpu.getRegister(12) == 0x1314);
+
+    CHECK_THROWS(mpu.getRegister(13));
+    CHECK_THROWS(mpu.getRegister(14));
+
+    CHECK_THROWS(mpu.getRegister(103));
+    CHECK_THROWS(mpu.getRegister(104));
+
     mpu.readHoldingRegisters(103, 10, 101);
 
-    auto commands = mpu.getCommandVector();
+    CHECK(mpu.size() == 2);
 
-    REQUIRE(commands.size() == 29);
+    commands = mpu[1].buffer;
 
-    REQUIRE(commands[0] == MPUCommands::WRITE);
-    REQUIRE(commands[1] == 8);
-    REQUIRE(commands[2] == 12);
-    REQUIRE(commands[3] == 3);
-    REQUIRE(commands[4] == 0);
-    REQUIRE(commands[5] == 3);
-    REQUIRE(commands[6] == 0);
-    REQUIRE(commands[7] == 10);
-    REQUIRE(commands[8] == 0x34);
-    REQUIRE(commands[9] == 0xD0);
-    REQUIRE(commands[10] == MPUCommands::READ_MS);
-    REQUIRE(commands[11] == 25);
-    REQUIRE(commands[12] == 0);
-    REQUIRE(commands[13] == 101);
+    CHECK(commands[0] == 12);
+    CHECK(commands[1] == 3);
+    CHECK(commands[2] == 0);
+    CHECK(commands[3] == 103);
+    CHECK(commands[4] == 0);
+    CHECK(commands[5] == 10);
+    CHECK(commands[6] == 0x75);
+    CHECK(commands[7] == 0x0F);
 
-    REQUIRE(commands[14] == MPUCommands::WRITE);
-    REQUIRE(commands[15] == 8);
-    REQUIRE(commands[16] == 12);
-    REQUIRE(commands[17] == 3);
-    REQUIRE(commands[18] == 0);
-    REQUIRE(commands[19] == 103);
-    REQUIRE(commands[20] == 0);
-    REQUIRE(commands[21] == 10);
-    REQUIRE(commands[22] == 0x75);
-    REQUIRE(commands[23] == 0x0F);
-    REQUIRE(commands[24] == MPUCommands::READ_MS);
-    REQUIRE(commands[25] == 25);
-    REQUIRE(commands[26] == 0);
-    REQUIRE(commands[27] == 101);
+    std::vector<uint8_t> res2 = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
+                                 11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
 
-    REQUIRE(commands[28] == MPUCommands::IRQ);
+    CHECK_NOTHROW(mpu.parse(res2));
 
-    std::vector<uint16_t> res1 = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
-                                  11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
+    CHECK_THROWS(mpu.getRegister(1));
+    CHECK_THROWS(mpu.getRegister(2));
 
-    REQUIRE_NOTHROW(mpu.processResponse(res1.data(), res1.size()));
+    CHECK(mpu.getRegister(3) == 0x0102);
+    CHECK(mpu.getRegister(4) == 0x0304);
+    CHECK(mpu.getRegister(5) == 0x0506);
+    CHECK(mpu.getRegister(6) == 0x0708);
+    CHECK(mpu.getRegister(7) == 0x090a);
+    CHECK(mpu.getRegister(8) == 0x0b0c);
+    CHECK(mpu.getRegister(9) == 0x0d0e);
+    CHECK(mpu.getRegister(10) == 0x0f10);
+    CHECK(mpu.getRegister(11) == 0x1112);
+    CHECK(mpu.getRegister(12) == 0x1314);
 
-    REQUIRE_THROWS(mpu.getRegister(1));
-    REQUIRE_THROWS(mpu.getRegister(2));
+    CHECK_THROWS(mpu.getRegister(13));
+    CHECK_THROWS(mpu.getRegister(14));
 
-    REQUIRE(mpu.getRegister(3) == 0x0102);
-    REQUIRE(mpu.getRegister(4) == 0x0304);
-    REQUIRE(mpu.getRegister(5) == 0x0506);
-    REQUIRE(mpu.getRegister(6) == 0x0708);
-    REQUIRE(mpu.getRegister(7) == 0x090a);
-    REQUIRE(mpu.getRegister(8) == 0x0b0c);
-    REQUIRE(mpu.getRegister(9) == 0x0d0e);
-    REQUIRE(mpu.getRegister(10) == 0x0f10);
-    REQUIRE(mpu.getRegister(11) == 0x1112);
-    REQUIRE(mpu.getRegister(12) == 0x1314);
+    CHECK(mpu.getRegister(103) == 0x0102);
+    CHECK(mpu.getRegister(104) == 0x0304);
+    CHECK(mpu.getRegister(105) == 0x0506);
+    CHECK(mpu.getRegister(106) == 0x0708);
+    CHECK(mpu.getRegister(107) == 0x090a);
+    CHECK(mpu.getRegister(108) == 0x0b0c);
+    CHECK(mpu.getRegister(109) == 0x0d0e);
+    CHECK(mpu.getRegister(110) == 0x0f10);
+    CHECK(mpu.getRegister(111) == 0x1112);
+    CHECK(mpu.getRegister(112) == 0x1314);
 
-    REQUIRE_THROWS(mpu.getRegister(13));
-    REQUIRE_THROWS(mpu.getRegister(14));
-
-    REQUIRE_THROWS(mpu.getRegister(103));
-    REQUIRE_THROWS(mpu.getRegister(104));
-
-    std::vector<uint16_t> res2 = {12, 3,  20, 1,  2,  3,  4,  5,  6,  7,  8,    9,   10,
-                                  11, 12, 13, 14, 15, 16, 17, 18, 19, 20, 0xcf, 0xde};
-
-    REQUIRE_NOTHROW(mpu.processResponse(res2.data(), res2.size()));
-
-    REQUIRE_THROWS(mpu.getRegister(1));
-    REQUIRE_THROWS(mpu.getRegister(2));
-
-    REQUIRE(mpu.getRegister(3) == 0x0102);
-    REQUIRE(mpu.getRegister(4) == 0x0304);
-    REQUIRE(mpu.getRegister(5) == 0x0506);
-    REQUIRE(mpu.getRegister(6) == 0x0708);
-    REQUIRE(mpu.getRegister(7) == 0x090a);
-    REQUIRE(mpu.getRegister(8) == 0x0b0c);
-    REQUIRE(mpu.getRegister(9) == 0x0d0e);
-    REQUIRE(mpu.getRegister(10) == 0x0f10);
-    REQUIRE(mpu.getRegister(11) == 0x1112);
-    REQUIRE(mpu.getRegister(12) == 0x1314);
-
-    REQUIRE_THROWS(mpu.getRegister(13));
-    REQUIRE_THROWS(mpu.getRegister(14));
-
-    REQUIRE(mpu.getRegister(103) == 0x0102);
-    REQUIRE(mpu.getRegister(104) == 0x0304);
-    REQUIRE(mpu.getRegister(105) == 0x0506);
-    REQUIRE(mpu.getRegister(106) == 0x0708);
-    REQUIRE(mpu.getRegister(107) == 0x090a);
-    REQUIRE(mpu.getRegister(108) == 0x0b0c);
-    REQUIRE(mpu.getRegister(109) == 0x0d0e);
-    REQUIRE(mpu.getRegister(110) == 0x0f10);
-    REQUIRE(mpu.getRegister(111) == 0x1112);
-    REQUIRE(mpu.getRegister(112) == 0x1314);
-
-    REQUIRE_THROWS(mpu.getRegister(113));
-    REQUIRE_THROWS(mpu.getRegister(114));
-
-    REQUIRE_NOTHROW(mpu.checkCommandedEmpty());
+    CHECK_THROWS(mpu.getRegister(113));
+    CHECK_THROWS(mpu.getRegister(114));
 }
 
 TEST_CASE("Test MPU preset holding register", "[MPU]") {
@@ -325,99 +291,78 @@ TEST_CASE("Test MPU preset holding register", "[MPU]") {
 
     mpu.presetHoldingRegister(0x0001, 0x0003, 102);
 
-    auto commands = mpu.getCommandVector();
+    CHECK(mpu.size() == 1);
 
-    REQUIRE(commands.size() == 15);
+    auto commands = mpu[0].buffer;
 
-    REQUIRE(commands[0] == MPUCommands::WRITE);
-    REQUIRE(commands[1] == 8);
-    REQUIRE(commands[2] == 0x11);
-    REQUIRE(commands[3] == 0x06);
-    REQUIRE(commands[4] == 0x00);
-    REQUIRE(commands[5] == 0x01);
-    REQUIRE(commands[6] == 0x00);
-    REQUIRE(commands[7] == 0x03);
-    REQUIRE(commands[8] == 0x9A);
-    REQUIRE(commands[9] == 0x9B);
-    REQUIRE(commands[10] == MPUCommands::READ_MS);
-    REQUIRE(commands[11] == 8);
-    REQUIRE(commands[12] == 0);
-    REQUIRE(commands[13] == 102);
-    REQUIRE(commands[14] == MPUCommands::IRQ);
+    CHECK(commands.size() == 8);
 
-    std::vector<uint16_t> res = {0x11, 0x06, 0x00, 0x01, 0x00, 0x03, 0x9A, 0x9B};
+    CHECK(commands[0] == 0x11);
+    CHECK(commands[1] == 0x06);
+    CHECK(commands[2] == 0x00);
+    CHECK(commands[3] == 0x01);
+    CHECK(commands[4] == 0x00);
+    CHECK(commands[5] == 0x03);
+    CHECK(commands[6] == 0x9A);
+    CHECK(commands[7] == 0x9B);
 
-    REQUIRE_NOTHROW(mpu.processResponse(res.data(), res.size()));
+    CHECK_NOTHROW(mpu.parse(std::vector<uint8_t>({0x11, 0x06, 0x00, 0x01, 0x00, 0x03, 0x9A, 0x9B})));
 }
 
 TEST_CASE("Test MPU preset holding registers", "[MPU]") {
     TestMPU mpu(5, 17);
 
     std::vector<uint16_t> regs = {0x0102, 0x0304};
-    mpu.presetHoldingRegisters(0x1718, regs.data(), regs.size(), 102);
+    mpu.presetHoldingRegisters(0x1718, regs, 102);
 
-    auto commands = mpu.getCommandVector();
+    CHECK(mpu.size() == 1);
 
-    REQUIRE(commands.size() == 20);
+    auto commands = mpu[0].buffer;
 
-    REQUIRE(commands[0] == MPUCommands::WRITE);
-    REQUIRE(commands[1] == 9 + 2 * regs.size());
-    REQUIRE(commands[2] == 17);
-    REQUIRE(commands[3] == 16);
-    REQUIRE(commands[4] == 0x17);
-    REQUIRE(commands[5] == 0x18);
-    REQUIRE(commands[6] == 0);
-    REQUIRE(commands[7] == regs.size());
-    REQUIRE(commands[8] == regs.size() * 2);
-    REQUIRE(commands[9] == 0x01);
-    REQUIRE(commands[10] == 0x02);
-    REQUIRE(commands[11] == 0x03);
-    REQUIRE(commands[12] == 0x04);
-    REQUIRE(commands[13] == 0xED);
-    REQUIRE(commands[14] == 0x3A);
-    REQUIRE(commands[15] == MPUCommands::READ_MS);
-    REQUIRE(commands[16] == 8);
-    REQUIRE(commands[17] == 0);
-    REQUIRE(commands[18] == 102);
-    REQUIRE(commands[19] == MPUCommands::IRQ);
+    CHECK(commands.size() == 9 + 2 * regs.size());
 
-    std::vector<uint16_t> res = {17, 16, 0x17, 0x18, 0, 2, 0xC6, 0xEB};
+    CHECK(commands[0] == 17);
+    CHECK(commands[1] == 16);
+    CHECK(commands[2] == 0x17);
+    CHECK(commands[3] == 0x18);
+    CHECK(commands[4] == 0);
+    CHECK(commands[5] == regs.size());
+    CHECK(commands[6] == regs.size() * 2);
+    CHECK(commands[7] == 0x01);
+    CHECK(commands[8] == 0x02);
+    CHECK(commands[9] == 0x03);
+    CHECK(commands[10] == 0x04);
+    CHECK(commands[11] == 0xED);
+    CHECK(commands[12] == 0x3A);
 
-    REQUIRE_NOTHROW(mpu.processResponse(res.data(), res.size()));
+    CHECK_NOTHROW(mpu.parse(std::vector<uint8_t>({17, 16, 0x17, 0x18, 0, 2, 0xC6, 0xEB})));
 }
 
 TEST_CASE("Test MPU preset holding registers by simplymodbus.ca", "[MPU]") {
     TestMPU mpu(5, 0x11);
 
     std::vector<uint16_t> regs = {0x000A, 0x0102};
-    mpu.presetHoldingRegisters(0x0001, regs.data(), regs.size(), 102);
+    mpu.presetHoldingRegisters(0x0001, regs, 102);
 
-    auto commands = mpu.getCommandVector();
+    CHECK(mpu.size() == 1);
 
-    REQUIRE(commands.size() == 20);
+    auto commands = mpu[0].buffer;
 
-    REQUIRE(commands[0] == MPUCommands::WRITE);
-    REQUIRE(commands[1] == 9 + 2 * regs.size());
-    REQUIRE(commands[2] == 0x11);
-    REQUIRE(commands[3] == 0x10);
-    REQUIRE(commands[4] == 0x00);
-    REQUIRE(commands[5] == 0x01);
-    REQUIRE(commands[6] == 0x00);
-    REQUIRE(commands[7] == 0x02);
-    REQUIRE(commands[8] == 0x04);
-    REQUIRE(commands[9] == 0x00);
-    REQUIRE(commands[10] == 0x0A);
-    REQUIRE(commands[11] == 0x01);
-    REQUIRE(commands[12] == 0x02);
-    REQUIRE(commands[13] == 0xC6);
-    REQUIRE(commands[14] == 0xF0);
-    REQUIRE(commands[15] == MPUCommands::READ_MS);
-    REQUIRE(commands[16] == 8);
-    REQUIRE(commands[17] == 0);
-    REQUIRE(commands[18] == 102);
-    REQUIRE(commands[19] == MPUCommands::IRQ);
+    CHECK(commands.size() == 9 + 2 * regs.size());
 
-    std::vector<uint16_t> res = {0x11, 0x10, 0x00, 0x01, 0x00, 0x02, 0x12, 0x98};
+    CHECK(commands[0] == 0x11);
+    CHECK(commands[1] == 0x10);
+    CHECK(commands[2] == 0x00);
+    CHECK(commands[3] == 0x01);
+    CHECK(commands[4] == 0x00);
+    CHECK(commands[5] == 0x02);
+    CHECK(commands[6] == 0x04);
+    CHECK(commands[7] == 0x00);
+    CHECK(commands[8] == 0x0A);
+    CHECK(commands[9] == 0x01);
+    CHECK(commands[10] == 0x02);
+    CHECK(commands[11] == 0xC6);
+    CHECK(commands[12] == 0xF0);
 
-    REQUIRE_NOTHROW(mpu.processResponse(res.data(), res.size()));
+    CHECK_NOTHROW(mpu.parse(std::vector<uint8_t>({0x11, 0x10, 0x00, 0x01, 0x00, 0x02, 0x12, 0x98})));
 }
