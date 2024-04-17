@@ -150,23 +150,23 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
 }
 
 void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
-    // construct buffer to send
-    std::vector<uint8_t> data;
-
-    data.push_back(mpu.getBus());
-    data.push_back(0);
-
-    uint8_t len = 0;
-
     for (auto cmd : mpu) {
+        // construct buffer to send
+        std::vector<uint8_t> data;
+
+        data.push_back(mpu.getBus());
+        data.push_back(cmd.buffer.size());
         data.insert(data.end(), cmd.buffer.begin(), cmd.buffer.end());
-        len += cmd.buffer.size();
+
+        writeMPUFIFO(data, 0);
+
+        // read reply
+        auto answer = readMPUFIFO(mpu);
+        if (answer.empty()) {
+            throw std::runtime_error(fmt::format("Empty answer to {}", Modbus::hexDump(data)));
+        }
+        mpu.parse(answer);
     }
-
-    data[1] = len;
-
-    writeMPUFIFO(data, 0);
-    readMPUFIFO(mpu);
 }
 
 }  // namespace cRIO

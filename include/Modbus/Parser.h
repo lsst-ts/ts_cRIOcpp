@@ -42,7 +42,7 @@ namespace Modbus {
  * @param len length of the buffer
  */
 template <typename dt>
-static const std::string hexDump(dt *buf, size_t len) {
+static const std::string hexDump(const dt *buf, size_t len) {
     std::ostringstream os;
     os << std::setfill('0') << std::hex;
     for (size_t i = 0; i < len; i++) {
@@ -53,6 +53,11 @@ static const std::string hexDump(dt *buf, size_t len) {
     }
     os << std::dec;
     return os.str();
+}
+
+template <typename dt>
+static const std::string hexDump(const std::vector<dt> &data) {
+    return hexDump<dt>(data.data(), data.size());
 }
 
 /**
