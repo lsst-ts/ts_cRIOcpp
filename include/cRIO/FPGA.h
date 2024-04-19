@@ -38,6 +38,20 @@ namespace cRIO {
 class MPU;
 
 /**
+ * Commands for FPGA MPU unit.
+ */
+enum MPUCommands {
+    WRITE = 1,
+    READ_US = 2,
+    READ_MS = 3,
+    WAIT_US = 100,
+    WAIT_MS = 101,
+    IRQ = 240,
+    TELEMETRY = 254,
+    RESET = 255,
+};
+
+/**
  * Interface class for cRIO FPGA. Subclasses can talk either to the real HW, or
  * be a software simulator.
  *

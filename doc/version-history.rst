@@ -8,6 +8,7 @@ v1.11.0
   to FPGA class.
 * Improved documentation.
 * Public constants to explain meaning of the numbers
+* mpuCommands redesign
 
 v1.10.1
 -------

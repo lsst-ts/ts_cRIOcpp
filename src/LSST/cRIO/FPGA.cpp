@@ -155,6 +155,8 @@ void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
         std::vector<uint8_t> data;
 
         data.push_back(mpu.getBus());
+        data.push_back(cmd.buffer.size() + 2);
+        data.push_back(MPUCommands::WRITE);
         data.push_back(cmd.buffer.size());
         data.insert(data.end(), cmd.buffer.begin(), cmd.buffer.end());
 
