@@ -31,7 +31,7 @@ using namespace LSST::cRIO;
 
 MPU::MPU(uint8_t bus, uint8_t node_address) : _bus(bus), _node_address(node_address), _commanded_address(0) {
     addResponse(
-            2,
+            READ_INPUT_STATUS,
             [this](Modbus::Parser parser) {
                 if (_commanded_address == 0 || _commanded_length == 0) {
                     throw std::runtime_error("Empty read input status");
@@ -59,7 +59,7 @@ MPU::MPU(uint8_t bus, uint8_t node_address) : _bus(bus), _node_address(node_addr
             0x82);
 
     addResponse(
-            3,
+            READ_HOLDING_REGISTERS,
             [this](Modbus::Parser parser) {
                 if (parser.address() != _node_address) {
                     throw std::runtime_error(fmt::format("Invalid ModBus address {}, expected {}",
@@ -78,7 +78,7 @@ MPU::MPU(uint8_t bus, uint8_t node_address) : _bus(bus), _node_address(node_addr
             0x83);
 
     addResponse(
-            6,
+            PRESET_HOLDING_REGISTER,
             [this](Modbus::Parser parser) {
                 if (parser.address() != _node_address) {
                     throw std::runtime_error(fmt::format("Invalid ModBus address {}, expected {}",
@@ -99,7 +99,7 @@ MPU::MPU(uint8_t bus, uint8_t node_address) : _bus(bus), _node_address(node_addr
             0x86);
 
     addResponse(
-            16,
+            PRESET_HOLDING_REGISTERS,
             [this](Modbus::Parser parser) {
                 if (parser.address() != _node_address) {
                     throw std::runtime_error(fmt::format("Invalid ModBus address {}, expected {}",
@@ -117,25 +117,25 @@ MPU::MPU(uint8_t bus, uint8_t node_address) : _bus(bus), _node_address(node_addr
 }
 
 void MPU::readInputStatus(uint16_t start_register_address, uint16_t count, uint32_t timing) {
-    callFunction(_node_address, 2, timing, start_register_address, count);
+    callFunction(_node_address, READ_INPUT_STATUS, timing, start_register_address, count);
     _commanded_address = start_register_address;
     _commanded_length = count;
 }
 
 void MPU::readHoldingRegisters(uint16_t start_register_address, uint16_t count, uint32_t timing) {
-    callFunction(_node_address, 3, timing, start_register_address, count);
+    callFunction(_node_address, READ_HOLDING_REGISTERS, timing, start_register_address, count);
     _commanded_address = start_register_address;
 }
 
 void MPU::presetHoldingRegister(uint16_t register_address, uint16_t value, uint32_t timing) {
-    callFunction(_node_address, 6, timing, register_address, value);
+    callFunction(_node_address, PRESET_HOLDING_REGISTER, timing, register_address, value);
     _commanded_address = register_address;
 }
 
 void MPU::presetHoldingRegisters(uint16_t start_register_address, const std::vector<uint16_t> &values,
                                  uint32_t timing) {
-    callFunction(_node_address, 16, timing, start_register_address, static_cast<uint16_t>(values.size()),
-                 static_cast<uint8_t>(values.size() * 2), values);
+    callFunction(_node_address, PRESET_HOLDING_REGISTERS, timing, start_register_address,
+                 static_cast<uint16_t>(values.size()), static_cast<uint8_t>(values.size() * 2), values);
     _commanded_address = start_register_address;
 }
 

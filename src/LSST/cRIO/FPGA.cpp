@@ -166,6 +166,7 @@ void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
             throw std::runtime_error(fmt::format("Empty answer to {}", Modbus::hexDump(data)));
         }
         mpu.parse(answer);
+        mpu.reset();
     }
 }
 

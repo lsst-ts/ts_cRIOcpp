@@ -50,6 +50,16 @@ namespace cRIO {
 class MPU : public Modbus::BusList {
 public:
     /**
+     * Modbus basic functions.
+     */
+    enum MODBUS_CMD {
+        READ_INPUT_STATUS = 2,
+        READ_HOLDING_REGISTERS = 3,
+        PRESET_HOLDING_REGISTER = 6,
+        PRESET_HOLDING_REGISTERS = 16
+    };
+
+    /**
      * Construct MPU class.
      *
      * @param bus MPU bus number (internal FPGA identifier)
