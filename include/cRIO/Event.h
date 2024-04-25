@@ -43,11 +43,11 @@ public:
     virtual ~Event();
 
     task_return_t run() override {
-        recieved();
+        received();
         return Task::DONT_RESCHEDULE;
     }
 
-    virtual void recieved() = 0;
+    virtual void received() = 0;
 };
 
 }  // namespace cRIO
