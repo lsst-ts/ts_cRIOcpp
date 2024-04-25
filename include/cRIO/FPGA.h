@@ -38,6 +38,20 @@ namespace cRIO {
 class MPU;
 
 /**
+ * Commands for FPGA MPU unit.
+ */
+enum MPUCommands {
+    WRITE = 1,
+    READ_US = 2,
+    READ_MS = 3,
+    WAIT_US = 100,
+    WAIT_MS = 101,
+    IRQ = 240,
+    TELEMETRY = 254,
+    RESET = 255,
+};
+
+/**
  * Interface class for cRIO FPGA. Subclasses can talk either to the real HW, or
  * be a software simulator.
  *
@@ -109,13 +123,12 @@ public:
     void mpuCommands(MPU& mpu, const std::chrono::duration<double>& timeout = 500ms);
 
     /**
-     * Commands FPGA to write to MPU commands buffer. Data to write are passed
-     * along in mpu parameter - you need to fill the MPU commands prior to
-     * calling this method.
+     * Commands FPGA to write to MPU commands buffer.
      *
-     * @param mpu Modbus Processing Unit to write
+     * @param data data to write to the MPU command buffer
+     * @param timeout timeout in milliseconds
      */
-    virtual void writeMPUFIFO(MPU& mpu) = 0;
+    virtual void writeMPUFIFO(const std::vector<uint8_t>& data, uint32_t timeout) = 0;
 
     /**
      * Commands FPGA to copy MPU output FIFO to FPGA-C/C++ output FIFO. This

@@ -41,7 +41,6 @@ FPGA::FPGA(fpgaType type) : SimpleFPGA(type) {
             _modbusSoftwareTrigger = 252;
             break;
         case M2:
-            _modbusSoftwareTrigger = 1;
         case VMS:
             _modbusSoftwareTrigger = 0;
             break;
@@ -151,14 +150,26 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
 }
 
 void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
-    writeMPUFIFO(mpu);
+    for (auto cmd : mpu) {
+        // construct buffer to send
+        std::vector<uint8_t> data;
 
-    if (mpu.containsRead()) {
-        std::this_thread::sleep_for(timeout);
-        readMPUFIFO(mpu);
+        data.push_back(mpu.getBus());
+        data.push_back(cmd.buffer.size() + 2);
+        data.push_back(MPUCommands::WRITE);
+        data.push_back(cmd.buffer.size());
+        data.insert(data.end(), cmd.buffer.begin(), cmd.buffer.end());
+
+        writeMPUFIFO(data, 0);
+
+        // read reply
+        auto answer = readMPUFIFO(mpu);
+        if (answer.empty()) {
+            throw std::runtime_error(fmt::format("Empty answer to {}", Modbus::hexDump(data)));
+        }
+        mpu.parse(answer);
+        mpu.reset();
     }
-
-    mpu.checkCommandedEmpty();
 }
 
 }  // namespace cRIO

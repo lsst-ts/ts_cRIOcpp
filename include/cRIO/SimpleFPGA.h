@@ -33,6 +33,7 @@
 #include <spdlog/spdlog.h>
 
 #include <cRIO/ModbusBuffer.h>
+#include <Modbus/Parser.h>
 
 namespace LSST {
 namespace cRIO {
@@ -101,13 +102,28 @@ public:
     void writeDebugFile(const char* message);
 
     template <typename dt>
+    const void writeDebugFile(const char* message, const std::vector<dt>& data) {
+        if (_debug_stream.is_open()) {
+            try {
+                auto now = std::chrono::system_clock::now();
+                auto in_time_t = std::chrono::system_clock::to_time_t(now);
+                _debug_stream << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dZ%T:") << message << " "
+                              << Modbus::hexDump<dt>(data) << std::endl;
+            } catch (const std::ios_base::failure& e) {
+                SPDLOG_WARN("Cannot write to debug file: {}", e.what());
+                closeDebugFile();
+            }
+        }
+    }
+
+    template <typename dt>
     const void writeDebugFile(const char* message, dt* buf, size_t length) {
         if (_debug_stream.is_open()) {
             try {
                 auto now = std::chrono::system_clock::now();
                 auto in_time_t = std::chrono::system_clock::to_time_t(now);
                 _debug_stream << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dZ%T:") << message << " "
-                              << ModbusBuffer::hexDump<dt>(buf, length) << std::endl;
+                              << Modbus::hexDump<dt>(buf, length) << std::endl;
             } catch (const std::ios_base::failure& e) {
                 SPDLOG_WARN("Cannot write to debug file: {}", e.what());
                 closeDebugFile();

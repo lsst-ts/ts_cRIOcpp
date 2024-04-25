@@ -107,6 +107,13 @@ public:
     template <typename dt>
     void write(dt data);
 
+    template <typename vt>
+    inline void writeVector(std::vector<vt> data) {
+        for (auto d : data) {
+            write<vt>(d);
+        }
+    }
+
     /**
      * Writes 24bit signed integer.
      *
@@ -254,9 +261,12 @@ inline void Buffer::write(float data) {
 
 template <>
 inline void Buffer::write(std::vector<uint8_t> data) {
-    for (auto d : data) {
-        write<uint8_t>(d);
-    }
+    writeVector<uint8_t>(data);
+}
+
+template <>
+inline void Buffer::write(std::vector<uint16_t> data) {
+    writeVector<uint16_t>(data);
 }
 
 }  // namespace Modbus

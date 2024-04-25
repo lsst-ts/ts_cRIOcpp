@@ -62,6 +62,12 @@ CliApp::~CliApp() {
     }
 }
 
+CliApp::CliApp(const char* name, const char* description)
+        : Application(name, description), _history_fn(NULL) {
+    addCommand("exit", std::bind(&CliApp::_exit, this, std::placeholders::_1), "", 0, NULL,
+               "Exits the application - Ctrl+d or Ctrl+c does the same");
+}
+
 void CliApp::addCommand(const char* command, std::function<int(command_vec)> action, const char* args,
                         int flags, const char* help_args, const char* help) {
     for (auto iter = _commands.begin(); iter != _commands.end(); iter++)
@@ -450,6 +456,12 @@ void CliApp::printCommands() {
     for (auto command : _commands) {
         std::cout << " " << command.command << std::endl;
     }
+}
+
+int CliApp::_exit(command_vec cmds) {
+    std::cerr << "Exiting " << getName() << " - bye!" << std::endl;
+    exit(EXIT_SUCCESS);
+    return 0;
 }
 
 Command* CliApp::findCommand(std::string cmd, command_vec& matchedCmds) {
