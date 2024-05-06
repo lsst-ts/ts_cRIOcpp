@@ -31,6 +31,8 @@
 #include <string>
 #include <vector>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <Modbus/Buffer.h>
 
 namespace Modbus {
@@ -78,7 +80,7 @@ public:
 /**
  * Thrown when response continue after CRC.
  */
-class LongResponse : std::runtime_error {
+class LongResponse : public std::runtime_error {
 public:
     /**
      * Construct LongResponse from the given buffer.
@@ -124,7 +126,9 @@ public:
      */
     void readBuffer(void *buf, size_t len) {
         if (_data + len > size()) {
-            throw std::out_of_range("Trying to access data beyond buffer are.");
+            throw std::out_of_range(fmt::format(
+                    "Attempt to access data beyond buffer end (buffer index {}, but buffer length is {}).",
+                    _data + len, size()));
         }
         memcpy(buf, data() + _data, len);
         _data += len;

@@ -189,7 +189,7 @@ std::vector<const char *> ILCBusList::getFaultString(uint16_t fault) {
 void ILCBusList::changeILCMode(uint8_t address, uint16_t mode) {
     uint32_t timeout = 335;
     try {
-        if ((getLastMode(address) == Mode::Standby && mode == Mode::Bootloader) ||
+        if ((mode == Mode::Bootloader) ||
             (getLastMode(address) == Mode::Bootloader && mode == Mode::Standby)) {
             timeout = 100000;
         }

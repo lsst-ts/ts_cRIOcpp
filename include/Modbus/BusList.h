@@ -40,7 +40,7 @@ namespace Modbus {
  * Error thrown when a response is missing. This is mostly caused by an @glos{ILC} on
  * the bus being dead/not reacting to the command send.
  */
-class MissingResponse : std::runtime_error {
+class MissingResponse : public std::runtime_error {
 public:
     /**
      * Construct missing response exception.
@@ -49,8 +49,9 @@ public:
      * @param func Expected function which wasn't responded by the @glos{ILC}
      */
     MissingResponse(uint8_t address, uint8_t func)
-            : std::runtime_error(fmt::format("Missing response for function {} from ILC with address {}",
-                                             func, address)) {}
+            : std::runtime_error(
+                      fmt::format("Missing response for function {0} (0x{0:02x}) from ILC with address {1}",
+                                  func, address)) {}
 };
 
 /**
@@ -59,7 +60,7 @@ public:
  *
  * @see BusList::addResponse
  */
-class UnexpectedResponse : std::runtime_error {
+class UnexpectedResponse : public std::runtime_error {
 public:
     /**
      * Construct unexpected response.

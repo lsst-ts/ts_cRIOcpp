@@ -91,12 +91,13 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
     uint16_t responseLen;
 
     readU16ResponseFIFO(&responseLen, 1, 20);
-    if (responseLen < 4) {
+    // minimal response is timestamp + 4 ILC bytes
+    if (responseLen < 8) {
         if (responseLen > 0) {
             uint16_t buffer[responseLen];
             readU16ResponseFIFO(buffer, responseLen, 10);
         }
-        throw std::runtime_error("FPGA::ilcCommands timeout on response: " + std::to_string(responseLen));
+        throw Modbus::MissingResponse(ilc[0].buffer.address(), ilc[0].buffer.func());
     }
 
     uint16_t buffer[responseLen];
