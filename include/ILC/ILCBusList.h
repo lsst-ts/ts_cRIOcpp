@@ -136,8 +136,9 @@ protected:
      * @param counter broadcast counter. ModBus provides method to retrieve this
      * in unicast function to verify the broadcast was received and processed
      * @param data function parameters. Usually device's bus ID indexed array
-     _
      */
+    void broadcastFunction(uint8_t address, uint8_t func, uint32_t delay);
+
     void broadcastFunction(uint8_t address, uint8_t func, uint32_t delay, uint8_t counter,
                            std::vector<uint8_t> data);
 

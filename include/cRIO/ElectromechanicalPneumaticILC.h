@@ -61,6 +61,7 @@ public:
     enum ILC_EM_CMD {
         SET_STEPPER_STEPS = 66,
         STEPPER_FORCE_STATUS = 67,
+        FREEZE_SENSOR = 68,
         SET_DCA_GAIN = 73,
         REPORT_DCA_GAIN = 74,
         SET_FORCE_OFFSET = 75,
@@ -168,6 +169,8 @@ public:
     void reportForceActuatorForceStatus(uint8_t address) {
         callFunction(address, ILC_EM_CMD::REPORT_FA_FORCE_STATUS, 1800);
     }
+
+    void freezeSensor() {broadcastFunction(248, ILC_EM_CMD::FREEZE_SENSOR, 180); }
 
     /**
      * Unicast ADC Channel Offset and Sensitivity. @glos{ILC} command code 81 (0x51).
