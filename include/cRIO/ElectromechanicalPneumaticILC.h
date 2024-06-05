@@ -72,6 +72,9 @@ public:
         REPORT_HARDPOINT_LVDT = 122
     };
 
+
+    static constexpr uint8_t EA_BROADCAST = 248;
+
     /**
      * Unicast command to command stepper motor moves.
      *
@@ -85,6 +88,10 @@ public:
      */
     void setStepperSteps(uint8_t address, int8_t steps) {
         callFunction(address, ILC_EM_CMD::SET_STEPPER_STEPS, 1800, steps);
+    }
+
+    void broadcastStepperSteps(uint8_t counter, std::vector<int8_t> steps) {
+        broadcastFunction(EA_BROADCAST, ILC_EM_CMD::SET_STEPPER_STEPS, 1800, counter, steps);
     }
 
     /**
@@ -170,7 +177,7 @@ public:
         callFunction(address, ILC_EM_CMD::REPORT_FA_FORCE_STATUS, 1800);
     }
 
-    void freezeSensor() {broadcastFunction(248, ILC_EM_CMD::FREEZE_SENSOR, 180); }
+    void freezeSensor(uint8_t counter) {broadcastFunction(EA_BROADCAST, ILC_EM_CMD::FREEZE_SENSOR, 180, counter); }
 
     /**
      * Unicast ADC Channel Offset and Sensitivity. @glos{ILC} command code 81 (0x51).
