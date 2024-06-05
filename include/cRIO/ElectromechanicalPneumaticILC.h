@@ -72,7 +72,6 @@ public:
         REPORT_HARDPOINT_LVDT = 122
     };
 
-
     static constexpr uint8_t EA_BROADCAST = 248;
 
     /**
@@ -90,6 +89,15 @@ public:
         callFunction(address, ILC_EM_CMD::SET_STEPPER_STEPS, 1800, steps);
     }
 
+    /**
+     * Broadcast steps to all force actuators.
+     *
+     * @param counter broadcast counter (0-15)
+     * @param steps commanded steps
+     *
+     * @ingroup M1M3_hp
+     * @ingroup M2
+     */
     void broadcastStepperSteps(uint8_t counter, std::vector<int8_t> steps) {
         broadcastFunction(EA_BROADCAST, ILC_EM_CMD::SET_STEPPER_STEPS, 1800, counter, steps);
     }
@@ -177,7 +185,20 @@ public:
         callFunction(address, ILC_EM_CMD::REPORT_FA_FORCE_STATUS, 1800);
     }
 
-    void freezeSensor(uint8_t counter) {broadcastFunction(EA_BROADCAST, ILC_EM_CMD::FREEZE_SENSOR, 180, counter); }
+    /**
+     * Freeze sensor values. After issuing freeze, sensor values can be read
+     * out with reportForceActuatorForceStatus (function
+     * REPORT_FA_FORCE_STATUS).
+     *
+     * @param counter broadcast counter (0-15)
+     *
+     * @ingroup M1M3_fa
+     * @ingroup M1M3_hp
+     * @ingroup M2
+     */
+    void freezeSensor(uint8_t counter) {
+        broadcastFunction(EA_BROADCAST, ILC_EM_CMD::FREEZE_SENSOR, 180, counter);
+    }
 
     /**
      * Unicast ADC Channel Offset and Sensitivity. @glos{ILC} command code 81 (0x51).

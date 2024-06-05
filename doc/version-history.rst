@@ -2,6 +2,10 @@
 Version History
 ###############
 
+v1.11.1
+-------
+* broadcast commands to step and freeze
+
 v1.11.0
 -------
 * Modbus::, ILC::ILCBusList classes. Communication code moved from ModbusBuffer
