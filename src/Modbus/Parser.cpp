@@ -34,8 +34,10 @@ CRCError::CRCError(uint16_t calculated, uint16_t received)
 void Parser::parse(std::vector<uint8_t> buffer) {
     if (buffer.size() < 4) {
         throw std::runtime_error(
-                "Cannot parse small buffer - minimal Modbus buffer length is 4 bytes (address, function and "
-                "2 bytes CRC)");
+                fmt::format("Cannot parse small buffer (size {}) - minimal Modbus buffer length is 4 bytes "
+                            "(address, function and "
+                            "2 bytes CRC)",
+                            buffer.size()));
     }
     assign(buffer.begin(), buffer.end());
     _data = 2;

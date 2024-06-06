@@ -125,7 +125,7 @@ TEST_CASE("Test SSA force set", "[ElectromechanicalPneumaticILC]") {
     REQUIRE(parser.address() == 18);
     REQUIRE(parser.func() == 75);
     REQUIRE(parser.read<uint8_t>() == 0xFF);
-    REQUIRE(parser.read<int24_t>().value == 31450);
+    REQUIRE(parser.read<Modbus::int24_t>().value == 31450);
     REQUIRE_NOTHROW(parser.checkCRC());
 
     Modbus::Buffer response;
@@ -152,7 +152,7 @@ TEST_CASE("Test DAA force set", "[ElectromechanicalPneumaticILC]") {
     REQUIRE(parser.address() == 212);
     REQUIRE(parser.func() == 75);
     REQUIRE(parser.read<uint8_t>() == 0x00);
-    REQUIRE(parser.read<int24_t>().value == -123450);
+    REQUIRE(parser.read<Modbus::int24_t>().value == -123450);
     // hex(345100) = 0x05 44 0C
     REQUIRE(parser.read<uint8_t>() == 0x05);
     REQUIRE(parser.read<uint8_t>() == 0x44);

@@ -99,25 +99,26 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC:
         processMezzaninePressure(parser.address(), primaryPush, primaryPull, secondaryPush, secondaryPull);
     };
 
-    addResponse(66, stepperForceStatus, 194);
+    addResponse(ILC_EM_CMD::SET_STEPPER_STEPS, stepperForceStatus, 194);
 
-    addResponse(67, stepperForceStatus, 195);
-
-    addResponse(
-            73, [this](Modbus::Parser parser) { parser.checkCRC(); }, 201);
-
-    addResponse(74, dcaGain, 202);
-
-    addResponse(75, forceActuatorForceStatus, 210);
-
-    addResponse(76, forceActuatorForceStatus, 220);
+    addResponse(ILC_EM_CMD::STEPPER_FORCE_STATUS, stepperForceStatus, 195);
 
     addResponse(
-            81, [this](Modbus::Parser parser) { parser.checkCRC(); }, 235);
+            ILC_EM_CMD::SET_DCA_GAIN, [this](Modbus::Parser parser) { parser.checkCRC(); }, 201);
 
-    addResponse(110, calibrationData, 238);
+    addResponse(ILC_EM_CMD::REPORT_DCA_GAIN, dcaGain, 202);
 
-    addResponse(119, pressureData, 247);
+    addResponse(ILC_EM_CMD::SET_FORCE_OFFSET, forceActuatorForceStatus, 210);
 
-    addResponse(122, hardpointLVDT, 250);
+    addResponse(ILC_EM_CMD::REPORT_FA_FORCE_STATUS, forceActuatorForceStatus, 220);
+
+    addResponse(
+            ILC_EM_CMD::SET_OFFSET_AND_SENSITIVITY, [this](Modbus::Parser parser) { parser.checkCRC(); },
+            235);
+
+    addResponse(ILC_EM_CMD::REPORT_CALIBRATION_DATA, calibrationData, 238);
+
+    addResponse(ILC_EM_CMD::REPORT_MEZZANINE_PRESSURE, pressureData, 247);
+
+    addResponse(ILC_EM_CMD::REPORT_HARDPOINT_LVDT, hardpointLVDT, 250);
 }

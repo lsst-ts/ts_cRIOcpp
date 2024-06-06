@@ -53,7 +53,7 @@ public:
     uint16_t getTxCommand(uint8_t bus) override { return FPGAAddress::MODBUS_A_TX; }
     uint16_t getRxCommand(uint8_t bus) override { return FPGAAddress::MODBUS_A_RX; }
     uint32_t getIrq(uint8_t bus) override { return 1; }
-    void writeMPUFIFO(uint8_t bus, std::vector<uint8_t> mpu_data) override { last_mpu = mpu_data; }
+    void writeMPUFIFO(const std::vector<uint8_t>& data, uint32_t timeout) override {}
     std::vector<uint8_t> readMPUFIFO(LSST::cRIO::MPU&) override {
         return std::vector<uint8_t>({0xff, 0x0fe});
     }
@@ -65,8 +65,6 @@ public:
 
     void setPages(uint8_t* pages) { _pages = pages; }
     void setSimulatedIRQs(uint32_t irqs) { _simulatedIRQs = irqs; }
-
-    std::vector<uint8_t> last_mpu;
 
 protected:
     void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) override;

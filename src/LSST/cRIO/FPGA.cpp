@@ -41,7 +41,6 @@ FPGA::FPGA(fpgaType type) : SimpleFPGA(type) {
             _modbusSoftwareTrigger = 252;
             break;
         case M2:
-            _modbusSoftwareTrigger = 1;
         case VMS:
             _modbusSoftwareTrigger = 0;
             break;
@@ -92,12 +91,13 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
     uint16_t responseLen;
 
     readU16ResponseFIFO(&responseLen, 1, 20);
-    if (responseLen < 4) {
+    // minimal response is timestamp + 4 ILC bytes
+    if (responseLen < 8) {
         if (responseLen > 0) {
             uint16_t buffer[responseLen];
             readU16ResponseFIFO(buffer, responseLen, 10);
         }
-        throw std::runtime_error("FPGA::ilcCommands timeout on response: " + std::to_string(responseLen));
+        throw Modbus::MissingResponse(ilc[0].buffer.address(), ilc[0].buffer.func());
     }
 
     uint16_t buffer[responseLen];
@@ -150,89 +150,27 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
     reportTime(beginTs, endTs);
 }
 
-#if 0
-bool FPGA::runLoop(MPU &mpu) {
-    switch (_loop_state) {
-        case loop_state_t::WAIT_WRITE:
-            _loop_next_read = std::chrono::steady_clock::now() + _loop_timeout;
-            loopWrite();
-            fpga.writeMPUFIFO(*this);
-            _loop_state = loop_state_t::WAIT_READ;
-            break;
-        case loop_state_t::WAIT_READ: {
-            bool timedout;
-            fpga.waitOnIrqs(getIrq(), 0, timedout);
-            if (timedout) {
-                // there is still time to retrieve data, wait for IRQ
-                if (_loop_next_read > std::chrono::steady_clock::now()) {
-                    return false;
-                }
-                auto data = fpga.readMPUFIFO(*this);
-                resetBus();
-                fpga.writeMPUFIFO(*this);
-                fpga.waitOnIrqs(getIrq(), 100, timedout);
-                fpga.ackIrqs(getIrq());
-                throw IRQTimeout(data);
-            } else {
-                fpga.ackIrqs(getIrq());
-                fpga.readMPUFIFO(*this);
-            }
+void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
+    for (auto cmd : mpu) {
+        // construct buffer to send
+        std::vector<uint8_t> data;
 
-            loopRead(timedout);
-            _loop_state = loop_state_t::WAIT_IDLE;
-        } break;
-        case loop_state_t::WAIT_IDLE:
-            if (_loop_next_read > std::chrono::steady_clock::now()) {
-                return false;
-            }
-            _loop_state = loop_state_t::WAIT_WRITE;
-            return true;
-    }
-    return false;
-}
-#endif
+        data.push_back(mpu.getBus());
+        data.push_back(cmd.buffer.size() + 2);
+        data.push_back(MPUCommands::WRITE);
+        data.push_back(cmd.buffer.size());
+        data.insert(data.end(), cmd.buffer.begin(), cmd.buffer.end());
 
-void FPGA::mpuCommands(MPU &mpu) {
-    std::vector<uint8_t> commands;
+        writeMPUFIFO(data, 0);
 
-    for (auto m : mpu) {
-        commands.push_back(MPU_WRITE);
-        size_t size_index = commands.size();
-        commands.push_back(0);
-
-        for (auto v : m.buffer) {
-            commands.push_back(v);
+        // read reply
+        auto answer = readMPUFIFO(mpu);
+        if (answer.empty()) {
+            throw std::runtime_error(fmt::format("Empty answer to {}", Modbus::hexDump(data)));
         }
-
-        commands[size_index] = m.buffer.size();
-
-        commands.push_back(MPU_READ_MS);
-
-        uint8_t expected_response_length = 4;
-
-        switch (m.buffer[1]) {
-            case 2:  // read inputs
-                expected_response_length = ceil(Modbus::Parser::u8tou16(m.buffer[5], m.buffer[4]) / 8.0) + 5;
-                break;
-            case 3:
-                expected_response_length = (Modbus::Parser::u8tou16(m.buffer[5], m.buffer[4]) * 2) + 5;
-                break;
-            case 6:
-            case 16:
-                expected_response_length = 8;
-                break;
-        }
-
-        commands.push_back(expected_response_length);
-        commands.push_back(m.timming >> 8 & 0xff);
-        commands.push_back(m.timming & 0xff);
+        mpu.parse(answer);
+        mpu.reset();
     }
-
-    commands.push_back(MPU_IRQ);
-
-    writeMPUFIFO(mpu.getBus(), commands);
-
-    readMPUFIFO(mpu);
 }
 
 }  // namespace cRIO

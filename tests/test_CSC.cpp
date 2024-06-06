@@ -33,9 +33,28 @@
 #include <cRIO/CSC.h>
 #include <cRIO/FPGA.h>
 
-#include <TestFPGA.h>
-
 using namespace LSST::cRIO;
+
+class TestFPGA : public FPGA {
+public:
+    TestFPGA() : FPGA(fpgaType::SS) {}
+    void initialize() override {}
+    void open() override {}
+    void close() override {}
+    void finalize() override {}
+    uint16_t getTxCommand(uint8_t) override { return 0; }
+    uint16_t getRxCommand(uint8_t) override { return 0; }
+    uint32_t getIrq(uint8_t) override { return 0; }
+    void writeMPUFIFO(const std::vector<uint8_t>& data, uint32_t timeout) override {}
+    std::vector<uint8_t> readMPUFIFO(MPU&) override { return std::vector<uint8_t>({0x04, 0x05}); }
+    void writeCommandFIFO(uint16_t*, size_t, uint32_t) override {}
+    void writeRequestFIFO(uint16_t*, size_t, uint32_t) override {}
+    void readU16ResponseFIFO(uint16_t*, size_t, uint32_t) override {}
+    void waitOnIrqs(uint32_t irqs, uint32_t timeout, bool& timedout, uint32_t* triggered = NULL) override {
+        timedout = false;
+    }
+    void ackIrqs(uint32_t) override {}
+};
 
 class TestCSC : public CSC {
 public:

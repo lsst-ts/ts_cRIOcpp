@@ -115,9 +115,10 @@ public:
     /**
      * Construct CliApp.
      *
-     * @param _description a short description of the application
+     * @param name command line application name
+     * @param description a short description of the application
      */
-    CliApp(const char* name, const char* description) : Application(name, description), _history_fn(NULL) {}
+    CliApp(const char* name, const char* description);
 
     /**
      * Class destructor. Subclasses are encouraged to include all destruction
@@ -242,6 +243,8 @@ protected:
 
     /**
      * Process unmatched commands.
+     *
+     * @param cmds commands to be processed
      */
     virtual int processUnmached(command_vec cmds);
 
@@ -249,6 +252,13 @@ protected:
      * List available commands on standard output. Use it inside printUsage().
      */
     void printCommands();
+
+    /**
+     * Exits the application.
+     *
+     * @param cmds commands to be processed
+     */
+    virtual int _exit(command_vec cmds);
 
     int verbose;
 

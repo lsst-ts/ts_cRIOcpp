@@ -35,7 +35,7 @@ public:
     uint8_t expectedAddress;
 };
 
-TestList::TestList(uint8_t _expectedAddress) : BusList::BusList(1), expectedAddress(_expectedAddress) {
+TestList::TestList(uint8_t _expectedAddress) : expectedAddress(_expectedAddress) {
     addResponse(
             3,
             [this](Modbus::Parser parser) {
@@ -58,7 +58,7 @@ void TestList::processReadRegister(uint8_t address, uint16_t reg1, uint16_t reg2
 }
 
 TEST_CASE("Call functions", "[Calls]") {
-    BusList buslist(1);
+    BusList buslist;
 
     buslist.callFunction(123, 17, 200, static_cast<uint8_t>(0xfe), static_cast<uint16_t>(0xffcc),
                          static_cast<float>(22.33));

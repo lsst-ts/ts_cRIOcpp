@@ -27,8 +27,9 @@
 using namespace Modbus;
 
 TEST_CASE("Parser buffer", "[Parsing]") {
-    std::vector<uint8_t> data = {0x81, 0x11, 0x10, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAA, 0xFF, 0xBB,
-                                 0xCC, 0xDD, 0xEE, 0x11, 0x53, 0x74, 0x61, 0x72, 0xA7, 0x9F};
+    std::vector<uint8_t> data = {0x81, 0x11, 0x10, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAA, 0xFF,
+                                 0xBB, 0xCC, 0xDD, 0xEE, 0x11, 0x53, 0x74, 0x61, 0x72, 0x12,
+                                 0x23, 0x34, 0xFF, 0xFF, 0xFF, 0x80, 0x00, 0x01, 0x84, 0x52};
 
     Parser parser(data);
 
@@ -39,6 +40,9 @@ TEST_CASE("Parser buffer", "[Parsing]") {
     CHECK(parser.read<uint32_t>() == 0x567890AA);
     CHECK(parser.read<uint64_t>() == 0xFFBBCCDDEE115374);
     CHECK(parser.readString(2) == "ar");
+    CHECK(parser.read<int24_t>().value == 0x122334);
+    CHECK(parser.read<int24_t>().value == -1);
+    CHECK(parser.read<int24_t>().value == -0x7FFFFF);
     REQUIRE_NOTHROW(parser.checkCRC());
 }
 
@@ -87,7 +91,7 @@ TEST_CASE("Small buffer - no CRC", "[Parsing]") {
 }
 
 TEST_CASE("Test transform functions", "[Transformation]") {
-    REQUIRE(Modbus::Parser::u8tou16(0, 0xCA) == 0xCA00);
-    REQUIRE(Modbus::Parser::u8tou16(0xCA, 0x12) == 0x12CA);
-    REQUIRE(Modbus::Parser::u8tou16(0x12, 0) == 0x12);
+    CHECK(Modbus::Parser::u8tou16(0, 0xCA) == 0xCA00);
+    CHECK(Modbus::Parser::u8tou16(0xCA, 0x12) == 0x12CA);
+    CHECK(Modbus::Parser::u8tou16(0x12, 0) == 0x12);
 }

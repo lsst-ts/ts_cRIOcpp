@@ -26,7 +26,7 @@
 
 using namespace Modbus;
 
-BusList::BusList(uint8_t bus) : _bus(bus) {}
+BusList::BusList() {}
 
 void BusList::parse(Parser parser) {
     auto exp_address = at(_parsed_index).buffer.address();
@@ -53,8 +53,7 @@ void BusList::parse(Parser parser) {
             return;
         }
     }
-    throw std::runtime_error(
-            fmt::format("Unknown/unexpected Modbusi function {} for address {}", called, address));
+    throw UnexpectedResponse(address, called);
 }
 
 void BusList::addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t error_reply,

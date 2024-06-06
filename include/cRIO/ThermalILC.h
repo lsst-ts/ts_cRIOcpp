@@ -73,6 +73,16 @@ public:
     };
 
     /**
+     * Thermal ILC command numbers. Please consult LTS-646 for details.
+     */
+    enum ILC_THERMAL_CMD {
+        SET_THERMAL_DEMAND = 88,
+        REPORT_THERMAL_STATUS = 89,
+        SET_REHEATER_GAINS = 92,
+        REPORT_REHEATER_GAINS = 93
+    };
+
+    /**
      * Unicast heater PWM and fan RPM. ILC command code 88 (0x58)
      *
      * @param address ILC address
@@ -80,7 +90,7 @@ public:
      * @param fanRPM commanded fan RPM values (0-2550)
      */
     void setThermalDemand(uint8_t address, uint8_t heaterPWM, uint8_t fanRPM) {
-        callFunction(address, 88, 500, heaterPWM, fanRPM);
+        callFunction(address, ILC_THERMAL_CMD::SET_THERMAL_DEMAND, 500, heaterPWM, fanRPM);
     }
 
     /**
@@ -88,7 +98,9 @@ public:
      *
      * @param address ILC address to query.
      */
-    void reportThermalStatus(uint8_t address) { callFunction(address, 89, 300); }
+    void reportThermalStatus(uint8_t address) {
+        callFunction(address, ILC_THERMAL_CMD::REPORT_THERMAL_STATUS, 300);
+    }
 
     /**
      * Set new re-heater gains.
@@ -98,15 +110,19 @@ public:
      * @param integralGain Commanded integral gain
      */
     void setReHeaterGains(uint8_t address, float proportionalGain, float integralGain) {
-        callFunction(address, 92, 500000, proportionalGain, integralGain);
+        callFunction(address, ILC_THERMAL_CMD::SET_REHEATER_GAINS, 500000, proportionalGain, integralGain);
     }
 
     /**
      * Report re-heater gains. Command code 93 (0x5D).
      *
      * @param address ILC address to query.
+     *
+     * @note processThermalStatus method is called for replies
      */
-    void reportReHeaterGains(uint8_t address) { callFunction(address, 93, 300); }
+    void reportReHeaterGains(uint8_t address) {
+        callFunction(address, ILC_THERMAL_CMD::REPORT_REHEATER_GAINS, 300);
+    }
 
     /**
      * Broadcast heater PWM and fan RPM. ILC command code 88 (0x58).
@@ -123,7 +139,7 @@ protected:
      * @param address status returned from this ILC
      * @param status ILC status. See LTS-646 for details.
      * @param differentialTemperature differential temperature (degC)
-     * @param fanRPM measure fan RPM - 0 to 255 = 0 to 2550 RPM in 10 RPM increments
+     * @param fanRPM measure fan @glos{RPM} - 0 to 255 = 0 to 2550 @glos{RPM} in 10 @glos{RPM} increments
      * @param absoluteTemperature absolute temperature (degC)
      */
     virtual void processThermalStatus(uint8_t address, uint8_t status, float differentialTemperature,

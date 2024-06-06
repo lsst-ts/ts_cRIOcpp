@@ -29,33 +29,54 @@
 
 namespace ILC {
 
-enum Mode { Standby = 0, Disabled = 1, Enabled = 2, FirmwareUpdate = 3, Fault = 4, ClearFaults = 5 };
+enum Mode { Standby = 0, Disabled = 1, Enabled = 2, Bootloader = 3, Fault = 4, ClearFaults = 5 };
 
 /**
- * Handles basic ILC communication. Provides methods to run ILC functions and
- * callback for responses.
+ * Handles basic @glos{ILC} communication. Provides methods to run @glos{ILC}
+ * functions and callback for responses.
+ *
+ * ILCs are on a bus identified by the bus number. The details how bus commands
+ * are transferred to FPGA and replies are receieved is left on the FPGA
+ * handling class. As transfer is ussually done through some @glos{FIFO}s, the
+ * number of busses is limited by number of target-host FIFOs in the FPGA.a
  */
 class ILCBusList : public Modbus::BusList {
 public:
+    /**
+     * Construct new bus list.
+     *
+     * @param bus FPGA ILC bus number.
+     */
     ILCBusList(uint8_t bus);
+
+    /**
+     * Destroy ILC bus instance.
+     */
     virtual ~ILCBusList();
 
     /**
-     * Calls function 17 (0x11), ask for ILC identity.
+     * Return the FPGA bus ILCs operates on.
      *
-     * @param address ILC address
+     * @return FPGA ILC bus indentificator
      */
-    void reportServerID(uint8_t address) { callFunction(address, 17, 835); }
+    const uint8_t getBus() { return _bus; }
 
     /**
-     * Calls function 18 (0x12), ask for ILC status.
+     * Calls function 17 (0x11), ask for @glos{ILC} identity.
      *
-     * @param address ILC address
+     * @param address @glos{ICL} address
      */
-    void reportServerStatus(uint8_t address) { callFunction(address, 18, 270); }
+    void reportServerID(uint8_t address) { callFunction(address, ILC_CMD::SERVER_ID, 835); }
 
     /**
-     * Change ILC mode. Calls function 65 (0x41). Supported ILC modes are:
+     * Calls function 18 (0x12), ask for @glos{ILC} status.
+     *
+     * @param address @glos{ICL} address
+     */
+    void reportServerStatus(uint8_t address) { callFunction(address, ILC_CMD::SERVER_STATUS, 270); }
+
+    /**
+     * Change @glos{ILC} mode. Calls function 65 (0x41). Supported @glos{ILC} modes are:
      *
      * Mode | Supported by | Description
      * ---- | ------------ | ------------------------------------
@@ -69,27 +90,40 @@ public:
      * where all is Electromechanical (Hard-Point), Pneumatic, Thermal and
      * Hardpoint Monitoring ILC. HM is Hardpoint Monitoring.
      *
-     * @param address ILC address
-     * @param mode new ILC mode - see above
+     * @param address @glos{ICL} address
+     * @param mode new @glos{ILC} mode - see above
      */
     void changeILCMode(uint8_t address, uint16_t mode);
 
     /**
-     * Set temporary ILC address. ILC must be address-less (attached to address
-     * 255). Can be used only if one ILC on a bus failed to read its address
+     * Set temporary @glos{ICL} address. @glos{ILC} must be address-less (attached to address
+     * 255). Can be used only if one @glos{ILC} on a bus failed to read its address
      * from its network connection and therefore adopts the failure address
      * 255.
      *
-     * @param temporaryAddress new ILC address
+     * @param temporaryAddress new @glos{ICL} address
      */
-    void setTempILCAddress(uint8_t temporaryAddress) { callFunction(255, 72, 250, temporaryAddress); }
+    void setTempILCAddress(uint8_t temporaryAddress) {
+        callFunction(255, ILC_CMD::SET_TEMP_ADDRESS, 250, temporaryAddress);
+    }
 
     /**
      * Reset ILC. Calls function 107 (0x6b).
      *
-     * @param address ILC address
+     * @param address @glos{ICL} address
      */
-    void resetServer(uint8_t address) { callFunction(address, 107, 86840); }
+    void resetServer(uint8_t address) { callFunction(address, ILC_CMD::RESET_SERVER, 86840); }
+
+    /**
+     * ILC commands numbers. See LTS-346 and LTS-646 for details.
+     */
+    enum ILC_CMD {
+        SERVER_ID = 17,
+        SERVER_STATUS = 18,
+        CHANGE_MODE = 65,
+        SET_TEMP_ADDRESS = 72,
+        RESET_SERVER = 107
+    };
 
 protected:
     /**
@@ -102,7 +136,7 @@ protected:
      * @param counter broadcast counter. ModBus provides method to retrieve this
      * in unicast function to verify the broadcast was received and processed
      * @param data function parameters. Usually device's bus ID indexed array
-     * of values to pass to the devices
+     _
      */
     void broadcastFunction(uint8_t address, uint8_t func, uint32_t delay, uint8_t counter,
                            std::vector<uint8_t> data);
@@ -124,7 +158,7 @@ protected:
     /**
      * Return string with current mode description.
      *
-     * @param mode ILC mode, as returned by function 18.
+     * @param mode @glos{ILC} mode, as returned by function 18.
      *
      * @return status description (enabled, standby,..).
      */
@@ -142,20 +176,20 @@ protected:
     enum ILCStatus { MajorFault = 0x0001, MinorFault = 0x0002, FaultOverride = 0x0008 };
 
     /**
-     * Returns last know mode (state) of the ILC at the address.
+     * Returns last know mode (state) of the @glos{ILC} at the address.
      *
-     * @param address ILC node address
+     * @param address @glos{ILC} node address
      *
-     * @return last know ILC state
+     * @return last know @glos{ILC} state
      *
-     * @throw std::out_of_range when ILC mode is not known
+     * @throw std::out_of_range when @glos{ILC} mode is not known
      */
     uint8_t getLastMode(uint8_t address) { return _lastMode.at(address); }
 
     /**
-     * Return ILC fault textual description.
+     * Return @glos{ILC} fault textual description.
      *
-     * @param fault ILC faults returned by function 18.
+     * @param fault @glos{ILC} faults returned by function 18.
      *
      * @return vector of strings with fault description
      */
@@ -239,15 +273,15 @@ protected:
      *   </tr>
      * </table>
      *
-     * @param address  ILC address
-     * @param uniqueID  ILC unigue ID
-     * @param ilcAppType ILC App (Firmware) Type. See Types table for values
-     * @param networkNodeType ILC Network Node (TEDS) Type. See Types table for values
-     * @param ilcSelectedOptions ILC Selected Options. See Selected Options table for values
-     * @param networkNodeOptions ILC Network Node (TEDS) Options. See Selected Options table for values
+     * @param address @glos{ICL} address
+     * @param uniqueID @glos{ILC} unigue ID
+     * @param ilcAppType @glos{ILC} App (Firmware) Type. See Types table for values
+     * @param networkNodeType @glos{ILC} Network Node (TEDS) Type. See Types table for values
+     * @param ilcSelectedOptions @glos{ILC} Selected Options. See Selected Options table for values
+     * @param networkNodeOptions @glos{ILC} Network Node (TEDS) Options. See Selected Options table for values
      * @param majorRev Firmware major revision number
      * @param minorRev Firmware minor revision number
-     * @param firmwareName ASCII name string for ILC firmware
+     * @param firmwareName ASCII name string for @glos{ILC} firmware
      */
     virtual void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType,
                                  uint8_t networkNodeType, uint8_t ilcSelectedOptions,
@@ -257,18 +291,18 @@ protected:
     /**
      * Callback for server status reply.
      *
-     * @param address ILC address
-     * @param mode ILC mode
-     * @param status ILC status
-     * @param faults ILC faults
+     * @param address @glos{ICL} address
+     * @param mode @glos{ILC{ mode
+     * @param status @glos{ILC} status
+     * @param faults @glos{ILC} faults
      */
     virtual void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) = 0;
 
     /**
-     * Callback for change ILC mode reply.
+     * Callback for change @glos{ILC} mode reply.
      *
-     * @param address ILC address
-     * @param mode new (current) ILC mode
+     * @param address @glos{ICL} address
+     * @param mode new (current) @glos{ILC} mode
      */
     virtual void processChangeILCMode(uint8_t address, uint16_t mode) = 0;
 
@@ -283,13 +317,14 @@ protected:
     /**
      * Callback for reply from server reset.
      *
-     * @param address ILC address
+     * @param address @glos{ICL} address
      */
     virtual void processResetServer(uint8_t address) = 0;
 
 private:
-    // last know ILC mode
-    std::map<uint8_t, uint8_t> _lastMode;
+    const int _bus;
+
+    std::map<uint8_t, uint8_t> _lastMode;  ///< last know @glos{ILC} mode
     uint8_t _broadcastCounter = 0;
 };
 

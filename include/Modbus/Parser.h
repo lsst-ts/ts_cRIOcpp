@@ -31,6 +31,8 @@
 #include <string>
 #include <vector>
 
+#include <spdlog/fmt/fmt.h>
+
 #include <Modbus/Buffer.h>
 
 namespace Modbus {
@@ -42,7 +44,7 @@ namespace Modbus {
  * @param len length of the buffer
  */
 template <typename dt>
-static const std::string hexDump(dt *buf, size_t len) {
+static const std::string hexDump(const dt *buf, size_t len) {
     std::ostringstream os;
     os << std::setfill('0') << std::hex;
     for (size_t i = 0; i < len; i++) {
@@ -55,34 +57,61 @@ static const std::string hexDump(dt *buf, size_t len) {
     return os.str();
 }
 
+template <typename dt>
+static const std::string hexDump(const std::vector<dt> &data) {
+    return hexDump<dt>(data.data(), data.size());
+}
+
 /**
  * Exception thrown when calculated CRC doesn't match received CRC.
  */
 class CRCError : public std::runtime_error {
 public:
+    /**
+     * Construct new CRC error. Signal either problem in the sending
+     * electronics, or problems parsing the received replies.
+     *
+     * @param calculated CRC value calculated from the data (=expected)
+     * @param received CRC value received in response (=produced by the other side).
+     */
     CRCError(uint16_t calculated, uint16_t received);
 };
 
 /**
  * Thrown when response continue after CRC.
  */
-class LongResponse : std::runtime_error {
+class LongResponse : public std::runtime_error {
 public:
+    /**
+     * Construct LongResponse from the given buffer.
+     *
+     * @param buf Buffer with data received
+     * @param len Buffer length
+     */
     LongResponse(uint8_t *buf, size_t len)
             : std::runtime_error(std::string("Too long response - received ") + hexDump(buf, len)) {}
 };
 
+/**
+ * Class parsing a single Modbus response.
+ */
 class Parser : public std::vector<uint8_t> {
 public:
+    /**
+     * Construct parser from given input data. Essentially only store the data
+     * into buffer.
+     *
+     * @param buffer Buffer to parse
+     */
     Parser(std::vector<uint8_t> buffer) { parse(buffer); }
 
+    /**
+     * Sets the given buffer as the one to be parsed.
+     */
     void parse(std::vector<uint8_t> buffer);
 
     /**
-     * Check that accumulated data CRC matches readed CRC. Also stops recording
-     * of changes, as CRC shall be at the end of buffer.
-     *
-     * @see pauseRecordChanges
+     * Check that so far read data CRC matches calculated CRC.
      *
      * @throw CRCError if CRC doesn't match
      */
@@ -94,15 +123,17 @@ public:
     }
 
     /**
-     * Reads data from buffer. Size of * receiving buffer is assumed to be
-     * equal or greater than len.
+     * Reads data from the buffer. Size of the receiving buffer is assumed to
+     * be equal or greater than len argument.
      *
      * @param buf target buffer to read the data
      * @param len how many bytes shall be read
      */
     void readBuffer(void *buf, size_t len) {
         if (_data + len > size()) {
-            throw std::out_of_range("Trying to access data beyond buffer end.");
+            throw std::out_of_range(fmt::format(
+                    "Attempt to access data beyond buffer end (buffer index {}, but buffer length is {}).",
+                    _data + len, size()));
         }
         memcpy(buf, data() + _data, len);
         _data += len;
@@ -144,17 +175,30 @@ public:
      */
     std::string readString(size_t length);
 
+    /**
+     * Returns address from the Modbus buffer. Actually returns the first byte.
+     *
+     * @return Modbus command address
+     */
     const uint8_t address() { return at(0); }
 
+    /**
+     * Returns function code from the Modbus buffer. Actually returns the
+     * second byte.
+     *
+     * @return Modbus function code
+     */
     const uint8_t func() { return at(1); }
 
 private:
-    /***
-     * Data pointer.
-     */
-    size_t _data = 0;
+    size_t _data = 0;  ///< Data pointer.
 };
 
+/**
+ * Read 24 bites (3 bytes) integer value from the buffer.
+ *
+ * @return 24 bites value read from the buffer.
+ */
 template <>
 inline int24_t Parser::read() {
     int32_t db = 0;

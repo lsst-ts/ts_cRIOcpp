@@ -32,33 +32,38 @@
 #include <cRIO/PrintILC.h>
 #include <cRIO/SimulatedILC.h>
 
-#include <TestFPGA.h>
-
 using namespace LSST::cRIO;
 
-class FirmwareILC : public PrintILC {
+class TestILC : public PrintILC {
 public:
-    FirmwareILC(uint8_t bus) : ILC::ILCBusList(bus), PrintILC(bus) {}
+    TestILC(uint8_t bus) : ILC::ILCBusList(bus), PrintILC(bus) {}
 };
 
-class FirmwareFPGA : public TestFPGA {
+class TestFPGA : public FPGA {
 public:
-    FirmwareFPGA() : ILC::ILCBusList(1), TestFPGA(), _call(0) {}
-    ~FirmwareFPGA() { _outStream.close(); }
+    TestFPGA() : FPGA(SS), _call(0) {}
+    ~TestFPGA() { _outStream.close(); }
 
     void setOutFile(const char* filename) { _outStream.open(filename, std::ifstream::in); }
 
+    void initialize() override {}
+    void open() override {}
+    void close() override {}
+    void finalize() override {}
     uint16_t getTxCommand(uint8_t bus) override { return bus + 24; }
     uint16_t getRxCommand(uint8_t bus) override { return bus + 14; }
     uint32_t getIrq(uint8_t bus) override { return 1; }
 
+    void writeMPUFIFO(const std::vector<uint8_t>& data, uint32_t timeout) override {}
     std::vector<uint8_t> readMPUFIFO(MPU& mpu) override { return std::vector<uint8_t>({0x01, 0x02}); }
 
     void writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
+    void writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout) override {}
     void readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void waitOnIrqs(uint32_t irqs, uint32_t timeout, bool& timedout, uint32_t* triggered = NULL) override {
         timedout = false;
     }
+    void ackIrqs(uint32_t irqs) override {}
 
 private:
     uint8_t _call;
@@ -67,12 +72,12 @@ private:
     void _printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp = false);
 };
 
-void FirmwareFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
+void TestFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     _printBuffer(data, length, "C>", true);
     _call = 0xff & (data[5] >> 1);
 }
 
-void FirmwareFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) {
+void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     if (length == 1) {
         switch (_call) {
             case 18:
@@ -126,7 +131,7 @@ void FirmwareFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t t
     _printBuffer(data, length, "R<");
 }
 
-void FirmwareFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp) {
+void TestFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp) {
     std::stringstream ss;
     ss << prefix << " ";
     CliApp::printHexBuffer(data, length, ss);
@@ -142,8 +147,8 @@ TEST_CASE("Test load ILC", "[FirmwareLoad]") {
     IntelHex hex;
     hex.load("data/ILC-3.hex");
 
-    FirmwareILC tILC(1);
-    FirmwareFPGA testFPGA;
+    TestILC tILC(1);
+    TestFPGA testFPGA;
     REQUIRE_NOTHROW(testFPGA.setOutFile("data/ILC-3.out"));
     REQUIRE_NOTHROW(tILC.programILC(&testFPGA, 18, hex));
 }

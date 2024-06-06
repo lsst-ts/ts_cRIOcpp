@@ -64,13 +64,16 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
             "status", [](ILCUnit u) { u.first->reportServerStatus(u.second); }, "Print ILC status");
     addILCCommand(
             "standby", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::Standby); },
-            "Change to standby mode");
+            "Change ILC mode to standby");
     addILCCommand(
             "disable", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::Disabled); },
-            "Change to disabled mode");
+            "Change ILC mode to disabled");
     addILCCommand(
             "enable", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::Enabled); },
-            "Change to enabled mode");
+            "Change ILC mode to enabled");
+    addILCCommand(
+            "bootloader", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::Bootloader); },
+            "Change ILC mode to booloader");
     addILCCommand(
             "clear-faults", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::ClearFaults); },
             "Clear ILC faults");

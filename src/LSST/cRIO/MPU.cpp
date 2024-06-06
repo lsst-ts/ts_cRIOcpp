@@ -25,35 +25,33 @@
 
 #include <cRIO/CliApp.h>
 #include <cRIO/MPU.h>
+#include <Modbus/Parser.h>
 
 using namespace LSST::cRIO;
 
-MPU::IRQTimeout::IRQTimeout(std::vector<uint8_t> _data)
-        : std::runtime_error(fmt::format("Din't receive IRQ, reseting MPU. Read data: " +
-                                         ModbusBuffer::hexDump(_data.data(), _data.size()))),
-          data(_data) {}
-
-MPU::MPU(uint8_t bus) : Modbus::BusList(bus) {
-    _loop_state = loop_state_t::WAIT_WRITE;
-
+MPU::MPU(uint8_t bus, uint8_t node_address) : _bus(bus), _node_address(node_address), _commanded_address(0) {
     addResponse(
-            2,
+            READ_INPUT_STATUS,
             [this](Modbus::Parser parser) {
-                uint8_t len = parser.read<uint8_t>();
-                uint16_t inputs_address = requestBufferU16(2);
-                uint16_t inputs_len = requestBufferU16(4);
-                if (len > ceil(inputs_len / 8.0)) {
-                    throw std::runtime_error(fmt::format(
-                            "Invalid length for inputs starting at {:04x} - received {}, expected {}",
-                            inputs_address, len, inputs_len));
+                if (_commanded_address == 0 || _commanded_length == 0) {
+                    throw std::runtime_error("Empty read input status");
                 }
-                uint16_t end_address = inputs_address + inputs_len;
+                if (parser.address() != _node_address) {
+                    throw std::runtime_error(fmt::format("Invalid ModBus address {}, expected {}",
+                                                         parser.address(), _node_address));
+                }
+                uint8_t len = parser.read<uint8_t>();
                 uint8_t data = 0x00;
-                for (uint16_t a = inputs_address; a < end_address; a++) {
-                    if ((a - inputs_address) % 8 == 0) {
+                if (_commanded_length / 8 + (_commanded_length % 8 == 0 ? 0 : 1) != len) {
+                    throw std::runtime_error(
+                            fmt::format("Invalid reply length - received {}, ceiling from {} / 8", len,
+                                        _commanded_length));
+                }
+                for (uint16_t i = 0; i < _commanded_length; i++) {
+                    if (i % 8 == 0) {
                         data = parser.read<uint8_t>();
                     }
-                    _inputStatus[std::pair(parser.address(), a)] = data & 0x01;
+                    _inputStatus[_commanded_address + i] = data & 0x01;
                     data >>= 1;
                 }
                 parser.checkCRC();
@@ -61,23 +59,18 @@ MPU::MPU(uint8_t bus) : Modbus::BusList(bus) {
             0x82);
 
     addResponse(
-            3,
+            READ_HOLDING_REGISTERS,
             [this](Modbus::Parser parser) {
-                uint8_t len = parser.read<uint8_t>();
-
-                uint16_t request_address = requestBufferU16(2);
-                uint16_t request_len = requestBufferU16(4);
-                if (len != (request_len * 2)) {
-                    throw std::runtime_error(
-                            fmt::format("Invalid respond length for address {} - expected {}, received {}",
-                                        parser.address(), len, request_len * 2));
+                if (parser.address() != _node_address) {
+                    throw std::runtime_error(fmt::format("Invalid ModBus address {}, expected {}",
+                                                         parser.address(), _node_address));
                 }
+                uint8_t len = parser.read<uint8_t>() / 2;
                 {
                     std::lock_guard<std::mutex> lg(_registerMutex);
-                    for (size_t i = 0; i < len; i += 2) {
+                    for (size_t i = 0; i < len; i++) {
                         uint16_t val = parser.read<uint16_t>();
-                        _registers[std::pair(parser.address(), request_address)] = val;
-                        request_address++;
+                        _registers[_commanded_address + i] = val;
                     }
                 }
                 parser.checkCRC();
@@ -85,72 +78,74 @@ MPU::MPU(uint8_t bus) : Modbus::BusList(bus) {
             0x83);
 
     addResponse(
-            6,
+            PRESET_HOLDING_REGISTER,
             [this](Modbus::Parser parser) {
-                uint16_t register_address = parser.read<uint16_t>();
-                uint16_t value = parser.read<uint16_t>();
-
-                uint16_t request_address = requestBufferU16(2);
-                uint16_t request_value = requestBufferU16(4);
-
-                if (register_address != request_address) {
-                    throw std::runtime_error(fmt::format(
-                            "Invalid register address for address {} - expected {:04x}, received {:04x}",
-                            parser.address(), request_address, register_address));
+                if (parser.address() != _node_address) {
+                    throw std::runtime_error(fmt::format("Invalid ModBus address {}, expected {}",
+                                                         parser.address(), _node_address));
                 }
-
-                if (value != request_value) {
-                    throw std::runtime_error(fmt::format(
-                            "Invalid value for address {} register {:04x} - expected {}, received {}",
-                            parser.address(), register_address, request_value, value));
+                uint16_t reg = parser.read<uint16_t>();
+                uint16_t value = parser.read<uint16_t>();
+                if (reg != _commanded_address) {
+                    throw std::runtime_error(
+                            fmt::format("Invalid register {:04x}, expected {:04x}", reg, _commanded_address));
+                }
+                {
+                    std::lock_guard<std::mutex> lg(_registerMutex);
+                    _registers[_commanded_address] = value;
                 }
                 parser.checkCRC();
             },
             0x86);
 
     addResponse(
-            16,
+            PRESET_HOLDING_REGISTERS,
             [this](Modbus::Parser parser) {
-                uint16_t register_address = parser.read<uint16_t>();
-                uint16_t len = parser.read<uint16_t>();
-
-                uint16_t request_address = requestBufferU16(2);
-                uint16_t request_len = requestBufferU16(4);
-                if (register_address != request_address) {
-                    throw std::runtime_error(
-                            fmt::format("Invalid register for address {} - expected {:04x}, received {:04x}",
-                                        parser.address(), request_address, register_address));
+                if (parser.address() != _node_address) {
+                    throw std::runtime_error(fmt::format("Invalid ModBus address {}, expected {}",
+                                                         parser.address(), _node_address));
                 }
-                if (len != request_len) {
+                uint16_t reg = parser.read<uint16_t>();
+                uint16_t len = parser.read<uint16_t>();
+                if (reg != _commanded_address) {
                     throw std::runtime_error(
-                            fmt::format("Invalid lenght for address {} register - expected {}, received {}",
-                                        parser.address(), register_address, request_len, len));
+                            fmt::format("Invalid register {:04x}, expected {:04x}", reg, _commanded_address));
                 }
                 parser.checkCRC();
             },
             0x90);
 }
 
-void MPU::reset() {
-    _loop_state = loop_state_t::WAIT_WRITE;
-
-    _inputStatus.clear();
-    _registers.clear();
+void MPU::readInputStatus(uint16_t start_register_address, uint16_t count, uint32_t timing) {
+    callFunction(_node_address, READ_INPUT_STATUS, timing, start_register_address, count);
+    _commanded_address = start_register_address;
+    _commanded_length = count;
 }
 
-void MPU::presetHoldingRegisters(uint8_t address, uint16_t register_address, uint16_t* values, uint8_t count,
-                                 uint16_t timeout) {
-    Modbus::Buffer mbus;
-    mbus.write<uint8_t>(address);
-    mbus.write<uint8_t>(16);
-    mbus.write<uint16_t>(register_address);
-    mbus.write<uint16_t>(count);
-    mbus.write<uint8_t>(count * 2);
+void MPU::readHoldingRegisters(uint16_t start_register_address, uint16_t count, uint32_t timing) {
+    callFunction(_node_address, READ_HOLDING_REGISTERS, timing, start_register_address, count);
+    _commanded_address = start_register_address;
+}
 
-    for (uint8_t i = 0; i < count; i++) {
-        mbus.write<uint16_t>(values[i]);
+void MPU::presetHoldingRegister(uint16_t register_address, uint16_t value, uint32_t timing) {
+    callFunction(_node_address, PRESET_HOLDING_REGISTER, timing, register_address, value);
+    _commanded_address = register_address;
+}
+
+void MPU::presetHoldingRegisters(uint16_t start_register_address, const std::vector<uint16_t> &values,
+                                 uint32_t timing) {
+    callFunction(_node_address, PRESET_HOLDING_REGISTERS, timing, start_register_address,
+                 static_cast<uint16_t>(values.size()), static_cast<uint8_t>(values.size() * 2), values);
+    _commanded_address = start_register_address;
+}
+
+bool MPU::getInputStatus(uint16_t input_address) { return _inputStatus.at(input_address); }
+
+uint16_t MPU::getRegister(uint16_t address) {
+    std::lock_guard<std::mutex> lg(_registerMutex);
+    try {
+        return _registers.at(address);
+    } catch (std::out_of_range &e) {
+        throw std::runtime_error(fmt::format("Cannot retrieve holding register {}", address));
     }
-
-    mbus.writeCRC();
-    emplace(end(), Modbus::CommandRecord(mbus, timeout));
 }
