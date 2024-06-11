@@ -109,7 +109,9 @@ public:
 
     int closeFPGA(command_vec cmds) {
         _fpga->close();
-        delete _fpga;
+        if (_fpga_singleton == false) {
+            delete _fpga;
+        }
         _fpga = nullptr;
         return 0;
     }
@@ -125,7 +127,8 @@ public:
         } else {
             memcpy(dir, cmds[0].c_str(), cmds[0].length() + 1);
         }
-        _fpga = newFPGA(dir);
+        _fpga_singleton = false;
+        _fpga = newFPGA(dir, _fpga_singleton);
         _fpga->initialize();
         _fpga->open();
         return 0;
@@ -189,10 +192,11 @@ protected:
      * Creates new FPGA class. Pure virtual, must be overloaded.
      *
      * @param dir directory with
+     * @param fpga_singleton set to true if the returned pointer points to a singleton
      *
      * @return new FPGA class
      */
-    virtual fpga* newFPGA(const char* dir) = 0;
+    virtual fpga* newFPGA(const char* dir, bool& fpga_singleton) = 0;
 
     fpga* getFPGA() { return _fpga; }
 
@@ -201,6 +205,7 @@ private:
 
     bool _autoOpen;
     bool _timeIt;
+    bool _fpga_singleton;
 };
 
 /**
