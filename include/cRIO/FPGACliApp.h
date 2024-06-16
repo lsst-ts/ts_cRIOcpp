@@ -24,11 +24,10 @@
 #include <cRIO/CliApp.h>
 #include <cRIO/FPGA.h>
 #include <cRIO/PrintILC.h>
+#include <cRIO/SimpleFPGACliApp.h>
 
 namespace LSST {
 namespace cRIO {
-
-constexpr int NEED_FPGA = 0x01;
 
 typedef std::pair<std::shared_ptr<PrintILC>, uint8_t> ILCUnit;
 typedef std::list<ILCUnit> ILCUnits;
@@ -44,7 +43,7 @@ std::ostream& operator<<(std::ostream& stream, ILCUnit const& u);
  * custom FPGA and ILCs. ILCs are stored in list, as a @glos{ILC} class address ILCs
  * on single bus.
  */
-class FPGACliApp : public CliApp {
+class FPGACliApp : public TemplateFPGACliApp<FPGA> {
 public:
     /**
      * Construct FPGACliApp.
@@ -60,38 +59,14 @@ public:
      */
     virtual ~FPGACliApp();
 
-    /**
-     * Run the application.
-     *
-     * @return application return code
-     */
-    virtual int run(int argc, char* const argv[]);
-
-    int timeit(command_vec cmds);
     int setIlcTimeout(command_vec cmds);
-
-    int closeFPGA(command_vec cmds);
-    int openFPGA(command_vec cmds);
     int programILC(command_vec cmds);
-    int verbose(command_vec cmds);
 
 protected:
     void addILCCommand(const char* command, std::function<void(ILCUnit)> action, const char* help);
 
-    void processArg(int opt, char* optarg) override;
-    int processCommand(Command* cmd, const command_vec& args) override;
-
-    /**
-     * Creates new FPGA class. Pure virtual, must be overloaded.
-     *
-     * @param dir directory with
-     *
-     * @return new FPGA class
-     */
-    virtual FPGA* newFPGA(const char* dir) = 0;
     virtual ILCUnits getILCs(command_vec arguments) = 0;
 
-    FPGA* getFPGA() { return _fpga; }
     std::shared_ptr<PrintILC> getILC(int index) { return _ilcs[index]; }
 
     void addILC(std::shared_ptr<PrintILC> ilc) { _ilcs.push_back(ilc); }
@@ -120,7 +95,7 @@ protected:
     void runILCCommands(int32_t timeout) {
         for (auto ilcp : _ilcs) {
             if (ilcp->empty() == false) {
-                _fpga->ilcCommands(*ilcp, timeout);
+                getFPGA()->ilcCommands(*ilcp, timeout);
             }
         }
     }
@@ -147,14 +122,10 @@ protected:
     int32_t ilcTimeout;
 
 private:
-    FPGA* _fpga;
     std::vector<std::shared_ptr<PrintILC>> _ilcs;
     std::map<std::string, std::shared_ptr<MPU>> _mpu;
 
     ILCUnits _disabledILCs;
-
-    bool _autoOpen;
-    bool _timeIt;
 };
 
 }  // namespace cRIO
