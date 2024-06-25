@@ -82,12 +82,12 @@ public:
      * Construct record for the command send.
      *
      * @param _buffer Modbus buffer with command (address/function with possible arguments)
-     * @param _timming Maximal response time in microseconds
+     * @param _timing Maximal response time in microseconds
      */
-    CommandRecord(Buffer _buffer, uint32_t _timming) : buffer(_buffer), timming(_timming) {}
+    CommandRecord(Buffer _buffer, uint32_t _timing) : buffer(_buffer), timing(_timing) {}
 
     Buffer buffer;     ///< Buffer send to the bus
-    uint32_t timming;  ///< Timing value in microseconds. An error shall be thrown when the response isn't
+    uint32_t timing;  ///< Timing value in microseconds. An error shall be thrown when the response isn't
                        ///< received in the specified time.
 };
 
@@ -170,8 +170,8 @@ public:
      * @param func ModBus/@glos{ILC} function code
      * @param timing function call timing in microseconds (1/10^-6 second)
      */
-    void callFunction(uint8_t address, uint8_t func, uint32_t timming) {
-        emplace(end(), CommandRecord(Buffer(address, func), timming));
+    void callFunction(uint8_t address, uint8_t func, uint32_t timing) {
+        emplace(end(), CommandRecord(Buffer(address, func), timing));
     }
 
     /**
@@ -182,7 +182,7 @@ public:
      *
      * @param address ModBus/@glos{ILC} address
      * @param func ModBus/@glos{ILC} function code
-     * @param timming function call timing in microseconds (1/10^-6 second)
+     * @param timing function call timing in microseconds (1/10^-6 second)
      * @param ...params
      *
      * Intended usage:
@@ -198,8 +198,8 @@ public:
      * @endcode
      */
     template <typename... dt>
-    void callFunction(uint8_t address, uint8_t func, uint32_t timming, const dt &...params) {
-        emplace(end(), CommandRecord(Buffer(address, func, params...), timming));
+    void callFunction(uint8_t address, uint8_t func, uint32_t timing, const dt &...params) {
+        emplace(end(), CommandRecord(Buffer(address, func, params...), timing));
     }
 
     /**

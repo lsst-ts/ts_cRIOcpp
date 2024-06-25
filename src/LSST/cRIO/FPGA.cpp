@@ -67,8 +67,8 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
             data.push_back(FIFO::TX_MASK | ((static_cast<uint16_t>(b)) << 1));
         }
         data.push_back(FIFO::TX_FRAMEEND);
-        data.push_back(cmd.timming > 0x0FFF ? ((0x0FFF & ((cmd.timming / 1000) + 1)) | FIFO::TX_WAIT_LONG_RX)
-                                            : (cmd.timming | FIFO::TX_WAIT_RX));
+        data.push_back(cmd.timing > 0x0FFF ? ((0x0FFF & ((cmd.timing / 1000) + 1)) | FIFO::TX_WAIT_LONG_RX)
+                                           : (cmd.timing | FIFO::TX_WAIT_RX));
     }
 
     data.push_back(FIFO::TX_IRQTRIGGER);
