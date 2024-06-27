@@ -1,5 +1,5 @@
 /*
- * ILC Bus List handling communication (receiving and
+ * ILC Bus List handling communication (commanding ILCs and receiving replies).
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project

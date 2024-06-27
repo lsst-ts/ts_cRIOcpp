@@ -86,9 +86,9 @@ public:
      */
     CommandRecord(Buffer _buffer, uint32_t _timing) : buffer(_buffer), timing(_timing) {}
 
-    Buffer buffer;     ///< Buffer send to the bus
+    Buffer buffer;    ///< Buffer send to the bus
     uint32_t timing;  ///< Timing value in microseconds. An error shall be thrown when the response isn't
-                       ///< received in the specified time.
+                      ///< received in the specified time.
 };
 
 /**
