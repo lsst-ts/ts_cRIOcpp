@@ -265,6 +265,11 @@ inline void Buffer::write(std::vector<uint8_t> data) {
 }
 
 template <>
+inline void Buffer::write(std::vector<int8_t> data) {
+    writeVector<int8_t>(data);
+}
+
+template <>
 inline void Buffer::write(std::vector<uint16_t> data) {
     writeVector<uint16_t>(data);
 }

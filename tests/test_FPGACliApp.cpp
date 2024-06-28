@@ -57,7 +57,7 @@ public:
         addILCCommand("test", &testAction, "Test ILC calls");
     }
 
-    FPGA* newFPGA(const char* dir) override { return new TestFPGA(); }
+    FPGA* newFPGA(const char* dir, bool& fpga_singleton) override { return new TestFPGA(); }
     ILCUnits getILCs(command_vec arguments) override;
 
     void test();
