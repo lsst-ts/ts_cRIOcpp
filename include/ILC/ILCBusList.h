@@ -1,5 +1,5 @@
 /*
- * ILC Bus List handling communication (receiving and
+ * ILC Bus List handling communication (commanding ILCs and receiving replies).
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -129,6 +129,20 @@ protected:
     /**
      * Call broadcast function.
      *
+     * @param address broadcast address. Shall be 0, 148, 149, 250 or 255. Not checked if it is correct
+     * @param func function to call
+     * @param delay delay in us (microseconds) for broadcast processing. Bus will remain silence for this
+     * number of us to allow ModBus process the broadcast function
+     * @param counter broadcast counter. ModBus provides method to retrieve this
+     * in unicast function to verify the broadcast was received and processed
+     */
+    void broadcastFunction(uint8_t address, uint8_t func, uint32_t delay, uint8_t counter) {
+        callFunction(address, func, delay, counter);
+    }
+
+    /**
+     * Call broadcast function.
+     *
      * @param address broadcast address. Shall be 0, 148, 149 or 250. Not checked if in correct range
      * @param func function to call
      * @param delay delay in us (microseconds) for broadcast processing. Bus will remain silence for this
@@ -136,10 +150,12 @@ protected:
      * @param counter broadcast counter. ModBus provides method to retrieve this
      * in unicast function to verify the broadcast was received and processed
      * @param data function parameters. Usually device's bus ID indexed array
-     _
      */
+    template <typename data_type>
     void broadcastFunction(uint8_t address, uint8_t func, uint32_t delay, uint8_t counter,
-                           std::vector<uint8_t> data);
+                           std::vector<data_type> data = {}) {
+        callFunction(address, func, delay, counter, data);
+    }
 
     /**
      * Return next bus broadcast counter.

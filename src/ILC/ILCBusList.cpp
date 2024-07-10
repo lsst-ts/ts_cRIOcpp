@@ -93,11 +93,6 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
 
 ILCBusList::~ILCBusList() {}
 
-void ILCBusList::broadcastFunction(uint8_t address, uint8_t func, uint32_t delay, uint8_t counter,
-                                   std::vector<uint8_t> data) {
-    callFunction(address, func, delay, counter, data);
-}
-
 uint8_t ILCBusList::nextBroadcastCounter() {
     _broadcastCounter++;
     if (_broadcastCounter > 15) {
