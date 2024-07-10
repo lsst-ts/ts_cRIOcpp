@@ -243,6 +243,12 @@ public:
     void addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t error_reply,
                      std::function<void(uint8_t, uint8_t)> error_action = nullptr);
 
+    /**
+     * Modbus error mask. If the first bit is set in reply funcion code, the
+     * reply is error reply for Modbus function call.
+     */
+    static constexpr uint8_t MODBUS_ERROR_MASK = 0x80;
+
 private:
     std::list<ResponseRecord> _functions;
 

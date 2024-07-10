@@ -3,12 +3,9 @@ Version History
 ###############
 
 
-v1.11.2
--------
-* SensorMonitor ILC
-
 v1.11.1
 -------
+* SensorMonitor ILC
 * broadcast commands to step and freeze
 * SimpleFPGACliApp class
 

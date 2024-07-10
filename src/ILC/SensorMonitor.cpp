@@ -46,5 +46,5 @@ SensorMonitor::SensorMonitor(uint8_t bus) : ILCBusList(bus) {
 
                 processSensorValues(parser.address(), values);
             },
-            SENSOR_VALUES | 0x80);
+            SENSOR_VALUES | MODBUS_ERROR_MASK);
 }
