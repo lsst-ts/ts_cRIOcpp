@@ -60,12 +60,12 @@ struct Argument {
 
 AClass : public cRIO::Application {
 public:
-    AClass(const char * description) : Application(description), counter(0) {}
+    AClass(const char* description) : Application(description), counter(0) {}
     float counter;
 
 protected:
     void printUsage() override;
-    void processArg(int opt, char * optarg) override;
+    void processArg(int opt, char* optarg) override;
 };
 
 void AClass::printUsage() {
@@ -73,7 +73,7 @@ void AClass::printUsage() {
     Application::printUsage();
 }
 
-void AClass::processArg(int opt, char * optarg) {
+void AClass::processArg(int opt, char* optarg) {
     switch (opt)
     {
         case 'a':
@@ -90,7 +90,7 @@ void AClass::processArg(int opt, char * optarg) {
 
 AClass cli("description");
 
-int main(int argc, char * argv[])
+int main(int argc, const char* argv[])
 {
     cli.processArgs(argc, argv);
     std::cout << "Counter is " << cli.counter << std::endl;
