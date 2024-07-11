@@ -123,6 +123,8 @@ public:
         WRITE_VERIFY_APPLICATION = 103
     };
 
+    static constexpr uint8_t APPLICATION_PAGE_LENGTH = 192;
+
 protected:
     void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
                          uint8_t ilcSelectedOptions, uint8_t networkNodeOptions, uint8_t majorRev,

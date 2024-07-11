@@ -275,9 +275,9 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
     uint8_t *endData = data.data() + data.size();
     uint16_t dataAddress = _startAddress;
     while (startData < endData) {
-        std::vector<uint8_t> page(192);
+        std::vector<uint8_t> page(APPLICATION_PAGE_LENGTH);
         int i = 0;
-        while (i < 192) {
+        while (i < APPLICATION_PAGE_LENGTH) {
             for (int j = 0; j < 3; j++) {
                 page[i] = *startData;
                 i++;
@@ -286,7 +286,7 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
             // skip every fourth byte
             startData++;
         }
-        writeApplicationPage(address, dataAddress, 192, page);
+        writeApplicationPage(address, dataAddress, APPLICATION_PAGE_LENGTH, page);
         fpga->ilcCommands(*this, 5000);
 
         clear();
