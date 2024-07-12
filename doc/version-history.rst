@@ -8,6 +8,7 @@ v1.11.1
 * SensorMonitor ILC
 * broadcast commands to step and freeze
 * SimpleFPGACliApp class
+* More constants
 
 v1.11.0
 -------
