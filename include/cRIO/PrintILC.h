@@ -75,7 +75,7 @@ public:
      */
     void writeApplicationPage(uint8_t address, uint16_t startAddress, uint16_t length,
                               std::vector<uint8_t> data) {
-        callFunction(address, ILC_CLI_CMD::WRITE_APPLICATION_PAGE, 500000, startAddress, length, data);
+        callFunction(address, ILC_CLI_CMD::WRITE_APPLICATION_PAGE, 600000, startAddress, length, data);
     }
 
     /**
