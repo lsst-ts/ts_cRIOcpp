@@ -100,9 +100,32 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     clear();
 
     if (getLastMode(address) != ILC::Mode::Bootloader) {
-        changeILCMode(address, ILC::Mode::Bootloader);
-        fpga->ilcCommands(*this, ILC_TIMEOUT);
-        clear();
+        try {
+            changeILCMode(address, ILC::Mode::Bootloader);
+            fpga->ilcCommands(*this, ILC_TIMEOUT);
+            clear();
+        } catch (std::runtime_error &er) {
+            // particularly bootloader version 5.0 (used at M2 ILCs) shows
+            // problems reporting status. The following code rectivies that.
+            clear();
+
+            reportServerStatus(address);
+            fpga->ilcCommands(*this, ILC_TIMEOUT);
+            clear();
+            if (getLastMode(address) == ILC::Mode::Fault) {
+                changeILCMode(address, ILC::Mode::ClearFaults);
+                fpga->ilcCommands(*this, ILC_TIMEOUT);
+                clear();
+
+                reportServerStatus(address);
+                fpga->ilcCommands(*this, ILC_TIMEOUT);
+                clear();
+            }
+            if (getLastMode(address) != ILC::Mode::Bootloader) {
+                throw std::runtime_error(
+                        fmt::format("Cannot enter bootloader mode for ILC with address {}", address));
+            }
+        }
     }
 
     if (getLastMode(address) == ILC::Mode::Fault) {
