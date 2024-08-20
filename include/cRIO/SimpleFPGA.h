@@ -99,10 +99,10 @@ public:
      */
     void openDebugFile(const char* path);
 
-    void writeDebugFile(const char* message);
+    void writeDebugFile(const std::string& message);
 
     template <typename dt>
-    const void writeDebugFile(const char* message, const std::vector<dt>& data) {
+    const void writeDebugFile(const std::string& message, const std::vector<dt>& data) {
         if (_debug_stream.is_open()) {
             try {
                 auto now = std::chrono::system_clock::now();
@@ -117,7 +117,7 @@ public:
     }
 
     template <typename dt>
-    const void writeDebugFile(const char* message, dt* buf, size_t length) {
+    const void writeDebugFile(const std::string& message, dt* buf, size_t length) {
         if (_debug_stream.is_open()) {
             try {
                 auto now = std::chrono::system_clock::now();
@@ -132,7 +132,7 @@ public:
     }
 
     template <typename dt>
-    const void writeDebugFile(const char* message, ModbusBuffer& mb) {
+    const void writeDebugFile(const std::string& message, ModbusBuffer& mb) {
         if (_debug_stream.is_open()) {
             try {
                 auto now = std::chrono::system_clock::now();
@@ -146,7 +146,7 @@ public:
         }
     }
 
-    void writeDebugFile(const char* message, ModbusBuffer& mb);
+    void writeDebugFile(const std::string& message, ModbusBuffer& mb);
 
     void closeDebugFile();
 

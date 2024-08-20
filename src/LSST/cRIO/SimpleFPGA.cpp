@@ -47,7 +47,7 @@ void SimpleFPGA::openDebugFile(const char* path) {
     }
 }
 
-void SimpleFPGA::writeDebugFile(const char* message) {
+void SimpleFPGA::writeDebugFile(const std::string& message) {
     if (_debug_stream.is_open()) {
         try {
             auto now = std::chrono::system_clock::now();
