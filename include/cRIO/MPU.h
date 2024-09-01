@@ -38,6 +38,12 @@
 namespace LSST {
 namespace cRIO {
 
+struct CommandedInfo {
+    CommandedInfo(uint16_t _addres, uint16_t _length) : address(_addres), length(_length) {}
+    uint16_t address;
+    uint16_t length;
+};
+
 /**
  * The Modbus Processing Unit class. Prepares buffer with commands to send to
  * FPGA, read responses & telemetry values.
@@ -138,8 +144,7 @@ private:
     /**
      * Address of register/input which will be read by the command
      */
-    uint16_t _commanded_address = 0;
-    uint16_t _commanded_length = 0;
+    std::list<CommandedInfo> _commanded_info;
 
     std::mutex _registerMutex;
 
