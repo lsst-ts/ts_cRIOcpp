@@ -162,6 +162,7 @@ uint16_t MPU::getRegister(uint16_t address) {
     try {
         return _registers.at(address);
     } catch (std::out_of_range &e) {
-        throw std::runtime_error(fmt::format("Cannot retrieve holding register {}", address));
+        throw std::runtime_error(
+                fmt::format("Cannot retrieve holding register {} (0x{:04x})", address, address));
     }
 }
