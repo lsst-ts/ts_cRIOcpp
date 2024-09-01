@@ -138,6 +138,8 @@ void TestFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, b
     if (cmp) {
         std::string l;
         std::getline(_outStream, l);
+        // trim
+        l = l.erase(l.find_last_not_of("\r\n") + 1);
         CHECK(l == ss.str());
     }
     std::cout << ss.str() << std::endl;
