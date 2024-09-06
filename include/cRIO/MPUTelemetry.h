@@ -38,41 +38,12 @@ public:
      *
      * @param data[45] data as received from FPGA
      */
-    MPUTelemetry(uint8_t* data);
-    uint32_t writeBytes;    /// Number of bytes written
-    uint32_t readBytes;     /// Number of bytes read
-    uint16_t readTimedout;  /// read timedout counter
+    MPUTelemetry(const uint8_t* data);
+
+    uint64_t writeBytes;  /// Number of bytes written
+    uint64_t readBytes;   /// Number of bytes read
 
     friend std::ostream& operator<<(std::ostream& os, const MPUTelemetry& tel);
-
-    /**
-     * Updates MPU telemetry SAL message structure.
-     *
-     * @tparam message class with telemetry filed. Shall be SAL declared class
-     * @param msg message to check and update
-     *
-     * @return true if message shall be send, false if updates are minor and it should not be send
-     */
-    template <class message>
-    bool sendUpdates(message* msg) {
-        return false;
-
-        /**
-    if (msg->readBytes != readBytes || msg->writeTimedout != writeTimedout ||
-        msg->instructionPointerOnError != instructionPointerOnError || msg->errorCode != errorCode) {
-        send = true;
-    }
-    msg->instructionPointer = instructionPointer;
-    msg->outputCounter = outputCounter;
-    msg->inputCounter = inputCounter;
-    msg->outputTimeouts = outputTimeouts;
-    msg->inputTimeouts = inputTimeouts;
-    msg->instructionPointerOnError = instructionPointerOnError;
-    msg->writeTimeout = writeTimeout;
-    msg->readTimeout = readTimeout;
-    msg->errorCode = errorCode;
-    return send; */
-    }
 };
 
 }  // namespace cRIO

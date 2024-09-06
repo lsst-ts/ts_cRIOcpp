@@ -4,7 +4,7 @@ Version History
 
 v1.12.0
 -------
-* simplified MPU commonication
+* simplified MPU communication
 
 v1.11.1
 -------
