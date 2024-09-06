@@ -2,6 +2,8 @@
 *.o
 *.a
 
+build
+
 tests/test_*
 !tests/test_*.cpp
 !tests/test_*.c
