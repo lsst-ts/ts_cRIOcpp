@@ -116,7 +116,7 @@ TEST_CASE("WriteIxx", "[ILC]") {
     REQUIRE_NOTHROW(parser.checkCRC());
 }
 
-TEST_CASE("WriteSGL", "[ModbusBuffer]") {
+TEST_CASE("WriteSGL", "[Modbus::Buffer]") {
     Buffer mbuf;
     mbuf.write<uint8_t>(1);
     mbuf.write<uint8_t>(2);

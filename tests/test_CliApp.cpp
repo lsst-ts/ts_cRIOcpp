@@ -31,9 +31,9 @@
 using namespace LSST::cRIO;
 using Catch::Approx;
 
-class AClass : public CliApp {
+class CClass : public CliApp {
 public:
-    AClass(const char* name, const char* description)
+    CClass(const char* name, const char* description)
             : CliApp(name, description), interactive(false), test_count(0) {}
     bool interactive;
     int test_count;
@@ -68,7 +68,7 @@ protected:
     void processArg(int opt, char* optarg) override;
 };
 
-void AClass::processArg(int opt, char* optarg) {
+void CClass::processArg(int opt, char* optarg) {
     switch (opt) {
         case 'h':
             printAppHelp();
@@ -83,8 +83,8 @@ void AClass::processArg(int opt, char* optarg) {
 }
 
 TEST_CASE("Test CliApp", "[CliApp]") {
-    AClass cli("name", "description");
-    cli.addCommand("testcmd", std::bind(&AClass::testCmd, &cli, std::placeholders::_1), "s", 0,
+    CClass cli("name", "description");
+    cli.addCommand("testcmd", std::bind(&CClass::testCmd, &cli, std::placeholders::_1), "s", 0,
                    "[ALL|command]", "Prints all command or command help.");
 
     const int argc = 3;
@@ -101,8 +101,8 @@ TEST_CASE("Test CliApp", "[CliApp]") {
 }
 
 TEST_CASE("Test int format", "[CliApp]") {
-    AClass cli("name", "description");
-    cli.addCommand("testcmd", std::bind(&AClass::testInt, &cli, std::placeholders::_1), "I", 0, "[address]",
+    CClass cli("name", "description");
+    cli.addCommand("testcmd", std::bind(&CClass::testInt, &cli, std::placeholders::_1), "I", 0, "[address]",
                    "Prints memory at given address.");
 
     const int argc = 1;
@@ -133,8 +133,8 @@ TEST_CASE("Test int format", "[CliApp]") {
 }
 
 TEST_CASE("Test Hex format", "[CliApp]") {
-    AClass cli("name", "description");
-    cli.addCommand("testcmd", std::bind(&AClass::testHex, &cli, std::placeholders::_1), "H", 0, "[address]",
+    CClass cli("name", "description");
+    cli.addCommand("testcmd", std::bind(&CClass::testHex, &cli, std::placeholders::_1), "H", 0, "[address]",
                    "Prints memory at given address.");
 
     const int argc = 1;
@@ -165,8 +165,8 @@ TEST_CASE("Test Hex format", "[CliApp]") {
 }
 
 TEST_CASE("Test double format", "[CliApp]") {
-    AClass cli("name", "description");
-    cli.addCommand("testcmd", std::bind(&AClass::testDouble, &cli, std::placeholders::_1), "D", 0,
+    CClass cli("name", "description");
+    cli.addCommand("testcmd", std::bind(&CClass::testDouble, &cli, std::placeholders::_1), "D", 0,
                    "[address]", "Set a parameter.");
 
     const int argc = 1;

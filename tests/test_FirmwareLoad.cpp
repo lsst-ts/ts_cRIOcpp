@@ -39,10 +39,10 @@ public:
     TestILC(uint8_t bus) : ILC::ILCBusList(bus), PrintILC(bus) {}
 };
 
-class TestFPGA : public FPGA {
+class FirmwareLoadFPGA : public FPGA {
 public:
-    TestFPGA() : FPGA(SS), _call(0) {}
-    ~TestFPGA() { _outStream.close(); }
+    FirmwareLoadFPGA() : FPGA(SS), _call(0) {}
+    ~FirmwareLoadFPGA() { _outStream.close(); }
 
     void setOutFile(const char* filename) { _outStream.open(filename, std::ifstream::in); }
 
@@ -69,12 +69,12 @@ private:
     void _printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp = false);
 };
 
-void TestFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
+void FirmwareLoadFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     _printBuffer(data, length, "C>", true);
     _call = 0xff & (data[5] >> 1);
 }
 
-void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) {
+void FirmwareLoadFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     if (length == 1) {
         switch (_call) {
             case 18:
@@ -128,7 +128,7 @@ void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeo
     _printBuffer(data, length, "R<");
 }
 
-void TestFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp) {
+void FirmwareLoadFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp) {
     std::stringstream ss;
     ss << prefix << " ";
     CliApp::printHexBuffer(data, length, ss);
@@ -147,7 +147,7 @@ TEST_CASE("Test load ILC", "[FirmwareLoad]") {
     hex.load("data/ILC-3.hex");
 
     TestILC tILC(1);
-    TestFPGA testFPGA;
+    FirmwareLoadFPGA testFPGA;
     REQUIRE_NOTHROW(testFPGA.setOutFile("data/ILC-3.out"));
     REQUIRE_NOTHROW(tILC.programILC(&testFPGA, 18, hex));
 }
