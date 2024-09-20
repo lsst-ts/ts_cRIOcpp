@@ -20,28 +20,6 @@ jobs:
         make
         make junit || true
 
-  centos:
-    runs-on: ubuntu-latest
-    name: Test compile on Centos7
-    container:
-      image: centos/devtoolset-7-toolchain-centos7
-      options: -u root
-    steps:
-    - name: Install dependencies
-      run: |
-        yum install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
-        yum install -y make catch-devel readline-devel yaml-cpp-devel git
-    - name: Checkout
-      uses: actions/checkout@v3
-    - name: make junit
-      run: |
-        git clone https://github.com/gabime/spdlog.git
-        mv spdlog/include/spdlog include/
-        git clone https://github.com/fmtlib/fmt
-        mv fmt/include/fmt include
-        make
-        make junit || true
-
   ubuntu:
     runs-on: ubuntu-latest
     name: Test compile on Ubuntu

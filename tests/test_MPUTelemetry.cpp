@@ -29,31 +29,13 @@
 using namespace LSST::cRIO;
 
 uint8_t data[16] = {
-        0x01, 0x02, 0x03, 0x04,  // write bytes
-        0x05, 0x06, 0x07, 0x08,  // read HW bytes
+        0x01, 0x02, 0x03, 0x04, 0x10, 0x20, 0x30, 0x40,  // write bytes
+        0x05, 0x06, 0x07, 0x08, 0x50, 0x60, 0x70, 0x80   // read HW bytes
 };
 
 TEST_CASE("Test MPU telemetry class", "[MPUTelemetry]") {
     MPUTelemetry mpuTel(data);
 
-    REQUIRE(mpuTel.writeBytes == 0x01020304);
-}
-
-struct testMsg_t {
-    uint32_t writeBytes;  // Written bytes
-};
-
-TEST_CASE("Test MPU sending", "[MPUTelemetry]") {
-    MPUTelemetry mpuTel(data);
-
-    struct testMsg_t testMsg;
-    memset(&testMsg, '0', sizeof(testMsg));
-
-    // TODO add test once telemetry will be again reporetd through SAL
-
-    // REQUIRE(mpuTel.sendUpdates(&testMsg) == true);
-    // REQUIRE(mpuTel.sendUpdates(&testMsg) == false);
-
-    // REQUIRE(mpuTel.sendUpdates(&testMsg) == true);
-    // REQUIRE(mpuTel.sendUpdates(&testMsg) == false);
+    CHECK(mpuTel.writeBytes == 0x0102030410203040);
+    CHECK(mpuTel.readBytes == 0x0506070850607080);
 }

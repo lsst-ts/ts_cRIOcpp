@@ -125,10 +125,11 @@ public:
     /**
      * Commands FPGA to write to MPU commands buffer.
      *
+     * @param mpu Modbus Processing Unit that shall be written
      * @param data data to write to the MPU command buffer
      * @param timeout timeout in milliseconds
      */
-    virtual void writeMPUFIFO(const std::vector<uint8_t>& data, uint32_t timeout) = 0;
+    virtual void writeMPUFIFO(MPU& mpu, const std::vector<uint8_t>& data, uint32_t timeout) = 0;
 
     /**
      * Commands FPGA to copy MPU output FIFO to FPGA-C/C++ output FIFO. This

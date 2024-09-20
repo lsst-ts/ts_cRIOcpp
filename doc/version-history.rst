@@ -2,12 +2,17 @@
 Version History
 ###############
 
+v1.12.0
+-------
+* simplified MPU communication
 
 v1.11.1
 -------
 * SensorMonitor ILC
 * broadcast commands to step and freeze
 * SimpleFPGACliApp class
+* formatDuration template class
+* More constants
 
 v1.11.0
 -------

@@ -23,6 +23,7 @@
 #include <unistd.h>
 
 #include <cRIO/CliApp.h>
+#include <cRIO/formatDuration.h>
 #include <cRIO/SimpleFPGA.h>
 
 namespace LSST {
@@ -181,8 +182,8 @@ protected:
         auto end = std::chrono::steady_clock::now();
 
         if (_timeIt) {
-            std::chrono::duration<double> diff = end - start;
-            std::cout << "Took " << std::setprecision(3) << (diff.count() * 1000.0) << " ms" << std::endl;
+            std::cout << "Took " << std::setprecision(3) << std::fixed << formatDuration(end - start)
+                      << std::endl;
         }
 
         return ret;

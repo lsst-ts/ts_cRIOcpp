@@ -100,9 +100,32 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
     clear();
 
     if (getLastMode(address) != ILC::Mode::Bootloader) {
-        changeILCMode(address, ILC::Mode::Bootloader);
-        fpga->ilcCommands(*this, ILC_TIMEOUT);
-        clear();
+        try {
+            changeILCMode(address, ILC::Mode::Bootloader);
+            fpga->ilcCommands(*this, ILC_TIMEOUT);
+            clear();
+        } catch (std::runtime_error &er) {
+            // particularly bootloader version 5.0 (used at M2 ILCs) shows
+            // problems reporting status. The following code rectivies that.
+            clear();
+
+            reportServerStatus(address);
+            fpga->ilcCommands(*this, ILC_TIMEOUT);
+            clear();
+            if (getLastMode(address) == ILC::Mode::Fault) {
+                changeILCMode(address, ILC::Mode::ClearFaults);
+                fpga->ilcCommands(*this, ILC_TIMEOUT);
+                clear();
+
+                reportServerStatus(address);
+                fpga->ilcCommands(*this, ILC_TIMEOUT);
+                clear();
+            }
+            if (getLastMode(address) != ILC::Mode::Bootloader) {
+                throw std::runtime_error(
+                        fmt::format("Cannot enter bootloader mode for ILC with address {}", address));
+            }
+        }
     }
 
     if (getLastMode(address) == ILC::Mode::Fault) {
@@ -275,9 +298,9 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
     uint8_t *endData = data.data() + data.size();
     uint16_t dataAddress = _startAddress;
     while (startData < endData) {
-        std::vector<uint8_t> page(192);
+        std::vector<uint8_t> page(APPLICATION_PAGE_LENGTH);
         int i = 0;
-        while (i < 192) {
+        while (i < APPLICATION_PAGE_LENGTH) {
             for (int j = 0; j < 3; j++) {
                 page[i] = *startData;
                 i++;
@@ -286,7 +309,7 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
             // skip every fourth byte
             startData++;
         }
-        writeApplicationPage(address, dataAddress, 192, page);
+        writeApplicationPage(address, dataAddress, APPLICATION_PAGE_LENGTH, page);
         fpga->ilcCommands(*this, 5000);
 
         clear();
