@@ -152,15 +152,12 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
 
 void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
     for (auto cmd : mpu) {
-        // construct buffer to send
-        std::vector<uint8_t> data;
-
         writeMPUFIFO(mpu, cmd.buffer, 0);
 
         // read reply
         auto answer = readMPUFIFO(mpu);
         if (answer.empty()) {
-            throw std::runtime_error(fmt::format("Empty answer to {}", Modbus::hexDump(data)));
+            throw std::runtime_error(fmt::format("Empty answer to {}", Modbus::hexDump(cmd.buffer)));
         }
         mpu.parse(answer);
         mpu.reset();
