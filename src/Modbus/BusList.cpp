@@ -28,6 +28,8 @@ using namespace Modbus;
 
 BusList::BusList() {}
 
+int BusList::responseLength(const std::vector<uint8_t> &response) { return -1; }
+
 void BusList::parse(Parser parser) {
     auto exp_address = at(_parsed_index).buffer.address();
     auto exp_func = at(_parsed_index).buffer.func();

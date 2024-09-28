@@ -366,3 +366,21 @@ TEST_CASE("Test MPU preset holding registers by simplymodbus.ca", "[MPU]") {
 
     CHECK_NOTHROW(mpu.parse(std::vector<uint8_t>({0x11, 0x10, 0x00, 0x01, 0x00, 0x02, 0x12, 0x98})));
 }
+
+TEST_CASE("Test responseLength calculations", "[ResponseLength]") {
+    TestMPU mpu(5, 0x11);
+
+    CHECK(mpu.responseLength({0x11, 0x83}) == 5);
+
+    CHECK(mpu.responseLength({0x11, MPU::MODBUS_CMD::READ_INPUT_STATUS}) == -1);
+    CHECK(mpu.responseLength({0x11, MPU::MODBUS_CMD::READ_INPUT_STATUS, 0x02}) == 7);
+
+    CHECK(mpu.responseLength({0x11, MPU::MODBUS_CMD::READ_HOLDING_REGISTERS}) == -1);
+    CHECK(mpu.responseLength({0x11, MPU::MODBUS_CMD::READ_HOLDING_REGISTERS, 0x08}) == 13);
+
+    CHECK(mpu.responseLength({0x11, MPU::MODBUS_CMD::PRESET_HOLDING_REGISTER}) == 8);
+    CHECK(mpu.responseLength({0x11, MPU::MODBUS_CMD::PRESET_HOLDING_REGISTER, 0x11, 0x22, 0x33, 0x44}) == 8);
+
+    CHECK(mpu.responseLength({0x11, MPU::MODBUS_CMD::PRESET_HOLDING_REGISTERS}) == 8);
+    CHECK(mpu.responseLength({0x11, MPU::MODBUS_CMD::PRESET_HOLDING_REGISTERS, 0x11, 0x22, 0x33, 0x44}) == 8);
+}

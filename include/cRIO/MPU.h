@@ -73,6 +73,8 @@ public:
      */
     MPU(uint8_t bus, uint8_t node_address);
 
+    int responseLength(const std::vector<uint8_t> &response) override;
+
     /**
      * Returns bus number (internal FPGA identifier).
      *

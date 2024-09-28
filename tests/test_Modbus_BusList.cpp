@@ -44,7 +44,7 @@ TestList::TestList(uint8_t _expectedAddress) : expectedAddress(_expectedAddress)
                 uint16_t reg1 = parser.read<uint16_t>();
                 uint16_t reg2 = parser.read<uint16_t>();
                 uint16_t reg3 = parser.read<uint16_t>();
-                REQUIRE_NOTHROW(parser.checkCRC());
+                CHECK_NOTHROW(parser.checkCRC());
                 processReadRegister(parser.address(), reg1, reg2, reg3);
             },
             131);
@@ -66,9 +66,9 @@ TEST_CASE("Call functions", "[Calls]") {
     buslist.callFunction(43, 86, 200, static_cast<float>(0.1122), static_cast<int16_t>(-1234),
                          static_cast<uint64_t>(0x0123456789abcdef));
 
-    REQUIRE(buslist.size() == 2);
+    CHECK(buslist.size() == 2);
 
-    REQUIRE(buslist[0].buffer.size() == 11);
+    CHECK(buslist[0].buffer.size() == 11);
     CHECK(buslist[0].buffer[0] == 0x7b);
     CHECK(buslist[0].buffer[1] == 0x11);
     CHECK(buslist[0].buffer[2] == 0xfe);
@@ -81,7 +81,7 @@ TEST_CASE("Call functions", "[Calls]") {
     CHECK(buslist[0].buffer[9] == 0x4b);
     CHECK(buslist[0].buffer[10] == 0xa7);
 
-    REQUIRE(buslist[1].buffer.size() == 18);
+    CHECK(buslist[1].buffer.size() == 18);
     CHECK(buslist[1].buffer[0] == 0x2b);
     CHECK(buslist[1].buffer[1] == 0x56);
     CHECK(buslist[1].buffer[2] == 0x3d);
@@ -109,7 +109,7 @@ TEST_CASE("Call function, parser return", "[Parsing]") {
 
     std::vector<uint8_t> data({0x11, 0x03, 0x06, 0xAE, 0x41, 0x56, 0x52, 0x43, 0x40, 0x49, 0xAD});
 
-    REQUIRE_NOTHROW(buslist.parse(data));
+    CHECK_NOTHROW(buslist.parse(data));
 }
 
 TEST_CASE("Call 10 functions, parser return", "[Parsing]") {
@@ -127,7 +127,7 @@ TEST_CASE("Call 10 functions, parser return", "[Parsing]") {
 
     for (int address = 1; address < 10; address++) {
         buslist.expectedAddress = address;
-        REQUIRE_NOTHROW(buslist.parse(generateReply(address)));
+        CHECK_NOTHROW(buslist.parse(generateReply(address)));
     }
 }
 
@@ -146,14 +146,14 @@ TEST_CASE("Missing response", "[BusListErrors]") {
 
     for (uint8_t address = 1; address < 10; address++) {
         buslist.expectedAddress = address;
-        REQUIRE_NOTHROW(buslist.parse(generateReply(address)));
+        CHECK_NOTHROW(buslist.parse(generateReply(address)));
     }
 
     buslist.reset();
 
     for (uint8_t address = 1; address < 10; address++) {
         buslist.expectedAddress = address;
-        REQUIRE_THROWS_AS(buslist.parse(generateReply(address + 1)), MissingResponse);
+        CHECK_THROWS_AS(buslist.parse(generateReply(address + 1)), MissingResponse);
     }
 
     buslist.reset();
@@ -161,23 +161,30 @@ TEST_CASE("Missing response", "[BusListErrors]") {
     // test MissingResponse is thrown properly in expected processing sequences
 
     buslist.expectedAddress = 1;
-    REQUIRE_THROWS_AS(buslist.parse(generateReply(2)), MissingResponse);
+    CHECK_THROWS_AS(buslist.parse(generateReply(2)), MissingResponse);
     buslist.expectedAddress = 2;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(2)));
+    CHECK_NOTHROW(buslist.parse(generateReply(2)));
     buslist.expectedAddress = 3;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(3)));
+    CHECK_NOTHROW(buslist.parse(generateReply(3)));
     buslist.expectedAddress = 4;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(4)));
+    CHECK_NOTHROW(buslist.parse(generateReply(4)));
     buslist.expectedAddress = 5;
-    REQUIRE_THROWS_AS(buslist.parse(generateReply(7)), MissingResponse);
+    CHECK_THROWS_AS(buslist.parse(generateReply(7)), MissingResponse);
     buslist.expectedAddress = 6;
-    REQUIRE_THROWS_AS(buslist.parse(generateReply(7)), MissingResponse);
+    CHECK_THROWS_AS(buslist.parse(generateReply(7)), MissingResponse);
     buslist.expectedAddress = 7;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(7)));
+    CHECK_NOTHROW(buslist.parse(generateReply(7)));
     buslist.expectedAddress = 8;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(8)));
+    CHECK_NOTHROW(buslist.parse(generateReply(8)));
     buslist.expectedAddress = 9;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(9)));
+    CHECK_NOTHROW(buslist.parse(generateReply(9)));
     buslist.expectedAddress = 9;
-    REQUIRE_THROWS_AS(buslist.parse(generateReply(10)), std::out_of_range);
+    CHECK_THROWS_AS(buslist.parse(generateReply(10)), std::out_of_range);
+}
+
+TEST_CASE("Response length calculations", "[ResponseLength]") {
+    TestList buslist(1);
+
+    CHECK(buslist.responseLength({}) == -1);
+    CHECK(buslist.responseLength({0x01, 0x02}) == -1);
 }

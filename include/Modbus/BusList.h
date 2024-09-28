@@ -203,6 +203,17 @@ public:
     }
 
     /**
+     * Returns number of expected bytes, given the reply so far received. Child
+     * subclasses shall overwrite the method.
+     *
+     * @param response received response data.
+     *
+     * @return Total size of the response expected. If the passed response doesn't contain
+     * all data needed to calculate its length, returns -1.
+     */
+    virtual int responseLength(const std::vector<uint8_t> &response);
+
+    /**
      * Process @glos{ILC} response. Address and function of the response are checked if
      *
      * @throw MissingResponse when response for the address is missing. The
