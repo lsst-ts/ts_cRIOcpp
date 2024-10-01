@@ -28,11 +28,11 @@ using namespace LSST::cRIO;
 
 class TestMPU : public MPU {
 public:
-    TestMPU(uint8_t bus, uint8_t mpu_address) : MPU(bus, mpu_address) {}
+    TestMPU(uint8_t mpu_address) : MPU(mpu_address) {}
 };
 
 TEST_CASE("Test MPU read input status", "[MPU]") {
-    TestMPU mpu(1, 0x11);
+    TestMPU mpu(0x11);
     mpu.readInputStatus(0x00C4, 0x0016, 108);
 
     CHECK(mpu.size() == 1);
@@ -90,7 +90,7 @@ TEST_CASE("Test MPU read input status", "[MPU]") {
 }
 
 TEST_CASE("Test MPU read holding registers", "[MPU]") {
-    TestMPU mpu(1, 12);
+    TestMPU mpu(12);
     mpu.readHoldingRegisters(3, 10, 101);
 
     CHECK(mpu.size() == 1);
@@ -132,7 +132,7 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
 }
 
 TEST_CASE("Test MPU reading multiple registers - failed response", "[MPU]") {
-    TestMPU mpu(1, 12);
+    TestMPU mpu(12);
     mpu.readHoldingRegisters(3, 10, 101);
 
     CHECK(mpu.size() == 1);
@@ -195,7 +195,7 @@ TEST_CASE("Test MPU reading multiple registers - failed response", "[MPU]") {
 }
 
 TEST_CASE("Test MPU reading multiple registers - successful response", "[MPU]") {
-    TestMPU mpu(1, 12);
+    TestMPU mpu(12);
     mpu.readHoldingRegisters(3, 10, 101);
 
     auto commands = mpu[0].buffer;
@@ -287,7 +287,7 @@ TEST_CASE("Test MPU reading multiple registers - successful response", "[MPU]") 
 }
 
 TEST_CASE("Test MPU preset holding register", "[MPU]") {
-    TestMPU mpu(5, 0x11);
+    TestMPU mpu(0x11);
 
     mpu.presetHoldingRegister(0x0001, 0x0003, 102);
 
@@ -310,7 +310,7 @@ TEST_CASE("Test MPU preset holding register", "[MPU]") {
 }
 
 TEST_CASE("Test MPU preset holding registers", "[MPU]") {
-    TestMPU mpu(5, 17);
+    TestMPU mpu(17);
 
     std::vector<uint16_t> regs = {0x0102, 0x0304};
     mpu.presetHoldingRegisters(0x1718, regs, 102);
@@ -339,7 +339,7 @@ TEST_CASE("Test MPU preset holding registers", "[MPU]") {
 }
 
 TEST_CASE("Test MPU preset holding registers by simplymodbus.ca", "[MPU]") {
-    TestMPU mpu(5, 0x11);
+    TestMPU mpu(0x11);
 
     std::vector<uint16_t> regs = {0x000A, 0x0102};
     mpu.presetHoldingRegisters(0x0001, regs, 102);
@@ -368,7 +368,7 @@ TEST_CASE("Test MPU preset holding registers by simplymodbus.ca", "[MPU]") {
 }
 
 TEST_CASE("Test responseLength calculations", "[ResponseLength]") {
-    TestMPU mpu(5, 0x11);
+    TestMPU mpu(0x11);
 
     CHECK(mpu.responseLength({0x11, 0x83}) == 5);
 

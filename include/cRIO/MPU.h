@@ -68,19 +68,11 @@ public:
     /**
      * Construct MPU class.
      *
-     * @param bus MPU bus number (internal FPGA identifier)
      * @param node_address MPU ModBus address
      */
-    MPU(uint8_t bus, uint8_t node_address);
+    MPU(uint8_t node_address);
 
     int responseLength(const std::vector<uint8_t> &response) override;
-
-    /**
-     * Returns bus number (internal FPGA identifier).
-     *
-     * @return MPU bus number
-     */
-    uint8_t getBus() { return _bus; }
 
     /**
      * Read input registers.

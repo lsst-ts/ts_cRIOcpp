@@ -150,19 +150,5 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
     reportTime(beginTs, endTs);
 }
 
-void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
-    for (auto cmd : mpu) {
-        writeMPUFIFO(mpu, cmd.buffer, 0);
-
-        // read reply
-        auto answer = readMPUFIFO(mpu);
-        if (answer.empty()) {
-            throw std::runtime_error(fmt::format("Empty answer to {}", Modbus::hexDump(cmd.buffer)));
-        }
-        mpu.parse(answer);
-        mpu.reset();
-    }
-}
-
 }  // namespace cRIO
 }  // namespace LSST

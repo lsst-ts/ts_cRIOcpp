@@ -29,7 +29,7 @@
 
 using namespace LSST::cRIO;
 
-MPU::MPU(uint8_t bus, uint8_t node_address) : _bus(bus), _node_address(node_address) {
+MPU::MPU(uint8_t node_address) : _bus(0), _node_address(node_address) {
     addResponse(
             READ_INPUT_STATUS,
             [this](Modbus::Parser parser) {

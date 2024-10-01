@@ -411,13 +411,13 @@ public:
      * Called before responses are processed (before processXX methods are
      * called).
      */
-    virtual void preProcess() {};
+    virtual void preProcess(){};
 
     /**
      * Called after responses are processed (after processXX methods are
      * called).
      */
-    virtual void postProcess() {};
+    virtual void postProcess(){};
 
     /**
      * Thrown when an unknown response function is received. As unknown function
