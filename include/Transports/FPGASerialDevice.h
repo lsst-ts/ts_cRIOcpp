@@ -46,10 +46,10 @@ public:
 
     void write(const unsigned char* buf, size_t len) override;
 
-    std::vector<uint8_t> read(size_t len, std::chrono::duration<long int> timeout,
+    std::vector<uint8_t> read(size_t len, std::chrono::microseconds timeout,
                               LSST::cRIO::Thread* calling_thread = NULL) override;
 
-    void commands(Modbus::BusList& bus_list, std::chrono::duration<long int> timeout,
+    void commands(Modbus::BusList& bus_list, std::chrono::microseconds timeout,
                   LSST::cRIO::Thread* calling_thread = NULL) override;
 
     void telemetry(uint64_t& write_bytes, uint64_t& read_bytes) override;

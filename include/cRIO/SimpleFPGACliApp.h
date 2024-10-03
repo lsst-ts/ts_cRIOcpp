@@ -108,7 +108,15 @@ public:
 
     int setIlcTimeout(command_vec cmds);
 
+    /**
+     * Closes FPGA.
+     *
+     * @warning Assumes threads runnings in the application are created in
+     * openFPGA. Call stopAllThread first.
+     */
     int closeFPGA(command_vec cmds) {
+        stopAllThreads();
+
         _fpga->close();
         if (_fpga_singleton == false) {
             delete _fpga;
@@ -117,7 +125,11 @@ public:
         return 0;
     }
 
-    int openFPGA(command_vec cmds) {
+    /**
+     * Opens FPGA. Can be overwritten in subclasses to create threads which
+     * needs FPGA opened.
+     */
+    virtual int openFPGA(command_vec cmds) {
         if (_fpga != nullptr) {
             std::cerr << "FPGA already opened!" << std::endl;
             return 1;

@@ -70,7 +70,7 @@ public:
      *
      * @throw std::runtime_error on failure
      */
-    virtual std::vector<uint8_t> read(size_t len, std::chrono::duration<long int> timeout,
+    virtual std::vector<uint8_t> read(size_t len, std::chrono::microseconds timeout,
                                       LSST::cRIO::Thread* calling_thread = NULL) = 0;
 
     /**
@@ -85,7 +85,7 @@ public:
      * @param timeout timeout to sleep before reading
      * @param calling_thread thread calling the read. Used for waits.
      */
-    virtual void commands(Modbus::BusList& bus_list, std::chrono::duration<long int> timeout,
+    virtual void commands(Modbus::BusList& bus_list, std::chrono::microseconds timeout,
                           LSST::cRIO::Thread* calling_thread = NULL) = 0;
 
     /**

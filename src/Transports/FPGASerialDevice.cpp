@@ -43,7 +43,7 @@ void FPGASerialDevice::write(const unsigned char* buf, size_t len) {
                                     NULL));
 }
 
-std::vector<uint8_t> FPGASerialDevice::read(size_t len, std::chrono::duration<long int> timeout,
+std::vector<uint8_t> FPGASerialDevice::read(size_t len, std::chrono::microseconds timeout,
                                             LSST::cRIO::Thread* thread) {
     auto end = std::chrono::steady_clock::now() + timeout;
 
@@ -53,7 +53,7 @@ std::vector<uint8_t> FPGASerialDevice::read(size_t len, std::chrono::duration<lo
 
     do {
         if (not_run == false) {
-            auto end_wait = std::chrono::steady_clock::now() + std::chrono::milliseconds(10);
+            auto end_wait = std::chrono::steady_clock::now() + std::chrono::microseconds(10);
 
             auto end_time = end_wait < end ? end_wait : end;
 
@@ -96,7 +96,7 @@ std::vector<uint8_t> FPGASerialDevice::read(size_t len, std::chrono::duration<lo
     return ret;
 }
 
-void FPGASerialDevice::commands(Modbus::BusList& bus_list, std::chrono::duration<long int> timeout,
+void FPGASerialDevice::commands(Modbus::BusList& bus_list, std::chrono::microseconds timeout,
                                 Thread* calling_thread) {
     for (auto cmd : bus_list) {
         write(cmd.buffer.data(), cmd.buffer.size());
