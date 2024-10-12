@@ -29,8 +29,12 @@
 using namespace LSST::cRIO;
 using namespace Transports;
 
-FPGASerialDevice::FPGASerialDevice(uint32_t fpga_session, int write_fifo, int read_fifo)
-        : _fpga_session(fpga_session), _write_fifo(write_fifo), _read_fifo(read_fifo) {}
+FPGASerialDevice::FPGASerialDevice(uint32_t fpga_session, int write_fifo, int read_fifo,
+                                   std::chrono::microseconds quiet_time)
+        : _fpga_session(fpga_session),
+          _write_fifo(write_fifo),
+          _read_fifo(read_fifo),
+          _quiet_time(quiet_time) {}
 
 void FPGASerialDevice::write(const unsigned char* buf, size_t len) {
     assert(len < 255);
@@ -45,7 +49,8 @@ void FPGASerialDevice::write(const unsigned char* buf, size_t len) {
 
 std::vector<uint8_t> FPGASerialDevice::read(size_t len, std::chrono::microseconds timeout,
                                             LSST::cRIO::Thread* thread) {
-    auto end = std::chrono::steady_clock::now() + timeout;
+    auto now = std::chrono::steady_clock::now();
+    auto end = now + timeout;
 
     std::vector<uint8_t> ret;
 
@@ -53,7 +58,7 @@ std::vector<uint8_t> FPGASerialDevice::read(size_t len, std::chrono::microsecond
 
     do {
         if (not_run == false) {
-            auto end_wait = std::chrono::steady_clock::now() + std::chrono::microseconds(10);
+            auto end_wait = std::chrono::steady_clock::now() + std::chrono::milliseconds(10);
 
             auto end_time = end_wait < end ? end_wait : end;
 
@@ -74,41 +79,38 @@ std::vector<uint8_t> FPGASerialDevice::read(size_t len, std::chrono::microsecond
 
         uint8_t response[2];
         NiThrowError("Reading FIFO reading response and its length",
-                     NiFpga_WriteFifoU8(_fpga_session, _read_fifo, response, 2, 1, NULL));
+                     NiFpga_ReadFifoU8(_fpga_session, _read_fifo, response, 2, 1, NULL));
 
         if (response[0] != 2) {
-            throw std::runtime_error(fmt::format("Invalid reply from bus - {}, expected 2", response[0]));
+            throw std::runtime_error(
+                    fmt::format("Invalid reply from FIFO #{} - {}, expected 2", _read_fifo, response[0]));
         }
-        if (response[1] == 0) {
-            continue;
+        if (response[1] != 0) {
+            NiThrowError("ThermalFPGA::readMPUFIFO: reading response",
+                         NiFpga_ReadFifoU8(_fpga_session, _read_fifo, data, response[1], 0, NULL));
+
+            ret.insert(ret.end(), data, data + response[1]);
+            if (ret.size() >= len) {
+                break;
+            }
         }
 
-        NiThrowError("ThermalFPGA::readMPUFIFO: reading response",
-                     NiFpga_ReadFifoU8(_fpga_session, _read_fifo, data, response[1], 0, NULL));
-
-        ret.insert(ret.end(), data, data + response[1]);
-        if (ret.size() >= len) {
-            break;
-        }
-
-    } while (end <= std::chrono::steady_clock::now());
+        now = std::chrono::steady_clock::now();
+    } while (end > now);
 
     return ret;
 }
 
 void FPGASerialDevice::commands(Modbus::BusList& bus_list, std::chrono::microseconds timeout,
                                 Thread* calling_thread) {
-    for (auto cmd : bus_list) {
-        write(cmd.buffer.data(), cmd.buffer.size());
+    auto end = std::chrono::steady_clock::now() + timeout;
 
-        // read reply
-        auto answer = read(4, timeout, calling_thread);
-        if (answer.empty()) {
-            throw std::runtime_error(fmt::format("Empty answer to {}", Modbus::hexDump(cmd.buffer)));
-        }
-        bus_list.parse(answer);
-        bus_list.reset();
+    for (auto cmd : bus_list) {
+        execute_command(cmd.buffer, bus_list, end, calling_thread);
+        std::this_thread::sleep_for(_quiet_time);
     }
+
+    bus_list.clear();
 }
 
 void FPGASerialDevice::telemetry(uint64_t& write_bytes, uint64_t& read_bytes) {
@@ -118,10 +120,11 @@ void FPGASerialDevice::telemetry(uint64_t& write_bytes, uint64_t& read_bytes) {
 
     uint8_t response[17];
     NiThrowError("Reading FIFO reading telemetry",
-                 NiFpga_WriteFifoU8(_fpga_session, _read_fifo, response, 17, 1, NULL));
+                 NiFpga_ReadFifoU8(_fpga_session, _read_fifo, response, 17, 1, NULL));
 
     if (response[0] != 0) {
-        throw std::runtime_error("Invalid response - expected 3, received " + std::to_string(response[0]));
+        throw std::runtime_error(fmt::format("Invalid response from FIFO #{} - expected 3, received ",
+                                             _read_fifo, response[0]));
     }
 
     write_bytes = be64toh(*(reinterpret_cast<const uint64_t*>(response + 1)));

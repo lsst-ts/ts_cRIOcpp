@@ -1,5 +1,5 @@
 /*
- * Serial communication through FPGA FIFOs.
+ * Class supporting software simulated connections.
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -20,30 +20,32 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __Transports_FPGASerialDevice__
-#define __Transports_FPGASerialDevice__
+#ifndef __Transports_SimulatedTransport__
+#define __Transports_SimulatedTransport__
 
 #include <chrono>
 
-#include "Transport.h"
+#include <Modbus/Buffer.h>
+#include <Transports/Transport.h>
 
 namespace Transports {
 
 /**
- * Communicate with various serial devices hooked on cRIO serial ports.
+ * Template for union combining value representation and access to its bytes.
  */
-class FPGASerialDevice : public Transport {
+template <typename T>
+union BytesValue {
+    uint8_t bytes[sizeof(T)];
+    T value;
+};
+
+/**
+ * Base class for software simulation of the Transport connection. Provides
+ * buffer where responses to function shall be recorded.
+ */
+class SimulatedTransport : public Transport {
 public:
-    /**
-     * Construct object to communicate with serial device connected to cRIO.
-     * The FPGA in cRIO shall use SerialDevice.vi to communicate with the device.
-     *
-     * @param fpga_session
-     * @param write_fifo
-     * @param read_fifo
-     */
-    FPGASerialDevice(uint32_t fpga_session, int write_fifo, int read_fifo,
-                     std::chrono::microseconds quiet_time);
+    SimulatedTransport();
 
     void write(const unsigned char* buf, size_t len) override;
 
@@ -55,13 +57,26 @@ public:
 
     void telemetry(uint64_t& write_bytes, uint64_t& read_bytes) override;
 
+protected:
+    /**
+     * Generate response to a command. Child classes shall overwrite the method to provide response. Response
+     * shall be added to _response buffer.
+     *
+     * @param buf buffer with command
+     * @param len buffer size
+     */
+    virtual void generate_response(const unsigned char* buf, size_t len) = 0;
+
+    /**
+     * Buffer to store response.
+     */
+    Modbus::Buffer _response;
+
 private:
-    uint32_t _fpga_session;
-    int _write_fifo;
-    int _read_fifo;
-    std::chrono::microseconds _quiet_time;
+    uint64_t _bytes_written;
+    uint64_t _bytes_read;
 };
 
 }  // namespace Transports
 
-#endif  // !__Transports_FPGASerialDevice__
+#endif  // !__Transports_SimulatedTransport__

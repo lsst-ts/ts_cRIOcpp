@@ -48,10 +48,30 @@ public:
      * @param address Expected @glos{ILC} address, for which response wasn't received
      * @param func Expected function which wasn't responded by the @glos{ILC}
      */
-    MissingResponse(uint8_t address, uint8_t func)
+    MissingResponse(uint8_t address, uint8_t called)
             : std::runtime_error(
-                      fmt::format("Missing response for function {0} (0x{0:02x}) from ILC with address {1}",
-                                  func, address)) {}
+                      fmt::format("Missing response for function {0} (0x{0:02x}) from ILC with address {i1}",
+                                  called, address)) {}
+};
+
+/**
+ * Error thrown when a wrong response is received. This is mostly caused by an
+ * @glos{ILC} on the bus being dead/not reacting to the command send. The next
+ * address is then received.
+ */
+class WrongResponse : public std::runtime_error {
+public:
+    /**
+     * Construct missing response exception.
+     *
+     * @param address Expected @glos{ILC} address, for which response wasn't received
+     * @param func Expected function which wasn't responded by the @glos{ILC}
+     */
+    WrongResponse(uint8_t address, uint8_t exp_address, uint8_t called, uint8_t exp_func)
+            : std::runtime_error(
+                      fmt::format("Wrong response: expected function {0} (0x{0:02x}) from ILC with "
+                                  "address {1} - received {2} from {3}",
+                                  exp_func, exp_address, called, address)) {}
 };
 
 /**
@@ -111,7 +131,26 @@ public:
     const uint8_t func;                                  ///< sucessfull response function code
     std::function<void(Parser)> action;                  ///< action to call on sucessfull response
     const uint8_t error_reply;                           ///< error response code
-    std::function<void(uint8_t, uint8_t)> error_action;  ///< action to call on the error response
+    std::function<void(uint8_t, uint8_t)> error_action;  ///< action to call on the error response. Arguments
+                                                         ///< are address and error /< code received from ILC
+};
+
+/**
+ * Holds error statistics - last received error, its error code, time received
+ * and number of errors so far.
+ */
+class ErrorRecord {
+public:
+    ErrorRecord();
+
+    void record(uint8_t func, uint8_t error);
+    void reset();
+
+private:
+    uint8_t last_error_function;
+    uint8_t last_error_code;
+    uint64_t error_count;
+    std::chrono::time_point<std::chrono::steady_clock> last_occurence;
 };
 
 /**
@@ -262,6 +301,8 @@ public:
 
 private:
     std::list<ResponseRecord> _functions;
+
+    std::map<uint8_t, ErrorRecord> _errors;
 
     size_t _parsed_index = 0;
 };

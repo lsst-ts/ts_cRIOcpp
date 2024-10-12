@@ -132,7 +132,14 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
                 // don't break here - data also ends when timestamp is received
             case FIFO::RX_ENDFRAME:
                 if (decoded.empty() == false) {
-                    ilc.parse(decoded);
+                    while (true) {
+                        try {
+                            ilc.parse(decoded);
+                            break;
+                        } catch (Modbus::WrongResponse &wr) {
+                            SPDLOG_WARN(wr.what());
+                        }
+                    }
                     decoded.clear();
                     reportTime(beginTs, endTs);
                     beginTs = endTs;

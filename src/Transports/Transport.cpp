@@ -29,7 +29,7 @@ void Transport::execute_command(std::vector<uint8_t> command, Modbus::BusList& b
                                 LSST::cRIO::Thread* calling_thread) {
     auto now = std::chrono::steady_clock::now();
     if (now >= end) {
-        throw std::runtime_error("Timeout while waiting for FlowMeter response");
+        throw std::runtime_error("Timeout while waiting for Transport response");
     }
 
     write(command.data(), command.size());
@@ -41,14 +41,21 @@ void Transport::execute_command(std::vector<uint8_t> command, Modbus::BusList& b
         // read reply
         auto chunk = read(expected_len, std::chrono::duration_cast<std::chrono::microseconds>(end - now),
                           calling_thread);
+
         answer.insert(answer.end(), chunk.begin(), chunk.end());
 
         expected_len = bus_list.responseLength(answer);
+
         if (expected_len < 0) {
             expected_len = 0;
-        } else if (expected_len <= static_cast<int>(answer.size())) {
-            break;
+        } else {
+            expected_len -= answer.size();
+            if (expected_len <= 0) {
+                break;
+            }
         }
+
+        now = std::chrono::steady_clock::now();
     }
 
     if (answer.empty()) {

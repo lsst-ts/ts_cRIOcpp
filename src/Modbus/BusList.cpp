@@ -26,6 +26,25 @@
 
 using namespace Modbus;
 
+ErrorRecord::ErrorRecord() {
+    last_error_function = 0;
+    last_error_code = 0;
+    error_count = 0;
+}
+
+void ErrorRecord::record(uint8_t func, uint8_t error) {
+    last_error_function = func;
+    last_error_code = error;
+    last_occurence = std::chrono::steady_clock::now();
+    error_count++;
+}
+
+void ErrorRecord::reset() {
+    last_error_function = 0;
+    last_error_code = 0;
+    error_count = 0;
+}
+
 BusList::BusList() {}
 
 int BusList::responseLength(const std::vector<uint8_t> &response) { return -1; }
@@ -37,9 +56,9 @@ void BusList::parse(Parser parser) {
     uint8_t address = parser.address();
     uint8_t called = parser.func();
 
-    if (address != exp_address || called != exp_func) {
+    if (address != exp_address || (called & ~MODBUS_ERROR_MASK) != exp_func) {
         _parsed_index++;
-        throw MissingResponse(exp_address, exp_func);
+        throw WrongResponse(address, exp_address, called, exp_func);
     }
 
     for (auto func_record : _functions) {
@@ -50,7 +69,16 @@ void BusList::parse(Parser parser) {
         }
 
         if (func_record.error_reply == called) {
-            func_record.error_action(address, called);
+            uint8_t error = parser.read<uint8_t>();
+            parser.checkCRC();
+            _errors[address].record(called, error);
+
+            if (func_record.error_action != nullptr) {
+                func_record.error_action(address, error);
+            } else {
+                SPDLOG_WARN("Error reply from - function {} ({}), address {}", called, func_record.func,
+                            address);
+            }
             _parsed_index++;
             return;
         }
