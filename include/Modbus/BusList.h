@@ -50,7 +50,7 @@ public:
      */
     MissingResponse(uint8_t address, uint8_t called)
             : std::runtime_error(
-                      fmt::format("Missing response for function {0} (0x{0:02x}) from ILC with address {i1}",
+                      fmt::format("Missing response for function {0} (0x{0:02x}) from ILC with address {1}",
                                   called, address)) {}
 };
 
