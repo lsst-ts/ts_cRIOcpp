@@ -29,7 +29,7 @@
 
 using namespace LSST::cRIO;
 
-MPU::MPU(uint8_t bus, uint8_t node_address) : _bus(bus), _node_address(node_address) {
+MPU::MPU(uint8_t node_address) : _bus(0), _node_address(node_address) {
     addResponse(
             READ_INPUT_STATUS,
             [this](Modbus::Parser parser) {
@@ -133,26 +133,52 @@ MPU::MPU(uint8_t bus, uint8_t node_address) : _bus(bus), _node_address(node_addr
             0x90);
 }
 
+int MPU::responseLength(const std::vector<uint8_t> &response) {
+    if (response.size() < 2) {
+        return -1;
+    }
+
+    // Modbus error response. 5 bytes total - address, function, error code, CRC checksum
+    switch (response[1]) {
+        case READ_INPUT_STATUS:
+        case READ_HOLDING_REGISTERS:
+            if (response.size() < 3) {
+                return -1;
+            }
+            return 5 + response[2];
+
+        case PRESET_HOLDING_REGISTER:
+        case PRESET_HOLDING_REGISTERS:
+            return 8;
+
+        default:
+            if ((response[1] & 0x80) == 0x80) {
+                return 5;
+            }
+            throw std::runtime_error(fmt::format("Invalid function for responseLength: {}", response[1]));
+    }
+}
+
 void MPU::readInputStatus(uint16_t start_register_address, uint16_t count, uint32_t timing) {
     callFunction(_node_address, READ_INPUT_STATUS, timing, start_register_address, count);
-    _commanded_info.push_back(CommandedInfo(start_register_address, count));
+    _commanded_info.emplace_back(start_register_address, count);
 }
 
 void MPU::readHoldingRegisters(uint16_t start_register_address, uint16_t count, uint32_t timing) {
     callFunction(_node_address, READ_HOLDING_REGISTERS, timing, start_register_address, count);
-    _commanded_info.push_back(CommandedInfo(start_register_address, count));
+    _commanded_info.emplace_back(start_register_address, count);
 }
 
 void MPU::presetHoldingRegister(uint16_t register_address, uint16_t value, uint32_t timing) {
     callFunction(_node_address, PRESET_HOLDING_REGISTER, timing, register_address, value);
-    _commanded_info.push_back(CommandedInfo(register_address, 0));
+    _commanded_info.emplace_back(register_address, 0);
 }
 
 void MPU::presetHoldingRegisters(uint16_t start_register_address, const std::vector<uint16_t> &values,
                                  uint32_t timing) {
     callFunction(_node_address, PRESET_HOLDING_REGISTERS, timing, start_register_address,
                  static_cast<uint16_t>(values.size()), static_cast<uint8_t>(values.size() * 2), values);
-    _commanded_info.push_back(CommandedInfo(start_register_address, values.size()));
+    _commanded_info.emplace_back(start_register_address, values.size());
 }
 
 bool MPU::getInputStatus(uint16_t input_address) { return _inputStatus.at(input_address); }

@@ -132,7 +132,14 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
                 // don't break here - data also ends when timestamp is received
             case FIFO::RX_ENDFRAME:
                 if (decoded.empty() == false) {
-                    ilc.parse(decoded);
+                    while (true) {
+                        try {
+                            ilc.parse(decoded);
+                            break;
+                        } catch (Modbus::WrongResponse &wr) {
+                            SPDLOG_WARN(wr.what());
+                        }
+                    }
                     decoded.clear();
                     reportTime(beginTs, endTs);
                     beginTs = endTs;
@@ -148,23 +155,6 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
     // ilc.checkCommandedEmpty();
 
     reportTime(beginTs, endTs);
-}
-
-void FPGA::mpuCommands(MPU &mpu, const std::chrono::duration<double> &timeout) {
-    for (auto cmd : mpu) {
-        // construct buffer to send
-        std::vector<uint8_t> data;
-
-        writeMPUFIFO(mpu, cmd.buffer, 0);
-
-        // read reply
-        auto answer = readMPUFIFO(mpu);
-        if (answer.empty()) {
-            throw std::runtime_error(fmt::format("Empty answer to {}", Modbus::hexDump(data)));
-        }
-        mpu.parse(answer);
-        mpu.reset();
-    }
 }
 
 }  // namespace cRIO
