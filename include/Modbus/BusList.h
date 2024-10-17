@@ -305,6 +305,8 @@ public:
     void addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t error_reply,
                      std::function<void(uint8_t, uint8_t)> error_action = nullptr);
 
+    ErrorRecord get_error_record(uint8_t address) { return _errors[address]; }
+
     /**
      * Modbus error mask. If the first bit is set in reply funcion code, the
      * reply is error reply for Modbus function call.
