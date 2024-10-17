@@ -153,7 +153,7 @@ TEST_CASE("Missing response", "[BusListErrors]") {
 
     for (uint8_t address = 1; address < 10; address++) {
         buslist.expectedAddress = address;
-        CHECK_THROWS_AS(buslist.parse(generateReply(address + 1)), MissingResponse);
+        CHECK_THROWS_AS(buslist.parse(generateReply(address + 1)), WrongResponse);
     }
 
     buslist.reset();
@@ -161,7 +161,7 @@ TEST_CASE("Missing response", "[BusListErrors]") {
     // test MissingResponse is thrown properly in expected processing sequences
 
     buslist.expectedAddress = 1;
-    CHECK_THROWS_AS(buslist.parse(generateReply(2)), MissingResponse);
+    CHECK_THROWS_AS(buslist.parse(generateReply(2)), WrongResponse);
     buslist.expectedAddress = 2;
     CHECK_NOTHROW(buslist.parse(generateReply(2)));
     buslist.expectedAddress = 3;
@@ -169,9 +169,9 @@ TEST_CASE("Missing response", "[BusListErrors]") {
     buslist.expectedAddress = 4;
     CHECK_NOTHROW(buslist.parse(generateReply(4)));
     buslist.expectedAddress = 5;
-    CHECK_THROWS_AS(buslist.parse(generateReply(7)), MissingResponse);
+    CHECK_THROWS_AS(buslist.parse(generateReply(7)), WrongResponse);
     buslist.expectedAddress = 6;
-    CHECK_THROWS_AS(buslist.parse(generateReply(7)), MissingResponse);
+    CHECK_THROWS_AS(buslist.parse(generateReply(7)), WrongResponse);
     buslist.expectedAddress = 7;
     CHECK_NOTHROW(buslist.parse(generateReply(7)));
     buslist.expectedAddress = 8;
