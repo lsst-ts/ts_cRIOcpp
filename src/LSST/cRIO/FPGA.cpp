@@ -137,7 +137,9 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
                             ilc.parse(decoded);
                             break;
                         } catch (Modbus::WrongResponse &wr) {
-                            SPDLOG_WARN(wr.what());
+                            // ILC code takes care of reporting this error. For
+                            // FPGA, it means to skip the ILC - there wasn't
+                            // response from it
                         }
                     }
                     decoded.clear();

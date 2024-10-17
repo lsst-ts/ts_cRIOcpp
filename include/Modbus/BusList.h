@@ -55,9 +55,9 @@ public:
 };
 
 /**
- * Error thrown when a wrong response is received. This is mostly caused by an
- * @glos{ILC} on the bus being dead/not reacting to the command send. The next
- * address is then received.
+ * Error thrown when a wrong addressed response is received. This is mostly
+ * caused by an @glos{ILC} on the bus being dead/not reacting to the command
+ * send. The next address is then received.
  */
 class WrongResponse : public std::runtime_error {
 public:
@@ -143,7 +143,19 @@ class ErrorRecord {
 public:
     ErrorRecord();
 
-    void record(uint8_t func, uint8_t error);
+    /**
+     * Record error occurence.
+     *
+     * @param func error function number
+     * @param error error code
+     *
+     * @return true if the error is new and shall be reported. False otherwise.
+     */
+    bool record(uint8_t func, uint8_t error);
+
+    /**
+     * Reset error record. Error count is set to 0.
+     */
     void reset();
 
 private:
