@@ -143,7 +143,19 @@ class ErrorRecord {
 public:
     ErrorRecord();
 
-    void record(uint8_t func, uint8_t error);
+    /**
+     * Record error occurence.
+     *
+     * @param func error function number
+     * @param error error code
+     *
+     * @return true if the error is new and shall be reported. False otherwise.
+     */
+    bool record(uint8_t func, uint8_t error);
+
+    /**
+     * Reset error record. Error count is set to 0.
+     */
     void reset();
 
 private:
