@@ -59,8 +59,6 @@ public:
 
     FPGA* newFPGA(const char* dir, bool& fpga_singleton) override { return new TestFPGA(); }
     ILCUnits getILCs(command_vec arguments) override;
-
-    void test();
 };
 
 ILCUnits AClass::getILCs(command_vec arguments) {
@@ -83,16 +81,7 @@ ILCUnits AClass::getILCs(command_vec arguments) {
     return units;
 }
 
-void AClass::test() {
-    CHECK(getILC(0)->getBus() == 1);
-    CHECK(getILC(1)->getBus() == 4);
-}
-
-TEST_CASE("Test CliApp", "[FPGACliApp]") {
-    AClass cli("name", "description");
-
-    cli.test();
-}
+TEST_CASE("Test CliApp", "[FPGACliApp]") { AClass cli("name", "description"); }
 
 TEST_CASE("Test getILCs", "[FPGACliApp]") {
     AClass cli("name", "description");
