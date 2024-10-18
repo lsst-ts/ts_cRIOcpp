@@ -44,8 +44,10 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
                   "Temporary disable given ILC in * commands");
     addILCCommand("@enable", std::bind(&FPGACliApp::enableILC, this, std::placeholders::_1),
                   "Re-enable given ILC in * commands");
-    addILCCommand("info", [](ILCUnit u) { u.first->reportServerID(u.second); }, "Print ILC info");
-    addILCCommand("status", [](ILCUnit u) { u.first->reportServerStatus(u.second); }, "Print ILC status");
+    addILCCommand(
+            "info", [](ILCUnit u) { u.first->reportServerID(u.second); }, "Print ILC info");
+    addILCCommand(
+            "status", [](ILCUnit u) { u.first->reportServerStatus(u.second); }, "Print ILC status");
     addILCCommand(
             "standby", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::Standby); },
             "Change ILC mode to standby");
@@ -61,7 +63,8 @@ FPGACliApp::FPGACliApp(const char* name, const char* description)
     addILCCommand(
             "clear-faults", [](ILCUnit u) { u.first->changeILCMode(u.second, ILC::Mode::ClearFaults); },
             "Clear ILC faults");
-    addILCCommand("reset", [](ILCUnit u) { u.first->resetServer(u.second); }, "Reset server");
+    addILCCommand(
+            "reset", [](ILCUnit u) { u.first->resetServer(u.second); }, "Reset server");
 
     addCommand("program-ilc", std::bind(&FPGACliApp::programILC, this, std::placeholders::_1), "FS?",
                NEED_FPGA, "<firmware hex file> <ILC...>", "Program ILC with new firmware.");
