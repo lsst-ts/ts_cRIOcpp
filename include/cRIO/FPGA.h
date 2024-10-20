@@ -113,36 +113,6 @@ public:
     virtual void ilcCommands(ILC::ILCBusList& ilc, int32_t timeout);
 
     /**
-     * Sends MPU commands to command FIFO. MPU command buffer must be filled
-     * before calling this method. Read outs data if data output was specified in MPU commands. If you would
-     * like to split commanding and reading code, please use writeMPUFIFO and readMPUFIFO.
-     *
-     * @param mpu Modbus Processing Unit containing the commands.
-     * @param timeout timeout to sleep before reading. Default to 500ms.
-     */
-    void mpuCommands(MPU& mpu, const std::chrono::duration<double>& timeout = 500ms);
-
-    /**
-     * Commands FPGA to write to MPU commands buffer.
-     *
-     * @param mpu Modbus Processing Unit that shall be written
-     * @param data data to write to the MPU command buffer
-     * @param timeout timeout in milliseconds
-     */
-    virtual void writeMPUFIFO(MPU& mpu, const std::vector<uint8_t>& data, uint32_t timeout) = 0;
-
-    /**
-     * Commands FPGA to copy MPU output FIFO to FPGA-C/C++ output FIFO. This
-     * method will dump data from MPU to FIFO which C/C++ can read, and reads
-     * the data.
-     *
-     * @param mpu Modbus Processing Unit to read the data
-     *
-     * @return data read from the port
-     */
-    virtual std::vector<uint8_t> readMPUFIFO(MPU& mpu) = 0;
-
-    /**
      * Writes buffer to command FIFO. Command FIFO is processed in
      * CommandMultiplexer Vi.
      *

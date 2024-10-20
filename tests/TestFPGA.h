@@ -53,10 +53,6 @@ public:
     uint16_t getTxCommand(uint8_t bus) override { return FPGAAddress::MODBUS_A_TX; }
     uint16_t getRxCommand(uint8_t bus) override { return FPGAAddress::MODBUS_A_RX; }
     uint32_t getIrq(uint8_t bus) override { return 1; }
-    void writeMPUFIFO(LSST::cRIO::MPU& mpu, const std::vector<uint8_t>& data, uint32_t timeout) override {}
-    std::vector<uint8_t> readMPUFIFO(LSST::cRIO::MPU&) override {
-        return std::vector<uint8_t>({0xff, 0x0fe});
-    }
     void writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void writeRequestFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
     void readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) override;
