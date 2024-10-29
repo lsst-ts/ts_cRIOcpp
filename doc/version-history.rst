@@ -2,6 +2,10 @@
 Version History
 ###############
 
+v1.13.1
+-------
+* Flush method to flush transport's serial port buffers
+
 v1.13.0
 -------
 * Glycol temperature readout from FPGA serial line
