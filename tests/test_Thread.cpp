@@ -41,35 +41,35 @@ protected:
 
 TEST_CASE("Test thread join without stop", "[Thread]") {
     TestThread thread;
-    REQUIRE_NOTHROW(thread.start());
+    CHECK_NOTHROW(thread.start());
 
-    REQUIRE(true);
+    CHECK(true);
 }
 
 TEST_CASE("Test thread join with stop", "[Thread]") {
     TestThread thread;
-    REQUIRE_NOTHROW(thread.start());
+    CHECK_NOTHROW(thread.start());
 
-    REQUIRE(thread.joinable() == true);
+    CHECK(thread.joinable() == true);
     // wait for more than default 2ms, as thread is sleeping for 1ms and processing
     // on CI can sometimes take longer then 1ms
-    REQUIRE_NOTHROW(thread.stop(5ms));
-    REQUIRE(thread.joinable() == false);
+    CHECK_NOTHROW(thread.stop(5ms));
+    CHECK(thread.joinable() == false);
 
-    REQUIRE(true);
+    CHECK(true);
 }
 
 TEST_CASE("Test thread multiple stop calls", "[Thread]") {
     TestThread thread;
-    REQUIRE_NOTHROW(thread.start());
+    CHECK_NOTHROW(thread.start());
 
-    REQUIRE(thread.joinable() == true);
-    REQUIRE_NOTHROW(thread.stop(5ms));
-    REQUIRE(thread.joinable() == false);
-    REQUIRE_NOTHROW(thread.stop());
-    REQUIRE(thread.joinable() == false);
+    CHECK(thread.joinable() == true);
+    CHECK_NOTHROW(thread.stop(5ms));
+    CHECK(thread.joinable() == false);
+    CHECK_NOTHROW(thread.stop());
+    CHECK(thread.joinable() == false);
 
-    REQUIRE(true);
+    CHECK(true);
 }
 
 std::atomic<int> stop_calls(0);
@@ -99,59 +99,73 @@ private:
 
 TEST_CASE("Test thread multiple stop calls from multiple threads", "[Thread]") {
     TestThread thread;
-    REQUIRE_NOTHROW(thread.start());
+    CHECK_NOTHROW(thread.start());
 
-    REQUIRE(thread.joinable() == true);
+    CHECK(thread.joinable() == true);
 
     StopThread* stops[20];
     for (int i = 0; i < 20; i++) {
         stops[i] = new StopThread(&thread);
-        REQUIRE_NOTHROW(stops[i]->start(5ms));
+        CHECK_NOTHROW(stops[i]->start(5ms));
     }
 
     std::this_thread::sleep_for(10ms);
 
-    REQUIRE(thread.joinable() == false);
-    REQUIRE(stop_calls > 20);
-    REQUIRE(stop_success > 0);
-    REQUIRE(stop_success + stop_failed == stop_calls);
+    CHECK(thread.joinable() == false);
+    CHECK(stop_calls > 20);
+    CHECK(stop_success > 0);
+    CHECK(stop_success + stop_failed == stop_calls);
 
     for (auto i = 0; i < 10; i++) {
-        REQUIRE_NOTHROW(stops[i]->stop());
-        REQUIRE_NOTHROW(delete stops[i]);
+        CHECK_NOTHROW(stops[i]->stop());
+        CHECK_NOTHROW(delete stops[i]);
     }
 
     for (auto i = 10; i < 20; i++) {
-        REQUIRE_NOTHROW(delete stops[i]);
+        CHECK_NOTHROW(delete stops[i]);
     }
 
-    REQUIRE(true);
+    CHECK(true);
 }
 
 TEST_CASE("Test thread destructor", "[Thread]") {
     TestThread* thread = new TestThread();
-    REQUIRE_NOTHROW(thread->start());
+    CHECK_NOTHROW(thread->start());
 
-    REQUIRE_NOTHROW(delete thread);
+    CHECK_NOTHROW(delete thread);
 }
 
 TEST_CASE("Test thread stop and destructor", "[Thread]") {
     TestThread* thread = new TestThread();
-    REQUIRE_NOTHROW(thread->start());
+    CHECK_NOTHROW(thread->start());
 
-    REQUIRE_NOTHROW(thread->stop());
-    REQUIRE_NOTHROW(delete thread);
+    CHECK_NOTHROW(thread->stop());
+    CHECK_NOTHROW(delete thread);
 }
 
 TEST_CASE("Test thread is running", "[Thread]") {
     TestThread* thread = new TestThread();
-    REQUIRE_NOTHROW(thread->start());
+    CHECK_NOTHROW(thread->start());
 
-    REQUIRE_NOTHROW(thread->isRunning() == true);
+    CHECK_NOTHROW(thread->isRunning() == true);
 
-    REQUIRE_NOTHROW(thread->stop());
+    CHECK_NOTHROW(thread->stop());
 
-    REQUIRE_NOTHROW(thread->isRunning() == false);
+    CHECK_NOTHROW(thread->isRunning() == false);
 
-    REQUIRE_NOTHROW(delete thread);
+    CHECK_NOTHROW(delete thread);
+}
+
+TEST_CASE("Test wait_until method", "[Thread]") {
+    TestThread thread;
+
+    thread.start();
+
+    auto end = std::chrono::steady_clock::now() + std::chrono::milliseconds(10);
+
+    CHECK(thread.wait_until(end) == true);
+
+    CHECK_NOTHROW(thread.stop());
+
+    CHECK(thread.wait_until(end) == false);
 }

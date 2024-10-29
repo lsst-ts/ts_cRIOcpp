@@ -48,10 +48,30 @@ public:
      * @param address Expected @glos{ILC} address, for which response wasn't received
      * @param func Expected function which wasn't responded by the @glos{ILC}
      */
-    MissingResponse(uint8_t address, uint8_t func)
+    MissingResponse(uint8_t address, uint8_t called)
             : std::runtime_error(
-                      fmt::format("Missing response for function {0} (0x{0:02x}) from ILC with address {1}",
-                                  func, address)) {}
+                      fmt::format("Missing response for function {0} (0x{0:02x}) from ILC with address {i1}",
+                                  called, address)) {}
+};
+
+/**
+ * Error thrown when a wrong addressed response is received. This is mostly
+ * caused by an @glos{ILC} on the bus being dead/not reacting to the command
+ * send. The next address is then received.
+ */
+class WrongResponse : public std::runtime_error {
+public:
+    /**
+     * Construct missing response exception.
+     *
+     * @param address Expected @glos{ILC} address, for which response wasn't received
+     * @param func Expected function which wasn't responded by the @glos{ILC}
+     */
+    WrongResponse(uint8_t address, uint8_t exp_address, uint8_t called, uint8_t exp_func)
+            : std::runtime_error(
+                      fmt::format("Wrong response: expected function {0} (0x{0:02x}) from ILC with "
+                                  "address {1} - received {2} from {3}",
+                                  exp_func, exp_address, called, address)) {}
 };
 
 /**
@@ -111,7 +131,38 @@ public:
     const uint8_t func;                                  ///< sucessfull response function code
     std::function<void(Parser)> action;                  ///< action to call on sucessfull response
     const uint8_t error_reply;                           ///< error response code
-    std::function<void(uint8_t, uint8_t)> error_action;  ///< action to call on the error response
+    std::function<void(uint8_t, uint8_t)> error_action;  ///< action to call on the error response. Arguments
+                                                         ///< are address and error /< code received from ILC
+};
+
+/**
+ * Holds error statistics - last received error, its error code, time received
+ * and number of errors so far.
+ */
+class ErrorRecord {
+public:
+    ErrorRecord();
+
+    /**
+     * Record error occurence.
+     *
+     * @param func error function number
+     * @param error error code
+     *
+     * @return true if the error is new and shall be reported. False otherwise.
+     */
+    bool record(uint8_t func, uint8_t error);
+
+    /**
+     * Reset error record. Error count is set to 0.
+     */
+    void reset();
+
+private:
+    uint8_t last_error_function;
+    uint8_t last_error_code;
+    uint64_t error_count;
+    std::chrono::time_point<std::chrono::steady_clock> last_occurence;
 };
 
 /**
@@ -203,6 +254,17 @@ public:
     }
 
     /**
+     * Returns number of expected bytes, given the reply so far received. Child
+     * subclasses shall overwrite the method.
+     *
+     * @param response received response data.
+     *
+     * @return Total size of the response expected. If the passed response doesn't contain
+     * all data needed to calculate its length, returns -1.
+     */
+    virtual int responseLength(const std::vector<uint8_t> &response);
+
+    /**
      * Process @glos{ILC} response. Address and function of the response are checked if
      *
      * @throw MissingResponse when response for the address is missing. The
@@ -243,6 +305,8 @@ public:
     void addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t error_reply,
                      std::function<void(uint8_t, uint8_t)> error_action = nullptr);
 
+    ErrorRecord get_error_record(uint8_t address) { return _errors[address]; }
+
     /**
      * Modbus error mask. If the first bit is set in reply funcion code, the
      * reply is error reply for Modbus function call.
@@ -251,6 +315,8 @@ public:
 
 private:
     std::list<ResponseRecord> _functions;
+
+    std::map<uint8_t, ErrorRecord> _errors;
 
     size_t _parsed_index = 0;
 };

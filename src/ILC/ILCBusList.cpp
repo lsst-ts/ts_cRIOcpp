@@ -49,7 +49,7 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
                 processServerID(parser.address(), uniqueID, ilcAppType, networkNodeType, ilcSelectedOptions,
                                 networkNodeOptions, majorRev, minorRev, fwName);
             },
-            145);
+            BusList::MODBUS_ERROR_MASK | ILC_CMD::SERVER_ID);
 
     addResponse(
             ILC_CMD::SERVER_STATUS,
@@ -61,7 +61,7 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
                 _lastMode[parser.address()] = mode;
                 processServerStatus(parser.address(), mode, status, faults);
             },
-            146);
+            BusList::MODBUS_ERROR_MASK | ILC_CMD::SERVER_STATUS);
 
     addResponse(
             ILC_CMD::CHANGE_MODE,
@@ -71,7 +71,11 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
                 _lastMode[parser.address()] = mode;
                 processChangeILCMode(parser.address(), mode);
             },
-            193);
+            BusList::MODBUS_ERROR_MASK | ILC_CMD::CHANGE_MODE,
+            [this](uint8_t address, uint8_t error) {
+                SPDLOG_WARN("Cannot change mode of ILC with address {0} - response {1} ({1:02x})", address,
+                            error);
+            });
 
     addResponse(
             ILC_CMD::SET_TEMP_ADDRESS,
@@ -80,7 +84,7 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
                 parser.checkCRC();
                 processSetTempILCAddress(parser.address(), newAddress);
             },
-            200);
+            BusList::MODBUS_ERROR_MASK | ILC_CMD::SET_TEMP_ADDRESS);
 
     addResponse(
             ILC_CMD::RESET_SERVER,
@@ -88,7 +92,7 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
                 parser.checkCRC();
                 processResetServer(parser.address());
             },
-            235);
+            BusList::MODBUS_ERROR_MASK | ILC_CMD::RESET_SERVER);
 }
 
 ILCBusList::~ILCBusList() {}

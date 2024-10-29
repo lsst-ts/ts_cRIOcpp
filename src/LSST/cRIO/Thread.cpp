@@ -73,6 +73,11 @@ bool Thread::isRunning() {
     return _threadStarted;
 }
 
+bool Thread::wait_until(const std::chrono::time_point<std::chrono::steady_clock>& abs_time) {
+    std::unique_lock<std::mutex> lg(runMutex);
+    return (runCondition.wait_until(lg, abs_time, [this] { return keepRunning == true; }));
+}
+
 void Thread::_run() {
     {
         std::unique_lock<std::mutex> lock(runMutex);
