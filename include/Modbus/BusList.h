@@ -75,10 +75,19 @@ public:
 };
 
 /**
+ * Thrown when function error response (in Modbus, that's the function code |
+ * 0x80). Not thrown when the error handling function was provided
+ */
+class ErrorResponse : public std::runtime_error {
+public:
+    ErrorResponse(uint8_t address, uint8_t func);
+};
+
+/**
  * Error thrown when response action for the function received in response is
  * undefined.
  *
- * @see BusList::addResponse
+ * @see BusList::add_response
  */
 class UnexpectedResponse : public std::runtime_error {
 public:
@@ -119,18 +128,13 @@ public:
     /**
      * Construct callback entry.
      *
-     * @param _func Function code
      * @param _action Action to execute when function code is encountered
-     * @param _error_reply Error reply. That's usually 0x80 | _func
      * @param _error_action Error action
      */
-    ResponseRecord(uint8_t _func, std::function<void(Parser)> _action, uint8_t _error_reply,
-                   std::function<void(uint8_t, uint8_t)> _error_action)
-            : func(_func), action(_action), error_reply(_error_reply), error_action(_error_action) {}
+    ResponseRecord(std::function<void(Parser)> _action, std::function<void(uint8_t, uint8_t)> _error_action)
+            : action(_action), error_action(_error_action) {}
 
-    const uint8_t func;                                  ///< sucessfull response function code
     std::function<void(Parser)> action;                  ///< action to call on sucessfull response
-    const uint8_t error_reply;                           ///< error response code
     std::function<void(uint8_t, uint8_t)> error_action;  ///< action to call on the error response. Arguments
                                                          ///< are address and error /< code received from ILC
 };
@@ -273,7 +277,7 @@ public:
      * safe) disable the failing @glos{ILC}.
      *
      * @throw UnexpectedResponse Throwed when the bus list action for the
-     * address/function (set with the addResponse call) wasn't set.
+     * address/function (set with the add_response call) wasn't set.
      */
     void parse(Parser parser);
 
@@ -302,8 +306,10 @@ public:
      *
      * @see checkCached
      */
-    void addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t error_reply,
-                     std::function<void(uint8_t, uint8_t)> error_action = nullptr);
+    void add_response(uint8_t func, std::function<void(Parser)> action,
+                      std::function<void(uint8_t, uint8_t)> error_action = nullptr);
+
+    void set_error_response(uint8_t func, std::function<void(uint8_t, uint8_t)> error_action);
 
     ErrorRecord get_error_record(uint8_t address) { return _errors[address]; }
 
@@ -314,7 +320,7 @@ public:
     static constexpr uint8_t MODBUS_ERROR_MASK = 0x80;
 
 private:
-    std::list<ResponseRecord> _functions;
+    std::map<uint8_t, ResponseRecord> _functions;
 
     std::map<uint8_t, ErrorRecord> _errors;
 

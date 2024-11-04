@@ -54,7 +54,7 @@ public:
      *
      * @param ex exception raised during processing
      */
-    virtual void reportException(const std::exception &ex){};
+    virtual void reportException(const std::exception &ex) {};
 
     static constexpr task_return_t DONT_RESCHEDULE = 0xFFFFFFFF;
 

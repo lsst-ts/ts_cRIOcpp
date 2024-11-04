@@ -383,7 +383,7 @@ TEST_CASE("Error response", "[ILC]") {
     Modbus::Buffer mbuf(std::vector<uint8_t>({103, 145, 3}));
     mbuf.writeCRC();
 
-    CHECK_THROWS_AS(ilc.parse(mbuf), Modbus::WrongResponse);
+    CHECK_THROWS_AS(ilc.parse(mbuf), Modbus::ErrorResponse);
     CHECK(ilc.responseUniqueID == 0);
 
     Modbus::Buffer mbuf_ok;
