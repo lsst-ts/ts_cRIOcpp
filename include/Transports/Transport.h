@@ -89,6 +89,11 @@ public:
                           LSST::cRIO::Thread* calling_thread = NULL) = 0;
 
     /**
+     * Flush transport buffers.
+     */
+    virtual void flush() = 0;
+
+    /**
      * Retrieve transport telemetry.
      *
      * @param write_bytes number of bytes written to serial device

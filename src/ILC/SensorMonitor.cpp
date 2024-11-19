@@ -29,22 +29,19 @@
 using namespace ILC;
 
 SensorMonitor::SensorMonitor(uint8_t bus) : ILCBusList(bus) {
-    addResponse(
-            SENSOR_VALUES,
-            [this](Modbus::Parser parser) {
-                std::vector<float> values;
-                // there should be 2 bytes (address, function), 4 bytes floats and 2 bytes CRC - so the size()
-                // shall be multiple of 4
-                if (parser.size() % 4 != 0) {
-                    throw std::runtime_error(
-                            fmt::format("Invalid reponse length - expected 4*x, received {}", parser.size()));
-                }
+    add_response(SENSOR_VALUES, [this](Modbus::Parser parser) {
+        std::vector<float> values;
+        // there should be 2 bytes (address, function), 4 bytes floats and 2 bytes CRC - so the size()
+        // shall be multiple of 4
+        if (parser.size() % 4 != 0) {
+            throw std::runtime_error(
+                    fmt::format("Invalid reponse length - expected 4*x, received {}", parser.size()));
+        }
 
-                for (int i = 1; i < static_cast<int>(parser.size()) / 4; i++) {
-                    values.push_back(parser.read<float>());
-                }
+        for (int i = 1; i < static_cast<int>(parser.size()) / 4; i++) {
+            values.push_back(parser.read<float>());
+        }
 
-                processSensorValues(parser.address(), values);
-            },
-            SENSOR_VALUES | MODBUS_ERROR_MASK);
+        processSensorValues(parser.address(), values);
+    });
 }

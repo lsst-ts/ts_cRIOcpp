@@ -60,6 +60,8 @@ void SimulatedTransport::commands(Modbus::BusList& bus_list, std::chrono::micros
     bus_list.clear();
 }
 
+void SimulatedTransport::flush() {}
+
 void SimulatedTransport::telemetry(uint64_t& write_bytes, uint64_t& read_bytes) {
     write_bytes = _bytes_written;
     read_bytes = _bytes_read;

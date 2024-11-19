@@ -237,7 +237,7 @@ protected:
      * Prints preamble for commands help. Can include tips which commands to
      * use,..
      */
-    virtual void printGenericHelp(){};
+    virtual void printGenericHelp() {};
 
     /**
      * Process option from command line parsing.

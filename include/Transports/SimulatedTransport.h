@@ -55,6 +55,8 @@ public:
     void commands(Modbus::BusList& bus_list, std::chrono::microseconds timeout,
                   LSST::cRIO::Thread* calling_thread = NULL) override;
 
+    void flush() override;
+
     void telemetry(uint64_t& write_bytes, uint64_t& read_bytes) override;
 
 protected:

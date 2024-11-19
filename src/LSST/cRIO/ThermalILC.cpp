@@ -41,14 +41,13 @@ ThermalILC::ThermalILC(uint8_t bus) : ILC::ILCBusList(bus) {
         processReHeaterGains(parser.address(), proportionalGain, integralGain);
     };
 
-    addResponse(ILC_THERMAL_CMD::SET_THERMAL_DEMAND, thermalStatus, 216);
+    add_response(ILC_THERMAL_CMD::SET_THERMAL_DEMAND, thermalStatus);
 
-    addResponse(ILC_THERMAL_CMD::REPORT_THERMAL_STATUS, thermalStatus, 217);
+    add_response(ILC_THERMAL_CMD::REPORT_THERMAL_STATUS, thermalStatus);
 
-    addResponse(
-            ILC_THERMAL_CMD::SET_REHEATER_GAINS, [this](Modbus::Parser parser) { parser.checkCRC(); }, 220);
+    add_response(ILC_THERMAL_CMD::SET_REHEATER_GAINS, [this](Modbus::Parser parser) { parser.checkCRC(); });
 
-    addResponse(ILC_THERMAL_CMD::REPORT_REHEATER_GAINS, reheaterGains, 221);
+    add_response(ILC_THERMAL_CMD::REPORT_REHEATER_GAINS, reheaterGains);
 }
 
 std::vector<const char*> ThermalILC::getStatusString(uint16_t status) {

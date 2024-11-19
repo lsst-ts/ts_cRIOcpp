@@ -51,6 +51,11 @@ void ErrorRecord::reset() {
     error_count = 0;
 }
 
+ErrorResponse::ErrorResponse(uint8_t address, uint8_t func)
+        : std::runtime_error(
+                  fmt::format("Error response - address {0}. response {1} ({1:02x}), function {2} ({2:02x})",
+                              address, func, func & ~BusList::MODBUS_ERROR_MASK)) {}
+
 BusList::BusList() {}
 
 int BusList::responseLength(const std::vector<uint8_t> &response) { return -1; }
@@ -73,34 +78,28 @@ void BusList::parse(Parser parser) {
         throw wr;
     }
 
-    for (auto func_record : _functions) {
-        if (func_record.func == called) {
-            func_record.action(parser);
+    if (called & MODBUS_ERROR_MASK) {
+        auto func = _functions.at(called & ~MODBUS_ERROR_MASK);
+        if (func.error_action != nullptr) {
+            func.error_action(address, called);
             _parsed_index++;
-            return;
-        }
-
-        if (func_record.error_reply == called) {
-            uint8_t error = parser.read<uint8_t>();
-            parser.checkCRC();
-            bool new_error = _errors[address].record(called, error);
-
-            if (func_record.error_action != nullptr) {
-                func_record.error_action(address, error);
-            } else {
-                if (new_error) {
-                    SPDLOG_WARN("Error reply from - function {} ({}), address {}", called, func_record.func,
-                                address);
-                }
-            }
+        } else {
             _parsed_index++;
-            return;
+            throw ErrorResponse(address, called);
         }
+    } else {
+        _functions.at(called).action(parser);
+        _parsed_index++;
     }
-    throw UnexpectedResponse(address, called);
+
+    // throw UnexpectedResponse(address, called);
 }
 
-void BusList::addResponse(uint8_t func, std::function<void(Parser)> action, uint8_t error_reply,
-                          std::function<void(uint8_t, uint8_t)> error_action) {
-    _functions.emplace(_functions.end(), ResponseRecord(func, action, error_reply, error_action));
+void BusList::add_response(uint8_t func, std::function<void(Parser)> action,
+                           std::function<void(uint8_t, uint8_t)> error_action) {
+    _functions.emplace(func, ResponseRecord(action, error_action));
+}
+
+void BusList::set_error_response(uint8_t func, std::function<void(uint8_t, uint8_t)> error_action) {
+    _functions.at(func).error_action = error_action;
 }

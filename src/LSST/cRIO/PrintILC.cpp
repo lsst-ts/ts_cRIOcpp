@@ -32,25 +32,19 @@
 using namespace LSST::cRIO;
 
 PrintILC::PrintILC(uint8_t bus) : ILCBusList(bus), _printout(0), _lastAddress(0) {
-    addResponse(
-            ILC_CLI_CMD::WRITE_APPLICATION_STATS,
-            [this](Modbus::Parser parser) { processWriteApplicationStats(parser.address()); }, 228);
+    add_response(ILC_CLI_CMD::WRITE_APPLICATION_STATS,
+                 [this](Modbus::Parser parser) { processWriteApplicationStats(parser.address()); });
 
-    addResponse(
-            ILC_CLI_CMD::ERASE_APPLICATION,
-            [this](Modbus::Parser parser) { processEraseILCApplication(parser.address()); }, 229);
+    add_response(ILC_CLI_CMD::ERASE_APPLICATION,
+                 [this](Modbus::Parser parser) { processEraseILCApplication(parser.address()); });
 
-    addResponse(
-            ILC_CLI_CMD::WRITE_APPLICATION_PAGE,
-            [this](Modbus::Parser parser) { processWriteApplicationPage(parser.address()); }, 238);
+    add_response(ILC_CLI_CMD::WRITE_APPLICATION_PAGE,
+                 [this](Modbus::Parser parser) { processWriteApplicationPage(parser.address()); });
 
-    addResponse(
-            ILC_CLI_CMD::WRITE_VERIFY_APPLICATION,
-            [this](Modbus::Parser parser) {
-                uint16_t status = parser.read<uint16_t>();
-                processVerifyUserApplication(parser.address(), status);
-            },
-            231);
+    add_response(ILC_CLI_CMD::WRITE_VERIFY_APPLICATION, [this](Modbus::Parser parser) {
+        uint16_t status = parser.read<uint16_t>();
+        processVerifyUserApplication(parser.address(), status);
+    });
 }
 
 void PrintILC::writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t startAddress,

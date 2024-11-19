@@ -113,6 +113,22 @@ void FPGASerialDevice::commands(Modbus::BusList& bus_list, std::chrono::microsec
     bus_list.clear();
 }
 
+void FPGASerialDevice::flush() {
+    uint8_t req = 3;
+    NiThrowError("Reading FIFO requesting port flush",
+                 NiFpga_WriteFifoU8(_fpga_session, _write_fifo, &req, 1, 0, NULL));
+
+    uint8_t response;
+    NiThrowError("Reading FIFO flush response ",
+                 NiFpga_ReadFifoU8(_fpga_session, _read_fifo, &response, 1, 1, NULL));
+
+    if (response != req) {
+        throw std::runtime_error(
+                fmt::format("Invalid response from FIFO #{} on flush request - expected 3, recieved {}",
+                            _read_fifo, response));
+    }
+}
+
 void FPGASerialDevice::telemetry(uint64_t& write_bytes, uint64_t& read_bytes) {
     uint8_t req = 0;
     NiThrowError("Reading FIFO requesting telemetry",
@@ -123,8 +139,9 @@ void FPGASerialDevice::telemetry(uint64_t& write_bytes, uint64_t& read_bytes) {
                  NiFpga_ReadFifoU8(_fpga_session, _read_fifo, response, 17, 1, NULL));
 
     if (response[0] != 0) {
-        throw std::runtime_error(fmt::format("Invalid response from FIFO #{} - expected 3, received ",
-                                             _read_fifo, response[0]));
+        throw std::runtime_error(
+                fmt::format("Invalid response from FIFO #{} on telemetry request - expected 0, received {}",
+                            _read_fifo, response[0]));
     }
 
     write_bytes = be64toh(*(reinterpret_cast<const uint64_t*>(response + 1)));
