@@ -124,6 +124,15 @@ public:
     void writeI24(int32_t data);
 
     /**
+     * Writes 48bit unsigned integer.
+     *
+     * @param data 48bit unsigned integer
+     *
+     * @see write
+     */
+    void writeU48(uint64_t data);
+
+    /**
      * Returns current calculcated CRC.
      *
      * @return calculated CRC
@@ -272,6 +281,11 @@ inline void Buffer::write(std::vector<int8_t> data) {
 template <>
 inline void Buffer::write(std::vector<uint16_t> data) {
     writeVector<uint16_t>(data);
+}
+
+template <>
+inline void Buffer::write(std::string data) {
+    writeVector<uint8_t>(std::vector<uint8_t>(data.begin(), data.end()));
 }
 
 }  // namespace Modbus

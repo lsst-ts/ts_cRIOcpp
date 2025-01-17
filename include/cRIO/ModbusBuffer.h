@@ -323,6 +323,15 @@ public:
     void writeI24(int32_t data);
 
     /**
+     * Writes 48bit unsigned integer.
+     *
+     * @param data 48bit unsigned integer
+     *
+     * @see write
+     */
+    void writeU48(uint64_t data);
+
+    /**
      * Writes CRC for all data already written. Reset internal CRC counter, so
      * buffer can accept more commands.
      */

@@ -25,6 +25,7 @@
 
 #include <atomic>
 #include <chrono>
+#include <deque>
 #include <thread>
 
 #include <cRIO/FPGA.h>
@@ -62,7 +63,13 @@ public:
     void setPages(uint8_t* pages) { _pages = pages; }
     void setSimulatedIRQs(uint32_t irqs) { _simulatedIRQs = irqs; }
 
+    /// expected addresses. If not filled, expect address 8
+    std::deque<uint8_t> expectedAddresses;
+
 protected:
+    void processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType, uint8_t networkNodeType,
+                         uint8_t ilcSelectedOptions, uint8_t networkNodeOptions, uint8_t majorRev,
+                         uint8_t minorRev, std::string firmwareName) override;
     void processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) override;
     void processChangeILCMode(uint8_t address, uint16_t mode) override;
     void processWriteApplicationPage(uint8_t address) override { _ackFunction(address, 102); }

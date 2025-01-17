@@ -135,6 +135,15 @@ void ModbusBuffer::writeI24(int32_t data) {
     pushBuffer(getByteInstruction((uint8_t)data));
 }
 
+void ModbusBuffer::writeU48(uint64_t data) {
+    pushBuffer(getByteInstruction((uint8_t)(data >> 40)));
+    pushBuffer(getByteInstruction((uint8_t)(data >> 32)));
+    pushBuffer(getByteInstruction((uint8_t)(data >> 24)));
+    pushBuffer(getByteInstruction((uint8_t)(data >> 16)));
+    pushBuffer(getByteInstruction((uint8_t)(data >> 8)));
+    pushBuffer(getByteInstruction((uint8_t)data));
+}
+
 void ModbusBuffer::writeCRC() {
     uint16_t crc = getCalcCrc();
     pushBuffer(getByteInstruction(crc & 0xFF));

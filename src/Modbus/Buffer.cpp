@@ -53,6 +53,15 @@ void Buffer::writeI24(int32_t data) {
     pushBuffer(data);
 }
 
+void Buffer::writeU48(uint64_t data) {
+    pushBuffer(data >> 40);
+    pushBuffer(data >> 32);
+    pushBuffer(data >> 24);
+    pushBuffer(data >> 16);
+    pushBuffer(data >> 8);
+    pushBuffer(data);
+}
+
 void Buffer::writeCRC() {
     uint16_t crc = getCalcCrc();
     pushBuffer(crc & 0xFF);

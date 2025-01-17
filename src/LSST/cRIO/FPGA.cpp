@@ -97,7 +97,7 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
             uint16_t buffer[responseLen];
             readU16ResponseFIFO(buffer, responseLen, 10);
         }
-        throw Modbus::MissingResponse(ilc[0].buffer.address(), ilc[0].buffer.func());
+        throw Modbus::MissingResponse(ilc.size(), ilc[0].buffer.address(), ilc[0].buffer.func());
     }
 
     uint16_t buffer[responseLen];

@@ -128,7 +128,7 @@ TEST_CASE("Call 10 functions, parser return", "[Parsing]") {
     }
 }
 
-TEST_CASE("Missing response", "[BusListErrors]") {
+TEST_CASE("Wrong response", "[BusListErrors]") {
     TestList buslist(1);
 
     auto generate_reply = [](uint8_t address) -> std::vector<uint8_t> {

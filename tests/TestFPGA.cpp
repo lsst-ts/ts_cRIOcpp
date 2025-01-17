@@ -104,9 +104,28 @@ void TestFPGA::waitOnIrqs(uint32_t irqs, uint32_t timeout, bool& timedout, uint3
 
 void TestFPGA::ackIrqs(uint32_t irqs) {}
 
+void TestFPGA::processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAppType,
+                               uint8_t networkNodeType, uint8_t ilcSelectedOptions,
+                               uint8_t networkNodeOptions, uint8_t majorRev, uint8_t minorRev,
+                               std::string firmwareName) {
+    _response.write(address);
+    _response.write<uint8_t>(ILC_CMD::SERVER_ID);
+    _response.write<uint8_t>(12 + firmwareName.length());
+    _response.writeU48(uniqueID);
+    _response.write(ilcAppType);
+    _response.write(networkNodeType);
+    _response.write(ilcSelectedOptions);
+    _response.write(networkNodeOptions);
+    _response.write(majorRev);
+    _response.write(minorRev);
+    _response.writeBuffer(reinterpret_cast<uint8_t*>(firmwareName.data()), firmwareName.length());
+
+    _response.writeCRC();
+}
+
 void TestFPGA::processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
     _response.write(address);
-    _response.write<uint8_t>(18);
+    _response.write<uint8_t>(ILC_CMD::SERVER_STATUS);
     _response.write(mode);
     _response.write(status);
     _response.write(faults);
@@ -116,7 +135,7 @@ void TestFPGA::processServerStatus(uint8_t address, uint8_t mode, uint16_t statu
 
 void TestFPGA::processChangeILCMode(uint8_t address, uint16_t mode) {
     _response.write(address);
-    _response.write<uint8_t>(65);
+    _response.write<uint8_t>(ILC_CMD::CHANGE_MODE);
     _response.write(mode);
 
     _response.writeCRC();
@@ -169,14 +188,24 @@ void TestFPGA::_simulateModbus(uint16_t* data, size_t length) {
         std::vector<uint8_t> buf;
 
         uint8_t address = read_data(d, buf);
-        CHECK(address == 8);
+        if (expectedAddresses.empty()) {
+            CHECK(address == 8);
+        } else {
+            CHECK(address == expectedAddresses.front());
+            expectedAddresses.pop_front();
+        }
         uint8_t func = read_data(d, buf);
         switch (func) {
-            case 18:
+            case ILC_CMD::SERVER_ID:
+                check_CRC(buf, d);
+                processServerID(address, 0x123456789ABCDEF0, 0x01, 0x02, 0x03, 0x04, 0x11, 0x77,
+                                "Test Firmware. (C) 2025 LSST/Rubin Observatory.");
+                break;
+            case ILC_CMD::SERVER_STATUS:
                 check_CRC(buf, d);
                 processServerStatus(address, ILC::Mode::Standby, 0, 0);
                 break;
-            case 65:
+            case ILC_CMD::CHANGE_MODE:
                 currentMode = read_u16(d, buf);
                 check_CRC(buf, d);
                 processChangeILCMode(address, currentMode);
