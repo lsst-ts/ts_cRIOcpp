@@ -23,13 +23,12 @@
 #include <iostream>
 #include <vector>
 
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/catch_approx.hpp>
+#include <catch2/catch.hpp>
 
 #include <cRIO/CliApp.h>
 
 using namespace LSST::cRIO;
-using Catch::Approx;
+using namespace Catch::Matchers;
 
 class CClass : public CliApp {
 public:
@@ -60,7 +59,7 @@ public:
     int testDouble(command_vec cmds) {
         test_count++;
         CHECK(cmds.size() == 1);
-        CHECK(std::stod(cmds[0], nullptr) == Approx(M_PI));
+        CHECK_THAT(std::stod(cmds[0], nullptr), WithinRel(M_PI, 0.00001));
         return 0;
     }
 
@@ -91,13 +90,13 @@ TEST_CASE("Test CliApp", "[CliApp]") {
     const char* const argv[argc] = {"test", "testcmd", "tt"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
-    REQUIRE(cmds.size() == 2);
-    REQUIRE(cmds[0] == "testcmd");
-    REQUIRE(cmds[1] == "tt");
+    CHECK(cmds.size() == 2);
+    CHECK(cmds[0] == "testcmd");
+    CHECK(cmds[1] == "tt");
 
-    REQUIRE(cli.test_count == 0);
+    CHECK(cli.test_count == 0);
     cli.processCmdVector(cmds);
-    REQUIRE(cli.test_count == 1);
+    CHECK(cli.test_count == 1);
 }
 
 TEST_CASE("Test int format", "[CliApp]") {
@@ -109,27 +108,27 @@ TEST_CASE("Test int format", "[CliApp]") {
     const char* const argv[argc] = {"test"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
-    REQUIRE(cmds.size() == 0);
+    CHECK(cmds.size() == 0);
 
     cmds = {"testcmd", "8701"};
 
-    REQUIRE(cli.test_count == 0);
-    REQUIRE(cli.processCmdVector(cmds) == 0);
-    REQUIRE(cli.test_count == 1);
+    CHECK(cli.test_count == 0);
+    CHECK(cli.processCmdVector(cmds) == 0);
+    CHECK(cli.test_count == 1);
 
     cmds = {"testcmd"};
-    REQUIRE(cli.processCmdVector(cmds) == -1);
+    CHECK(cli.processCmdVector(cmds) == -1);
 
     cmds = {"testcmd", "0x21FD", "0x123A"};
-    REQUIRE(cli.processCmdVector(cmds) == -1);
+    CHECK(cli.processCmdVector(cmds) == -1);
 
     cmds = {"testcmd", "21FD"};
-    REQUIRE(cli.processCmdVector(cmds) == -1);
+    CHECK(cli.processCmdVector(cmds) == -1);
 
     cmds = {"testcmd", "0x21FD"};
-    REQUIRE(cli.processCmdVector(cmds) == 0);
+    CHECK(cli.processCmdVector(cmds) == 0);
 
-    REQUIRE(cli.test_count == 2);
+    CHECK(cli.test_count == 2);
 }
 
 TEST_CASE("Test Hex format", "[CliApp]") {
@@ -141,27 +140,27 @@ TEST_CASE("Test Hex format", "[CliApp]") {
     const char* const argv[argc] = {"test"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
-    REQUIRE(cmds.size() == 0);
+    CHECK(cmds.size() == 0);
 
     cmds = {"testcmd", "0x123A"};
 
-    REQUIRE(cli.test_count == 0);
-    REQUIRE(cli.processCmdVector(cmds) == 0);
-    REQUIRE(cli.test_count == 1);
+    CHECK(cli.test_count == 0);
+    CHECK(cli.processCmdVector(cmds) == 0);
+    CHECK(cli.test_count == 1);
 
     cmds = {"testcmd", "123A"};
-    REQUIRE(cli.processCmdVector(cmds) == 0);
+    CHECK(cli.processCmdVector(cmds) == 0);
 
     cmds = {"testcmd"};
-    REQUIRE(cli.processCmdVector(cmds) == -1);
+    CHECK(cli.processCmdVector(cmds) == -1);
 
     cmds = {"testcmd", "0x123A", "0x123A"};
-    REQUIRE(cli.processCmdVector(cmds) == -1);
+    CHECK(cli.processCmdVector(cmds) == -1);
 
     cmds = {"testcmd", "0x123AG"};
-    REQUIRE(cli.processCmdVector(cmds) == -1);
+    CHECK(cli.processCmdVector(cmds) == -1);
 
-    REQUIRE(cli.test_count == 2);
+    CHECK(cli.test_count == 2);
 }
 
 TEST_CASE("Test double format", "[CliApp]") {
@@ -173,36 +172,36 @@ TEST_CASE("Test double format", "[CliApp]") {
     const char* const argv[argc] = {"test"};
 
     command_vec cmds = cli.processArgs(argc, (char**)argv);
-    REQUIRE(cmds.size() == 0);
+    CHECK(cmds.size() == 0);
 
     cmds = {"testcmd", std::to_string(M_PI)};
 
-    REQUIRE(cli.test_count == 0);
-    REQUIRE(cli.processCmdVector(cmds) == 0);
-    REQUIRE(cli.test_count == 1);
+    CHECK(cli.test_count == 0);
+    CHECK(cli.processCmdVector(cmds) == 0);
+    CHECK(cli.test_count == 1);
 
     cmds = {"testcmd"};
-    REQUIRE(cli.processCmdVector(cmds) == -1);
+    CHECK(cli.processCmdVector(cmds) == -1);
 
     cmds = {"testcmd", "1.23f", "1.45f"};
-    REQUIRE(cli.processCmdVector(cmds) == -1);
+    CHECK(cli.processCmdVector(cmds) == -1);
 
-    REQUIRE(cli.test_count == 1);
+    CHECK(cli.test_count == 1);
 }
 
 TEST_CASE("Print decoded buffer", "[CliApp]") {
     std::ostringstream os1;
     std::vector<uint16_t> buf1({0x8000, 0x1233, 0x9233});
     CliApp::printDecodedBuffer(buf1.data(), buf1.size(), os1);
-    REQUIRE(os1.str() == " invalid timestamp   ");
+    CHECK(os1.str() == " invalid timestamp   ");
 
     std::ostringstream os2;
     std::vector<uint16_t> buf2({0x0000, 0x0000, 0x3b9a, 0xca00});
     CliApp::printDecodedBuffer(buf2.data(), buf2.size(), os2);
-    REQUIRE(os2.str() == " TS:           1.000");
+    CHECK(os2.str() == " TS:           1.000");
 
     std::ostringstream os3;
     std::vector<uint16_t> buf3({0x0012, 0x3456, 0x789a, 0xbcde, 0x8000, 0x1233, 0x9233});
     CliApp::printDecodedBuffer(buf3.data(), buf3.size(), os3);
-    REQUIRE(os3.str() == " TS:     5124095.576 X    W 19 R 19");
+    CHECK(os3.str() == " TS:     5124095.576 X    W 19 R 19");
 }

@@ -22,7 +22,7 @@
 
 #include <iostream>
 
-#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch.hpp>
 
 #include <cRIO/PrintILC.h>
 #include <cRIO/FPGACliApp.h>
@@ -81,7 +81,7 @@ ILCUnits AClass::getILCs(command_vec arguments) {
     return units;
 }
 
-TEST_CASE("Test CliApp", "[FPGACliApp]") { AClass cli("name", "description"); }
+TEST_CASE("Test FPGA CliApp", "[FPGACliApp]") { AClass cli("name", "description"); }
 
 TEST_CASE("Test getILCs", "[FPGACliApp]") {
     AClass cli("name", "description");

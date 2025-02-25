@@ -28,7 +28,7 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
-#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch.hpp>
 
 #include <cRIO/CSC.h>
 #include <cRIO/FPGA.h>
@@ -109,6 +109,8 @@ void _childHandler(int sig) {
 TEST_CASE("Daemonize", "[CSC]") {
     optind = 1;
 
+    INFO("Starting");
+
     const int argc = 4;
     char pid_template[200];
     strcpy(pid_template, "/tmp/test.pid-XXXXXX");
@@ -117,34 +119,38 @@ TEST_CASE("Daemonize", "[CSC]") {
     const char* const argv[argc] = {"test", "-p", pid_file, "TEST"};
 
     command_vec cmds = csc.processArgs(argc, (char**)argv);
-    REQUIRE(cmds.size() == 1);
-    REQUIRE(cmds[0] == "TEST");
+    CHECK(cmds.size() == 1);
+    CHECK(cmds[0] == "TEST");
 
     TestFPGA* fpga = new TestFPGA();
 
+    INFO("Running CSC");
+
     csc.run(fpga);
+
+    INFO("Run ends.");
 
     delete fpga;
 
     // open PID, kill what's in
     int pf = open(pid_file, O_RDONLY);
-    REQUIRE(pf >= 0);
+    CHECK(pf >= 0);
     char pid_buf[20];
-    REQUIRE(read(pf, pid_buf, 20) > 0);
-    REQUIRE(close(pf) == 0);
+    CHECK(read(pf, pid_buf, 20) > 0);
+    CHECK(close(pf) == 0);
 
     int child_pid = std::stoi(pid_buf);
-    REQUIRE(child_pid > 0);
+    CHECK(child_pid > 0);
 
-    REQUIRE(signal(SIGUSR2, &_childHandler) != SIG_ERR);
-    REQUIRE(_child_shutdown == false);
-    REQUIRE(kill(child_pid, SIGUSR1) == 0);
-    REQUIRE(unlink(pid_file) == 0);
+    CHECK(signal(SIGUSR2, &_childHandler) != SIG_ERR);
+    CHECK(_child_shutdown == false);
+    CHECK(kill(child_pid, SIGUSR1) == 0);
+    CHECK(unlink(pid_file) == 0);
 
-    REQUIRE(waitpid(child_pid, NULL, 0) == child_pid);
-    REQUIRE(_child_shutdown == true);
-    REQUIRE(kill(child_pid, SIGUSR1) == -1);
-    REQUIRE(errno == ESRCH);
+    CHECK(waitpid(child_pid, NULL, 0) == child_pid);
+    CHECK(_child_shutdown == true);
+    CHECK(kill(child_pid, SIGUSR1) == -1);
+    CHECK(errno == ESRCH);
 }
 
 void alarm_handler(int sig_t) { kill(getpid(), SIGUSR1); }
@@ -156,18 +162,18 @@ TEST_CASE("Run CSC", "[CSC]") {
     const int argc = 2;
     const char* const argv[argc] = {"test2", "-f"};
     command_vec cmds = csc2.processArgs(argc, (char**)argv);
-    REQUIRE(cmds.size() == 0);
+    CHECK(cmds.size() == 0);
 
     TestFPGA* fpga = new TestFPGA();
 
     _child_shutdown = false;
-    REQUIRE(_child_shutdown == false);
+    CHECK(_child_shutdown == false);
 
-    REQUIRE(signal(SIGALRM, &alarm_handler) != SIG_ERR);
+    CHECK(signal(SIGALRM, &alarm_handler) != SIG_ERR);
     alarm(3);
 
     csc2.run(fpga);
 
     delete fpga;
-    REQUIRE(_child_shutdown == false);
+    CHECK(_child_shutdown == false);
 }

@@ -25,7 +25,7 @@
 #include <iostream>
 #include <vector>
 
-#include <catch2/catch_test_macros.hpp>
+#include <catch2/catch.hpp>
 
 #include <cRIO/ModbusBuffer.h>
 
@@ -44,7 +44,7 @@ public:
     void readEndOfFrame() override {}
 };
 
-TEST_CASE("CalculateCRC", "[ModbusBuffer]") {
+TEST_CASE("ModbusBuffer CalculateCRC", "[ModbusBuffer]") {
     TestModbusBuffer mbuf;
     // address
     mbuf.write<uint8_t>(123);
@@ -58,7 +58,7 @@ TEST_CASE("CalculateCRC", "[ModbusBuffer]") {
     REQUIRE(buf[3] == 0x4c);
 }
 
-TEST_CASE("CalculateLongCRC", "[ModbusBuffer]") {
+TEST_CASE("ModbusBuffer CalculateLongCRC", "[ModbusBuffer]") {
     std::vector<uint8_t> data = {0x81, 0x11, 0x10, 0x12, 0x34, 0x56, 0x78, 0x90, 0xAA, 0xFF,
                                  0xBB, 0xCC, 0xDD, 0xEE, 0x11, 0x53, 0x74, 0x61, 0x72};
 
@@ -76,7 +76,7 @@ TEST_CASE("CalculateLongCRC", "[ModbusBuffer]") {
     REQUIRE(buf[20] == 0x9F);
 }
 
-TEST_CASE("WriteUxx", "[ModbusBuffer]") {
+TEST_CASE("ModbusBuffer WriteUxx", "[ModbusBuffer]") {
     TestModbusBuffer mbuf;
     mbuf.write<uint8_t>(0x12);
     mbuf.write<uint16_t>(0x3456);
@@ -107,7 +107,7 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }
 
-TEST_CASE("WriteIxx", "[ModbusBuffer]") {
+TEST_CASE("ModbusBuffer WriteIxx", "[ModbusBuffer]") {
     TestModbusBuffer mbuf;
     mbuf.write<int8_t>(0x12);
     mbuf.write<int16_t>(0x3456);
@@ -146,7 +146,7 @@ TEST_CASE("WriteIxx", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }
 
-TEST_CASE("WriteSGL", "[ModbusBuffer]") {
+TEST_CASE("ModbusBuffer WriteSGL", "[ModbusBuffer]") {
     TestModbusBuffer mbuf;
     mbuf.write<float>(0.123);
     mbuf.write(-6758.1234f);
@@ -171,7 +171,7 @@ TEST_CASE("WriteSGL", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }
 
-TEST_CASE("Calculate function response CRC", "[ModbusBuffer]") {
+TEST_CASE("ModbusBuffer Calculate function response CRC", "[ModbusBuffer]") {
     TestModbusBuffer mbuf;
     mbuf.write<uint8_t>(140);
     mbuf.write<uint8_t>(18);
@@ -211,7 +211,7 @@ public:
     bool checkRecording(std::vector<uint8_t>& changed) { return TestModbusBuffer::checkRecording(changed); }
 };
 
-TEST_CASE("Call function with arguments", "[ModbusBuffer]") {
+TEST_CASE("ModbusBuffer Call function with arguments", "[ModbusBuffer]") {
     TestBuffer mbuf;
     mbuf.testFunction(123, 17, 23, static_cast<uint8_t>(0xfe), static_cast<uint16_t>(0xffcc),
                       static_cast<float>(M_PI));
@@ -227,7 +227,7 @@ TEST_CASE("Call function with arguments", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(mbuf.readEndOfFrame());
 }
 
-TEST_CASE("Test broadcast", "[ModbusBuffer]") {
+TEST_CASE("ModbusBuffer Test broadcast", "[ModbusBuffer]") {
     TestBuffer mbuf;
 
     uint8_t data[22] = {0x01, 0xff, 0xfe, 0xce, 0xdf, 0xac, 0xef, 0x12, 0xAC, 0xee, 0x78,
@@ -249,7 +249,7 @@ TEST_CASE("Test broadcast", "[ModbusBuffer]") {
     REQUIRE(mbuf.readDelay() == 300);
 }
 
-TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
+TEST_CASE("ModbusBuffer Test changed calculations", "[ModbusBuffer]") {
     TestBuffer mbuf;
 
     mbuf.testFunction(11, 23, 25, static_cast<uint8_t>(0x1a), static_cast<uint16_t>(0xffcc),
@@ -324,7 +324,7 @@ TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
     REQUIRE(mbuf.checkRecording(changed) == true);
 }
 
-TEST_CASE("CRC class", "[ModbusBuffer::CRC]") {
+TEST_CASE("ModbusBuffer CRC class", "[ModbusBuffer::CRC]") {
     TestModbusBuffer::CRC crc;
 
     for (uint8_t d = 0; d < 0xFF; d++) {
@@ -360,14 +360,14 @@ TEST_CASE("CRC class", "[ModbusBuffer::CRC]") {
     REQUIRE(crc.get() == 0x6310);
 }
 
-TEST_CASE("CRC class constructed from buffer", "[ModbusBuffer::CRC]") {
+TEST_CASE("ModbusBuffer CRC class constructed from buffer", "[ModbusBuffer::CRC]") {
     uint8_t data[5] = {0x12, 0x34, 0x56, 0x78, 0xff};
     ModbusBuffer::CRC crc(data, 5);
 
     REQUIRE(crc.get() == 0x6310);
 }
 
-TEST_CASE("Hex dumping", "[ModbusBuffer::hexDump]") {
+TEST_CASE("ModbusBuffer Hex dumping", "[ModbusBuffer::hexDump]") {
     std::vector<uint8_t> data({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 255});
 
     REQUIRE(ModbusBuffer::hexDump(data.data(), data.size()) == "01 02 03 04 05 06 07 08 09 0a 0b ff");

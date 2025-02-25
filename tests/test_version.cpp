@@ -22,8 +22,7 @@
 
 #include <iostream>
 
-#include <catch2/catch_test_macros.hpp>
-#include <catch2/matchers/catch_matchers_string.hpp>
+#include <catch2/catch.hpp>
 
 #include <cRIO/version.h>
 
@@ -32,5 +31,5 @@ using Catch::Matchers::StartsWith;
 
 TEST_CASE("Version is reported", "[version]") {
     std::cout << "Version: " << version() << std::endl;
-    REQUIRE_THAT(version(), StartsWith("v"));
+    CHECK_THAT(version(), StartsWith("v"));
 }

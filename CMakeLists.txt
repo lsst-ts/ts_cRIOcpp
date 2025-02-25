@@ -17,7 +17,50 @@ configure_file(src/LSST/cRIO/version.cpp.in src/LSST/cRIO/version.cpp @ONLY)
 
 find_program(CRIOCPP_CPP_CLANG_FORMAT_EXE NAMES clang-format)
 
-pkg_search_module(SPDLOG REQUIRED spdlog)
+find_package(spdlog NO_CMAKE_PACKAGE_REGISTRY QUIET)
+if(NOT spdlog_FOUND)
+  message("-- spdlog not found. Fetching it.")
+
+  FetchContent_Declare(
+    spdlog
+    GIT_REPOSITORY https://github.com/gabime/spdlog
+    GIT_TAG        v1.15.0
+  )
+
+  FetchContent_MakeAvailable(spdlog)
+else()
+  message("-- spdlog found. Using system's spdlog.")
+
+  find_package(fmt NO_CMAKE_PACKAGE_REGISTRY)
+  if (NOT fmt_FOUND)
+    message("-- fmtlib not found. Fetching it.")
+
+    FetchContent_Declare(
+      fmt
+      GIT_REPOSITORY https://github.com/fmtlib/fmt
+      GIT_TAG        e69e5f977d458f2650bb346dadf2ad30c5320281
+    ) # 10.2.1
+    FetchContent_MakeAvailable(fmt)
+  else()
+    message("-- fmt lib found. Using system's fmt.")
+  endif()
+
+endif()
+
+find_package(yaml-cpp)
+if (NOT yaml-cpp_FOUND)
+  message("-- yaml-cpp not found. Fetching it.")
+
+  FetchContent_Declare(
+    yaml-cpp
+    GIT_REPOSITORY https://github.com/jbeder/yaml-cpp
+    GIT_TAG        0.8.0
+  )
+
+  FetchContent_MakeAvailable(yaml-cpp)
+else()
+  message("-- yaml-cpp found. Using system's yaml-cpp.")
+endif()
 
 option(SHAREDLIB "Build cRIOcpp shared library" ${BUILD_SHARED_LIBS})
 
@@ -55,18 +98,26 @@ target_include_directories(ts_cRIOcpp
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIRS}>
   PRIVATE
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>)
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/src>
+)
 
 target_link_libraries(ts_cRIOcpp
     ${SPDLOG_LIBRARIES}
+    ${FMT_LIBRARIES}
+    ${YAML-CPP_LIBRARIES}
 )
 
 target_compile_options(ts_cRIOcpp
-    PUBLIC ${SPDLOG_CFLAGS_OTHER})
+    PUBLIC 
+      ${SPDLOG_CFLAGS_OTHER}
+      ${FMT_CFLAGS_OTHER}
+)
 
 if (NOT DEFINED CMAKE_CXX_STANDARD)
   set(CMAKE_INSTALL_INCLUDE_DIRS 17)
 endif()
+
+add_compile_definitions(SPDLOG_FMT_EXTERNAL)
 
 target_compile_options(ts_cRIOcpp
   PRIVATE
@@ -86,11 +137,6 @@ set_target_properties(ts_cRIOcpp PROPERTIES
   SOVERSION "${PROJECT_VERSION_MAJOR}.${PROJECT_VERSION_MINOR}"
   PROJECT_LABEL "criocpp ${criocpp-label-postfix}"
   DEBUG_POSTFIX "${CMAKE_DEBUG_POSTFIX}")
-
-#configure_package_config_file(
-#  "${PROJECT_SOURCE_DIR}/criocpp-config.cmake.in"
-#  "${PROJECT_BINARY_DIR}/criocpp-config.cmake"
-#  INSTALL_DESTINATION "${CMAKE_INSTALL_DATADIR}/cmake/cpp")
 
 write_basic_package_version_file(
   "${PROJECT_BINARY_DIR}/criocpp-config-version.cmake"
@@ -131,20 +177,29 @@ endif()
 find_package(yaml-cpp)
 pkg_search_module(READLINE REQUIRED readline)
 
-find_package(Catch2 3 REQUIRED)
+message("-- installdir ${CMAKE_INSTALL_INCLUDEDIR}")
 
-file(GLOB tests-sources tests/*.cpp)
-add_executable(tests ${tests-sources})
+find_package(Catch2)
 
-target_link_libraries(tests PRIVATE Catch2::Catch2WithMain)
-target_link_libraries(tests PRIVATE ts_cRIOcpp)
+if (NOT Catch2_FOUND)
+  message("-- catch2 not found. Tests will be skipped.")
+else()
+  include(CTest)
+  include(Catch)
 
-include_directories(tests PRIVATE yaml-cpp)
-target_link_libraries(tests PRIVATE yaml-cpp)
+  file(GLOB test-sources ${PROJECT_SOURCE_DIR}/tests/*.cpp)
+  add_executable(tests ${test-sources})
 
-target_link_libraries(tests PRIVATE readline)
+  catch_discover_tests(tests
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests
+  )
 
-include(CTest)
-include(Catch)
-catch_discover_tests(tests
-    WORKING_DIRECTORY tests)
+  target_link_libraries(tests PRIVATE Catch2::Catch2 ts_cRIOcpp yaml-cpp readline spdlog fmt)
+  target_include_directories(tests
+    SYSTEM PUBLIC
+    PUBLIC
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests>
+      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIRS}>
+  )
+endif()
