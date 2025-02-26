@@ -29,7 +29,13 @@
 
 using namespace LSST::cRIO;
 
-MPU::MPU(uint8_t node_address) : _bus(0), _node_address(node_address) {
+MPU::MPU(uint8_t node_address)
+        : _bus(0),
+          _node_address(node_address),
+          _commanded_info(),
+          _registerMutex(),
+          _inputStatus(),
+          _registers() {
     add_response(READ_INPUT_STATUS, [this](Modbus::Parser parser) {
         auto commanded = _commanded_info.front();
         _commanded_info.pop_front();

@@ -44,14 +44,13 @@ namespace LSST {
 namespace cRIO {
 
 Command::Command(const char* _command, std::function<int(command_vec)> _action, const char* _args, int _flags,
-                 const char* _help_args, const char* _help) {
-    command = _command;
-    action = _action;
-    args = _args;
-    flags = _flags;
-    help_args = _help_args;
-    help = _help;
-}
+                 const char* _help_args, const char* _help)
+        : command(_command),
+          action(_action),
+          args(_args),
+          flags(_flags),
+          help_args(_help_args),
+          help(_help) {}
 
 CliApp::~CliApp() {
     if (_history_fn != NULL) {
@@ -63,7 +62,7 @@ CliApp::~CliApp() {
 }
 
 CliApp::CliApp(const char* name, const char* description)
-        : Application(name, description), _history_fn(NULL) {
+        : Application(name, description), verbose(0), _commands(), _history_fn(NULL) {
     addCommand("exit", std::bind(&CliApp::_exit, this, std::placeholders::_1), "", 0, NULL,
                "Exits the application - Ctrl+d or Ctrl+c does the same");
 }
@@ -224,9 +223,9 @@ int CliApp::processCmdVector(command_vec cmds) {
 
     command_vec matchedCmds;
 
-    Command* c = findCommand(cmd, matchedCmds);
+    Command* found_cmd = findCommand(cmd, matchedCmds);
 
-    if (c == NULL) {
+    if (found_cmd == NULL) {
         if (matchedCmds.empty()) {
             return processUnmached(cmds);
         }
@@ -234,8 +233,8 @@ int CliApp::processCmdVector(command_vec cmds) {
         else {
             std::cerr << "multiple commands matching " << cmd << ":";
 
-            for (auto c : matchedCmds) {
-                std::cerr << " " << c;
+            for (auto match_cmd : matchedCmds) {
+                std::cerr << " " << match_cmd;
             }
 
             std::cerr << std::endl;
@@ -245,7 +244,7 @@ int CliApp::processCmdVector(command_vec cmds) {
     }
 
     cmds.erase(cmds.begin());
-    return processCommand(c, cmds);
+    return processCommand(found_cmd, cmds);
 }
 
 void CliApp::saveHistory() {
@@ -266,13 +265,13 @@ void CliApp::saveHistory() {
     }
 }
 
-const bool CliApp::onOff(std::string on) {
+bool CliApp::onOff(std::string on) {
     if (strcasecmp(on.c_str(), "on") == 0 || on == "1") return true;
     if (strcasecmp(on.c_str(), "off") == 0 || on == "0") return false;
     throw std::runtime_error("Invalid on/off string:" + on);
 }
 
-const void CliApp::printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& os) {
+void CliApp::printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& os) {
     if (len < 4) {
         os << " invalid timestamp   ";
         return;
@@ -458,7 +457,7 @@ void CliApp::printCommands() {
     }
 }
 
-int CliApp::_exit(command_vec cmds) {
+int CliApp::_exit(command_vec) {
     std::cerr << "Exiting " << getName() << " - bye!" << std::endl;
     exit(EXIT_SUCCESS);
     return 0;

@@ -31,10 +31,9 @@
 namespace LSST {
 namespace cRIO {
 
-MPUTelemetry::MPUTelemetry(const uint8_t *data) {
-    writeBytes = be64toh(*(reinterpret_cast<const uint64_t *>(data + 0)));
-    readBytes = be64toh(*(reinterpret_cast<const uint64_t *>(data + 8)));
-}
+MPUTelemetry::MPUTelemetry(const uint8_t *data)
+        : writeBytes(be64toh(*(reinterpret_cast<const uint64_t *>(data + 0)))),
+          readBytes(be64toh(*(reinterpret_cast<const uint64_t *>(data + 8)))) {}
 
 std::ostream &operator<<(std::ostream &os, const MPUTelemetry &tel) {
     os << std::setw(20) << "Write bytes: " << tel.writeBytes << std::endl

@@ -43,12 +43,14 @@
 
 using namespace LSST::cRIO;
 
-CSC::CSC(const char* name, const char* description) : Application(name, description) {
-    _debugLevelSAL = 0;
-    _keep_running = true;
-    _configRoot = std::string("/var/lib/") + name;
+CSC::CSC(const char* name, const char* description)
+        : Application(name, description),
+          _configRoot(std::string("/var/lib") + name),
+          _debugLevelSAL(0),
+          _keep_running(true),
+          _daemon(),
+          _fpgaDebugPath(NULL) {
     _startPipe[0] = _startPipe[1] = -1;
-    _fpgaDebugPath = NULL;
 
     enabledSinks = Sinks::SAL;
 
@@ -107,10 +109,10 @@ int CSC::run(SimpleFPGA* fpga) {
     return EXIT_SUCCESS;
 }
 
-void CSC::processArg(int opt, char* optarg) {
+void CSC::processArg(int opt, char* arg) {
     switch (opt) {
         case 'c':
-            _configRoot = optarg;
+            _configRoot = arg;
             break;
         case 'd':
             incDebugLevel();
@@ -122,23 +124,23 @@ void CSC::processArg(int opt, char* optarg) {
             printAppHelp();
             exit(EXIT_SUCCESS);
         case 'p':
-            _daemon.pidfile = optarg;
+            _daemon.pidfile = arg;
             enabledSinks |= Sinks::SYSLOG;
             break;
         case 's':
             _debugLevelSAL++;
             break;
         case 'x':
-            _fpgaDebugPath = optarg;
+            _fpgaDebugPath = arg;
             break;
         case 'u': {
-            char* sep = strchr(optarg, ':');
+            char* sep = strchr(arg, ':');
             if (sep) {
                 *sep = '\0';
-                _daemon.user = optarg;
+                _daemon.user = arg;
                 _daemon.group = sep + 1;
             } else {
-                _daemon.user = _daemon.group = optarg;
+                _daemon.user = _daemon.group = arg;
             }
             break;
         }
@@ -173,10 +175,11 @@ void CSC::_startLog() {
         addSink(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
     }
     if (enabledSinks & Sinks::DAILY) {
-        addSink(std::make_shared<spdlog::sinks::daily_file_sink_mt>(_name, 0, 0));
+        addSink(std::make_shared<spdlog::sinks::daily_file_sink_mt>(getName(), 0, 0));
     }
     if (enabledSinks & Sinks::SYSLOG) {
-        addSink(std::make_shared<spdlog::sinks::syslog_sink_mt>(_name, LOG_PID | LOG_CONS, LOG_USER, false));
+        addSink(std::make_shared<spdlog::sinks::syslog_sink_mt>(getName(), LOG_PID | LOG_CONS, LOG_USER,
+                                                                false));
     }
 
     setSinks();

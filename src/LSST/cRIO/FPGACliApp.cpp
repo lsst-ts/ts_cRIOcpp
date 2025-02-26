@@ -36,7 +36,7 @@ std::ostream& LSST::cRIO::operator<<(std::ostream& stream, ILCUnit const& u) {
 }
 
 FPGACliApp::FPGACliApp(const char* name, const char* description)
-        : TemplateFPGACliApp<FPGA>(name, description), ilcTimeout(5000), _ilcs() {
+        : TemplateFPGACliApp<FPGA>(name, description), ilcTimeout(5000), _ilcs(), _mpu(), _disabledILCs() {
     addCommand("@ilc-timeout", std::bind(&FPGACliApp::setIlcTimeout, this, std::placeholders::_1), "i", 0,
                "[ilc timeout]", "Sets and retrieve timeout for ILC commands");
 

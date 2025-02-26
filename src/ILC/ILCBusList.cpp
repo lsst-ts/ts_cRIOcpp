@@ -26,7 +26,7 @@
 
 using namespace ILC;
 
-ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
+ILCBusList::ILCBusList(uint8_t bus) : _bus(bus), _lastMode() {
     add_response(ILC_CMD::SERVER_ID, [this](Modbus::Parser parser) {
         uint8_t fnLen = parser.read<uint8_t>();
         if (fnLen < 12) {

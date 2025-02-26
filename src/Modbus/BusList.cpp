@@ -26,11 +26,7 @@
 
 using namespace Modbus;
 
-ErrorRecord::ErrorRecord() {
-    last_error_function = 0;
-    last_error_code = 0;
-    error_count = 0;
-}
+ErrorRecord::ErrorRecord() : last_error_function(0), last_error_code(0), error_count(0), last_occurence() {}
 
 bool ErrorRecord::record(uint8_t func, uint8_t error) {
     last_occurence = std::chrono::steady_clock::now();
@@ -56,9 +52,9 @@ ErrorResponse::ErrorResponse(uint8_t address, uint8_t func)
                   fmt::format("Error response - address {0}. response {1} ({1:02x}), function {2} ({2:02x})",
                               address, func, func & ~BusList::MODBUS_ERROR_MASK)) {}
 
-BusList::BusList() {}
+BusList::BusList() : _functions(), _errors() {}
 
-int BusList::responseLength(const std::vector<uint8_t> &response) { return -1; }
+int BusList::responseLength(const std::vector<uint8_t> &) { return -1; }
 
 void BusList::parse(Parser parser) {
     auto exp_address = at(_parsed_index).buffer.address();

@@ -31,7 +31,8 @@
 
 using namespace LSST::cRIO;
 
-PrintILC::PrintILC(uint8_t bus) : ILCBusList(bus), _printout(0), _lastAddress(0) {
+PrintILC::PrintILC(uint8_t bus)
+        : ILCBusList(bus), _printout(0), _lastAddress(0), _crc(), _startAddress(0), _dataLength(0) {
     add_response(ILC_CLI_CMD::WRITE_APPLICATION_STATS,
                  [this](Modbus::Parser parser) { processWriteApplicationStats(parser.address()); });
 
@@ -80,6 +81,7 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
         // those modes need fault first
         case ILC::Mode::Enabled:
             changeILCMode(address, ILC::Mode::Disabled);
+            [[fallthrough]];
         case ILC::Mode::Disabled:
             changeILCMode(address, ILC::Mode::Standby);
             break;

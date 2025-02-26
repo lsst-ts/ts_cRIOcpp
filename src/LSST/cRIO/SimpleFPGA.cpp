@@ -29,7 +29,7 @@
 
 using namespace LSST::cRIO;
 
-SimpleFPGA::SimpleFPGA(fpgaType type) {
+SimpleFPGA::SimpleFPGA(fpgaType) : _debug_stream() {
     _debug_stream.exceptions(std::ios::eofbit | std::ios::badbit | std::ios::failbit);
 }
 

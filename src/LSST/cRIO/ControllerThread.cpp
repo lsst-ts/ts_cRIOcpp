@@ -32,7 +32,9 @@ using namespace std::chrono_literals;
 
 using namespace LSST::cRIO;
 
-ControllerThread::ControllerThread(token) { SPDLOG_DEBUG("ControllerThread: ControllerThread()"); }
+ControllerThread::ControllerThread(token) : _taskQueue() {
+    SPDLOG_DEBUG("ControllerThread: ControllerThread()");
+}
 
 ControllerThread::~ControllerThread() {
     delete _interruptWatcherThread;

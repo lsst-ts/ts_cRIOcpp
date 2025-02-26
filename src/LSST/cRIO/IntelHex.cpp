@@ -29,7 +29,7 @@
 
 using namespace LSST::cRIO;
 
-IntelHex::IntelHex() {}
+IntelHex::IntelHex() : _hexData(), _lineNo(), _appData() {}
 
 void IntelHex::load(const std::string &fileName) {
     std::ifstream inputStream(fileName);

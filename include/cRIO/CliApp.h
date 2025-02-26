@@ -214,7 +214,7 @@ get_the_answer command.
     /**
      * Transforms on/off, 0/1 etc strings into bool.
      */
-    static const bool onOff(std::string on);
+    bool onOff(std::string on);
 
     /**
      * Utility function to print out buffer as hex dump.
@@ -228,7 +228,7 @@ get_the_answer command.
         os << ModbusBuffer::hexDump<dt>(buf, len);
     }
 
-    static const void printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& os = std::cout);
+    static void printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& os = std::cout);
 
 protected:
     /**

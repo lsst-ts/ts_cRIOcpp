@@ -118,6 +118,7 @@ target_compile_options(ts_cRIOcpp
     PUBLIC 
       ${SPDLOG_CFLAGS_OTHER}
       ${FMT_CFLAGS_OTHER}
+      ${YAML-CPP_CFLAGS_OTHER}
 )
 
 if (NOT DEFINED CMAKE_CXX_STANDARD)
@@ -183,7 +184,7 @@ endif()
 
 message("-- installdir ${CMAKE_INSTALL_INCLUDEDIR}")
 
-find_package(Catch2)
+find_package(Catch2 REQUIRED)
 
 if (NOT Catch2_FOUND)
   message("-- catch2 not found. Tests will be skipped.")
@@ -191,14 +192,17 @@ else()
   include(CTest)
   include(Catch)
 
+  add_compile_definitions(CATCH_CONFIG_MAIN)
+
   file(GLOB test-sources ${PROJECT_SOURCE_DIR}/tests/*.cpp)
   add_executable(tests ${test-sources})
+  # add_executable(tests ${PROJECT_SOURCE_DIR}/tests/test_CSC.cpp ${PROJECT_SOURCE_DIR}/tests/TestFPGA.cpp )
 
   catch_discover_tests(tests
     WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests
   )
 
-  target_link_libraries(tests PRIVATE Catch2::Catch2 ts_cRIOcpp yaml-cpp readline spdlog fmt)
+  target_link_libraries(tests ts_cRIOcpp yaml-cpp readline spdlog fmt Catch2::Catch2 pthread)
   target_include_directories(tests
     SYSTEM PUBLIC
     PUBLIC

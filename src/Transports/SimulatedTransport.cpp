@@ -24,15 +24,14 @@
 
 using namespace Transports;
 
-SimulatedTransport::SimulatedTransport() : _bytes_written(0), _bytes_read(0) {}
+SimulatedTransport::SimulatedTransport() : _response(), _bytes_written(0), _bytes_read(0) {}
 
 void SimulatedTransport::write(const unsigned char* buf, size_t len) {
     generate_response(buf, len);
     _bytes_written += len;
 }
 
-std::vector<uint8_t> SimulatedTransport::read(size_t len, std::chrono::microseconds timeout,
-                                              LSST::cRIO::Thread* calling_thread) {
+std::vector<uint8_t> SimulatedTransport::read(size_t len, std::chrono::microseconds, LSST::cRIO::Thread*) {
     if (len == 0) {
         len = 1;
     };

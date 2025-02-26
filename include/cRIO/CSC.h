@@ -74,7 +74,7 @@ public:
     std::string getConfigRoot() { return _configRoot; }
 
 protected:
-    virtual void processArg(int opt, char* optarg);
+    virtual void processArg(int opt, char* arg);
 
     /**
      * Initialize CSC. Called after daemonization, with correct PID.
@@ -106,8 +106,6 @@ protected:
     void daemonFailed(const char* msg);
 
 private:
-    std::string _name;
-
     std::string _configRoot;
 
     int _debugLevelSAL;
