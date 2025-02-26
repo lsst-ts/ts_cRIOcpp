@@ -6,18 +6,23 @@ project(ts_cRIOcpp
     LANGUAGES CXX
 )
 
+set(CMAKE_CXX_STANDARD 17)
+
 include(CMakePackageConfigHelpers)
 include(CMakeDependentOption)
 include(CheckCXXCompilerFlag)
 include(GNUInstallDirs)
 include(FindPkgConfig)
 
+set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH}
+  ${PROJECT_SOURCE_DIR}/cmake)
+
 configure_file(criocpp.pc.in criocpp.pc @ONLY)
 configure_file(src/LSST/cRIO/version.cpp.in src/LSST/cRIO/version.cpp @ONLY)
 
 find_program(CRIOCPP_CPP_CLANG_FORMAT_EXE NAMES clang-format)
 
-find_package(spdlog NO_CMAKE_PACKAGE_REGISTRY QUIET)
+find_package(spdlog NO_CMAKE_PACKAGE_REGISTRY)
 if(NOT spdlog_FOUND)
   message("-- spdlog not found. Fetching it.")
 
@@ -61,6 +66,8 @@ if (NOT yaml-cpp_FOUND)
 else()
   message("-- yaml-cpp found. Using system's yaml-cpp.")
 endif()
+
+find_package(readline REQUIRED)
 
 option(SHAREDLIB "Build cRIOcpp shared library" ${BUILD_SHARED_LIBS})
 
@@ -173,9 +180,6 @@ if (CRIOCPP_CPP_CLANG_FORMAT_EXE)
     COMMENT "Running clang-format"
     VERBATIM)
 endif()
-
-find_package(yaml-cpp)
-pkg_search_module(READLINE REQUIRED readline)
 
 message("-- installdir ${CMAKE_INSTALL_INCLUDEDIR}")
 
