@@ -503,9 +503,9 @@ public:
          *
          * @param address Modbus address
          * @param func Modbus (error) function received
-         * @param exception exception code
+         * @param exception_code exception code
          */
-        Exception(uint8_t address, uint8_t func, uint8_t exception);
+        Exception(uint8_t address, uint8_t func, uint8_t exception_code);
     };
 
     /**

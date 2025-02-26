@@ -32,7 +32,7 @@
 namespace LSST {
 namespace cRIO {
 
-FPGA::FPGA(fpgaType type) : SimpleFPGA(type) {
+FPGA::FPGA(fpgaType type) : SimpleFPGA(type), _modbusSoftwareTrigger(0) {
     switch (type) {
         case SS:
             _modbusSoftwareTrigger = 252;
@@ -129,7 +129,7 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
 
                 endTs |= static_cast<uint64_t>((*p) & 0x00FF) << endTsShift;
                 endTsShift += 8;
-                // don't break here - data also ends when timestamp is received
+                [[fallthrough]];  // don't break here - data also ends when timestamp is received
             case FIFO::RX_ENDFRAME:
                 if (decoded.empty() == false) {
                     while (true) {

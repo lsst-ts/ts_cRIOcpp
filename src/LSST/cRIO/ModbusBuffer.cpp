@@ -34,7 +34,17 @@ using namespace std;
 namespace LSST {
 namespace cRIO {
 
-ModbusBuffer::ModbusBuffer() { clear(); }
+ModbusBuffer::ModbusBuffer()
+        : _buffer(),
+          _index(0),
+          _crc(),
+          _commanded(),
+          _recordChanges(false),
+          _records(),
+          _actions(),
+          _errorActions() {
+    clear();
+}
 
 ModbusBuffer::~ModbusBuffer() {}
 
@@ -227,10 +237,10 @@ ModbusBuffer::UnknownResponse::UnknownResponse(uint8_t address, uint8_t func)
         : std::runtime_error(fmt::format(
                   "Unknown function {1} (0x{1:02x}) in ModBus response for address {0}.", address, func)) {}
 
-ModbusBuffer::Exception::Exception(uint8_t address, uint8_t func, uint8_t exception)
+ModbusBuffer::Exception::Exception(uint8_t address, uint8_t func, uint8_t exception_code)
         : std::runtime_error(fmt::format(
                   "ModBus Exception {2} (ModBus address {0}, ModBus response function {1} (0x{1:02x})).",
-                  address, func, exception)) {}
+                  address, func, exception_code)) {}
 
 void ModbusBuffer::CRC::add(uint8_t data) {
     _crcCounter = _crcCounter ^ (uint16_t(data));

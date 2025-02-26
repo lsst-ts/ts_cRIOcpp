@@ -52,7 +52,7 @@ ErrorResponse::ErrorResponse(uint8_t address, uint8_t func)
                   fmt::format("Error response - address {0}. response {1} ({1:02x}), function {2} ({2:02x})",
                               address, func, func & ~BusList::MODBUS_ERROR_MASK)) {}
 
-BusList::BusList() : _functions(), _errors() {}
+BusList::BusList() : std::vector<CommandRecord>(), _functions(), _errors(), _parsed_index(0) {}
 
 int BusList::responseLength(const std::vector<uint8_t> &) { return -1; }
 

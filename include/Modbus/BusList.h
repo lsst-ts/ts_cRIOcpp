@@ -324,7 +324,7 @@ private:
 
     std::map<uint8_t, ErrorRecord> _errors;
 
-    size_t _parsed_index = 0;
+    size_t _parsed_index;
 };
 
 }  // namespace Modbus

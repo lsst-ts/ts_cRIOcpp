@@ -45,6 +45,7 @@ protected:
 class TestFPGA : public LSST::cRIO::FPGA, public LSST::cRIO::PrintILC {
 public:
     TestFPGA();
+    virtual ~TestFPGA();
 
     void initialize() override {}
     void open() override {}

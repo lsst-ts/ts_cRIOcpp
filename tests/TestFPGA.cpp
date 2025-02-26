@@ -45,6 +45,8 @@ TestFPGA::TestFPGA()
           _pages(nullptr),
           _currentTimestamp(0) {}
 
+TestFPGA::~TestFPGA() {}
+
 void TestFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     uint16_t* d = data;
     while (d < data + length) {

@@ -1,4 +1,4 @@
-cmake_minimum_required(VERSION 3.11)
+cmake_minimum_required(VERSION 3.14)
 
 project(ts_cRIOcpp 
     VERSION 1.12.0
@@ -24,7 +24,7 @@ find_program(CRIOCPP_CPP_CLANG_FORMAT_EXE NAMES clang-format)
 
 find_package(spdlog NO_CMAKE_PACKAGE_REGISTRY)
 if(NOT spdlog_FOUND)
-  message("-- spdlog not found. Fetching it.")
+  message(STATUS "spdlog not found. Fetching it.")
 
   FetchContent_Declare(
     spdlog
@@ -34,11 +34,11 @@ if(NOT spdlog_FOUND)
 
   FetchContent_MakeAvailable(spdlog)
 else()
-  message("-- spdlog found. Using system's spdlog.")
+  message(STATUS "spdlog found. Using system's spdlog.")
 
   find_package(fmt NO_CMAKE_PACKAGE_REGISTRY)
   if (NOT fmt_FOUND)
-    message("-- fmtlib not found. Fetching it.")
+    message(STATUS "fmtlib not found. Fetching it.")
 
     FetchContent_Declare(
       fmt
@@ -47,14 +47,14 @@ else()
     ) # 10.2.1
     FetchContent_MakeAvailable(fmt)
   else()
-    message("-- fmt lib found. Using system's fmt.")
+  message(STATUS "fmt lib found. Using system's fmt.")
   endif()
 
 endif()
 
 find_package(yaml-cpp)
 if (NOT yaml-cpp_FOUND)
-  message("-- yaml-cpp not found. Fetching it.")
+  message(STATUS "yaml-cpp not found. Fetching it.")
 
   FetchContent_Declare(
     yaml-cpp
@@ -64,7 +64,7 @@ if (NOT yaml-cpp_FOUND)
 
   FetchContent_MakeAvailable(yaml-cpp)
 else()
-  message("-- yaml-cpp found. Using system's yaml-cpp.")
+  message(STATUS "yaml-cpp found. Using system's yaml-cpp.")
 endif()
 
 find_package(readline REQUIRED)
@@ -182,32 +182,31 @@ if (CRIOCPP_CPP_CLANG_FORMAT_EXE)
     VERBATIM)
 endif()
 
-message("-- installdir ${CMAKE_INSTALL_INCLUDEDIR}")
+message(STATUS "installdir ${CMAKE_INSTALL_INCLUDEDIR}")
 
 find_package(Catch2 REQUIRED)
 
 if (NOT Catch2_FOUND)
-  message("-- catch2 not found. Tests will be skipped.")
+  message(STATUS "catch2 not found. Tests will be skipped.")
 else()
   include(CTest)
   include(Catch)
 
-  add_compile_definitions(CATCH_CONFIG_MAIN)
+  add_library(test_main ${PROJECT_SOURCE_DIR}/tests/TestsMain.cpp)
+  target_link_libraries(test_main Catch2::Catch2)
 
-  file(GLOB test-sources ${PROJECT_SOURCE_DIR}/tests/*.cpp)
-  add_executable(tests ${test-sources})
-  # add_executable(tests ${PROJECT_SOURCE_DIR}/tests/test_CSC.cpp ${PROJECT_SOURCE_DIR}/tests/TestFPGA.cpp )
-
-  catch_discover_tests(tests
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests
-  )
-
-  target_link_libraries(tests ts_cRIOcpp yaml-cpp readline spdlog fmt Catch2::Catch2 pthread)
+  file(GLOB test-sources ${PROJECT_SOURCE_DIR}/tests/test_*.cpp)
+  add_executable(tests ${test-sources} ${PROJECT_SOURCE_DIR}/tests/TestFPGA.cpp)
   target_include_directories(tests
     SYSTEM PUBLIC
     PUBLIC
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
       $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests>
       $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIRS}>
+  )
+  target_link_libraries(tests test_main ts_cRIOcpp yaml-cpp readline spdlog fmt Catch2::Catch2 pthread)
+
+  catch_discover_tests(tests
+    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests
   )
 endif()
