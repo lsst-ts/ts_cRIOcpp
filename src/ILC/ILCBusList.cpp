@@ -27,43 +27,37 @@
 using namespace ILC;
 
 ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
-    addResponse(
-            ILC_CMD::SERVER_ID,
-            [this](Modbus::Parser parser) {
-                uint8_t fnLen = parser.read<uint8_t>();
-                if (fnLen < 12) {
-                    throw std::runtime_error(fmt::format(
-                            "invalid ILC function 17 response length - expect at least 12, got {}", fnLen));
-                }
-                fnLen -= 12;
+    add_response(ILC_CMD::SERVER_ID, [this](Modbus::Parser parser) {
+        uint8_t fnLen = parser.read<uint8_t>();
+        if (fnLen < 12) {
+            throw std::runtime_error(fmt::format(
+                    "invalid ILC function 17 response length - expect at least 12, got {}", fnLen));
+        }
+        fnLen -= 12;
 
-                uint64_t uniqueID = parser.readU48();
-                uint8_t ilcAppType = parser.read<uint8_t>();
-                uint8_t networkNodeType = parser.read<uint8_t>();
-                uint8_t ilcSelectedOptions = parser.read<uint8_t>();
-                uint8_t networkNodeOptions = parser.read<uint8_t>();
-                uint8_t majorRev = parser.read<uint8_t>();
-                uint8_t minorRev = parser.read<uint8_t>();
-                std::string fwName = parser.readString(fnLen);
-                parser.checkCRC();
-                processServerID(parser.address(), uniqueID, ilcAppType, networkNodeType, ilcSelectedOptions,
-                                networkNodeOptions, majorRev, minorRev, fwName);
-            },
-            145);
+        uint64_t uniqueID = parser.readU48();
+        uint8_t ilcAppType = parser.read<uint8_t>();
+        uint8_t networkNodeType = parser.read<uint8_t>();
+        uint8_t ilcSelectedOptions = parser.read<uint8_t>();
+        uint8_t networkNodeOptions = parser.read<uint8_t>();
+        uint8_t majorRev = parser.read<uint8_t>();
+        uint8_t minorRev = parser.read<uint8_t>();
+        std::string fwName = parser.readString(fnLen);
+        parser.checkCRC();
+        processServerID(parser.address(), uniqueID, ilcAppType, networkNodeType, ilcSelectedOptions,
+                        networkNodeOptions, majorRev, minorRev, fwName);
+    });
 
-    addResponse(
-            ILC_CMD::SERVER_STATUS,
-            [this](Modbus::Parser parser) {
-                uint8_t mode = parser.read<uint8_t>();
-                uint16_t status = parser.read<uint16_t>();
-                uint16_t faults = parser.read<uint16_t>();
-                parser.checkCRC();
-                _lastMode[parser.address()] = mode;
-                processServerStatus(parser.address(), mode, status, faults);
-            },
-            146);
+    add_response(ILC_CMD::SERVER_STATUS, [this](Modbus::Parser parser) {
+        uint8_t mode = parser.read<uint8_t>();
+        uint16_t status = parser.read<uint16_t>();
+        uint16_t faults = parser.read<uint16_t>();
+        parser.checkCRC();
+        _lastMode[parser.address()] = mode;
+        processServerStatus(parser.address(), mode, status, faults);
+    });
 
-    addResponse(
+    add_response(
             ILC_CMD::CHANGE_MODE,
             [this](Modbus::Parser parser) {
                 uint16_t mode = parser.read<uint16_t>();
@@ -71,24 +65,21 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
                 _lastMode[parser.address()] = mode;
                 processChangeILCMode(parser.address(), mode);
             },
-            193);
+            [this](uint8_t address, uint8_t error) {
+                SPDLOG_WARN("Cannot change mode of ILC with address {0} - response {1} ({1:02x})", address,
+                            error);
+            });
 
-    addResponse(
-            ILC_CMD::SET_TEMP_ADDRESS,
-            [this](Modbus::Parser parser) {
-                uint8_t newAddress = parser.read<uint8_t>();
-                parser.checkCRC();
-                processSetTempILCAddress(parser.address(), newAddress);
-            },
-            200);
+    add_response(ILC_CMD::SET_TEMP_ADDRESS, [this](Modbus::Parser parser) {
+        uint8_t newAddress = parser.read<uint8_t>();
+        parser.checkCRC();
+        processSetTempILCAddress(parser.address(), newAddress);
+    });
 
-    addResponse(
-            ILC_CMD::RESET_SERVER,
-            [this](Modbus::Parser parser) {
-                parser.checkCRC();
-                processResetServer(parser.address());
-            },
-            235);
+    add_response(ILC_CMD::RESET_SERVER, [this](Modbus::Parser parser) {
+        parser.checkCRC();
+        processResetServer(parser.address());
+    });
 }
 
 ILCBusList::~ILCBusList() {}

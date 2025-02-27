@@ -71,7 +71,21 @@ public:
      */
     bool joinable();
 
+    /**
+     * Returns whenever thread is running.
+     *
+     * @return true if the thread is running.
+     */
     bool isRunning();
+
+    /**
+     * Waits until given time and while thread is running (wasn't stopped).
+     *
+     * @param abs_time time to wait
+     *
+     * @return false if thread was requested to stop while waiting, otherwise true.
+     */
+    bool wait_until(const std::chrono::time_point<std::chrono::steady_clock>& abs_time);
 
 protected:
     /**

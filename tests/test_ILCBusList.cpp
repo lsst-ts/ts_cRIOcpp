@@ -115,19 +115,19 @@ TEST_CASE("Generic functions", "[ILC]") {
 
     CHECK(parser.address() == 125);
     CHECK(parser.func() == 17);
-    REQUIRE_NOTHROW(parser.checkCRC());
+    CHECK_NOTHROW(parser.checkCRC());
 
     parser.parse(ilc[1].buffer);
 
     CHECK(parser.address() == 31);
     CHECK(parser.func() == 18);
-    REQUIRE_NOTHROW(parser.checkCRC());
+    CHECK_NOTHROW(parser.checkCRC());
 
     parser.parse(ilc[2].buffer);
 
     CHECK(parser.address() == 134);
     CHECK(parser.func() == 107);
-    REQUIRE_NOTHROW(parser.checkCRC());
+    CHECK_NOTHROW(parser.checkCRC());
 }
 
 TEST_CASE("Parse response", "[ILC]") {
@@ -170,7 +170,7 @@ TEST_CASE("Parse response", "[ILC]") {
     CHECK(mbuf[18] == 0xe7);
     CHECK(mbuf[19] == 0xa9);
 
-    REQUIRE_NOTHROW(ilc.parse(mbuf));
+    CHECK_NOTHROW(ilc.parse(mbuf));
 
     CHECK(ilc.responseUniqueID == 0x010203040506);
     CHECK(ilc.responseILCAppType == 7);
@@ -183,18 +183,18 @@ TEST_CASE("Parse response", "[ILC]") {
 
     // invalid length
     constructCommands();
-    REQUIRE_THROWS_AS(ilc.parse(mbuf.data(), 10), std::out_of_range);
+    CHECK_THROWS_AS(ilc.parse(mbuf.data(), 10), std::out_of_range);
 
     mbuf.write<uint8_t>(0xff);
 
     ilc.reset();
-    REQUIRE_THROWS_AS(ilc.parse(mbuf), Modbus::LongResponse);
+    CHECK_THROWS_AS(ilc.parse(mbuf), Modbus::LongResponse);
 
     // invalid CRC
     mbuf[18] = 0xe8;
 
     constructCommands();
-    REQUIRE_THROWS_AS(ilc.parse(mbuf), Modbus::CRCError);
+    CHECK_THROWS_AS(ilc.parse(mbuf), Modbus::CRCError);
 }
 
 TEST_CASE("Change ILC mode response", "[ILC]") {
@@ -211,7 +211,7 @@ TEST_CASE("Change ILC mode response", "[ILC]") {
     mbuf.writeCRC();
 
     CHECK(ilc.newMode == 0);
-    REQUIRE_NOTHROW(ilc.parse(mbuf));
+    CHECK_NOTHROW(ilc.parse(mbuf));
     CHECK(ilc.newMode == 4);
 }
 
@@ -229,7 +229,7 @@ TEST_CASE("Set Temp ILC Address", "[ILC]") {
     mbuf.writeCRC();
 
     CHECK(ilc.responseNewAddress == 0);
-    REQUIRE_NOTHROW(ilc.parse(mbuf));
+    CHECK_NOTHROW(ilc.parse(mbuf));
     CHECK(ilc.responseNewAddress == 22);
 }
 
@@ -289,8 +289,8 @@ TEST_CASE("Unmatched response", "[ILC]") {
     CHECK(mbuf2[7] == 0x05);
     CHECK(mbuf2[8] == 0xad);
 
-    REQUIRE_NOTHROW(ilc.parse(mbuf1));
-    REQUIRE_NOTHROW(ilc.parse(mbuf2));
+    CHECK_NOTHROW(ilc.parse(mbuf1));
+    CHECK_NOTHROW(ilc.parse(mbuf2));
 
     CHECK(ilc.responseUniqueID == 0x010203040506);
     CHECK(ilc.responseILCAppType == 7);
@@ -307,55 +307,55 @@ TEST_CASE("Unmatched response", "[ILC]") {
 
     // invalid length
     constructCommands();
-    REQUIRE_THROWS_AS(ilc.parse(mbuf1.data(), mbuf1.size() - 1), std::out_of_range);
+    CHECK_THROWS_AS(ilc.parse(mbuf1.data(), mbuf1.size() - 1), std::out_of_range);
 
     Modbus::Buffer mbuf3(mbuf1);
     mbuf3.write<uint8_t>(0xff);
 
     constructCommands();
-    REQUIRE_THROWS_AS(ilc.parse(mbuf3), Modbus::LongResponse);
+    CHECK_THROWS_AS(ilc.parse(mbuf3), Modbus::LongResponse);
 
     // missing command
     ilc.reset();
     ilc.clear();
     ilc.reportServerID(132);
 
-    REQUIRE_NOTHROW(ilc.parse(mbuf1));
-    REQUIRE_THROWS_AS(ilc.parse(mbuf2), std::out_of_range);
+    CHECK_NOTHROW(ilc.parse(mbuf1));
+    CHECK_THROWS_AS(ilc.parse(mbuf2), std::out_of_range);
 
     // invalid address
     ilc.reset();
     ilc.clear();
     ilc.reportServerID(132);
     ilc.reportServerStatus(141);
-    REQUIRE_NOTHROW(ilc.parse(mbuf1));
-    REQUIRE_THROWS_AS(ilc.parse(mbuf2), Modbus::MissingResponse);
+    CHECK_NOTHROW(ilc.parse(mbuf1));
+    CHECK_THROWS_AS(ilc.parse(mbuf2), Modbus::WrongResponse);
 
     // missing reply
     ilc.reset();
     ilc.clear();
     ilc.resetServer(121);
-    REQUIRE_THROWS_AS(ilc.parse(mbuf1), Modbus::MissingResponse);
-    REQUIRE_THROWS_AS(ilc.parse(mbuf2), std::out_of_range);
+    CHECK_THROWS_AS(ilc.parse(mbuf1), Modbus::WrongResponse);
+    CHECK_THROWS_AS(ilc.parse(mbuf2), std::out_of_range);
 
     // recheck correct reply are processed
     constructCommands();
-    REQUIRE_NOTHROW(ilc.parse(mbuf1));
-    REQUIRE_NOTHROW(ilc.parse(mbuf2));
+    CHECK_NOTHROW(ilc.parse(mbuf1));
+    CHECK_NOTHROW(ilc.parse(mbuf2));
 
     // invalid CRC
     mbuf2[2] = 0xe8;
 
     constructCommands();
-    REQUIRE_NOTHROW(ilc.parse(mbuf1));
-    REQUIRE_THROWS_AS(ilc.parse(mbuf2), Modbus::CRCError);
+    CHECK_NOTHROW(ilc.parse(mbuf1));
+    CHECK_THROWS_AS(ilc.parse(mbuf2), Modbus::CRCError);
 
     // invalid function
     mbuf2[1] = 1;
 
     constructCommands();
-    REQUIRE_NOTHROW(ilc.parse(mbuf1));
-    REQUIRE_THROWS_AS(ilc.parse(mbuf2), Modbus::MissingResponse);
+    CHECK_NOTHROW(ilc.parse(mbuf1));
+    CHECK_THROWS_AS(ilc.parse(mbuf2), Modbus::WrongResponse);
 
     // reset function
     Modbus::Buffer mbuf4;
@@ -368,9 +368,9 @@ TEST_CASE("Unmatched response", "[ILC]") {
 
     constructCommands();
     ilc.resetServer(17);
-    REQUIRE_NOTHROW(ilc.parse(mbuf1));
-    REQUIRE_NOTHROW(ilc.parse(mbuf2));
-    REQUIRE_NOTHROW(ilc.parse(mbuf4));
+    CHECK_NOTHROW(ilc.parse(mbuf1));
+    CHECK_NOTHROW(ilc.parse(mbuf2));
+    CHECK_NOTHROW(ilc.parse(mbuf4));
 
     CHECK(ilc.lastReset == 17);
 }
@@ -383,7 +383,7 @@ TEST_CASE("Error response", "[ILC]") {
     Modbus::Buffer mbuf(std::vector<uint8_t>({103, 145, 3}));
     mbuf.writeCRC();
 
-    REQUIRE_THROWS_AS(ilc.parse(mbuf), Modbus::MissingResponse);
+    CHECK_THROWS_AS(ilc.parse(mbuf), Modbus::ErrorResponse);
     CHECK(ilc.responseUniqueID == 0);
 
     Modbus::Buffer mbuf_ok;
@@ -414,7 +414,7 @@ TEST_CASE("Error response", "[ILC]") {
 
     ilc.reset();
 
-    REQUIRE_NOTHROW(ilc.parse(mbuf_ok));
+    CHECK_NOTHROW(ilc.parse(mbuf_ok));
     CHECK(ilc.responseUniqueID == 0x010203040506);
 }
 
@@ -433,7 +433,7 @@ TEST_CASE("Multiple calls to processResponse", "[ILC]") {
     mbuf1.writeCRC();
 
     CHECK(ilc.newMode == 0);
-    REQUIRE_NOTHROW(ilc.parse(mbuf1));
+    CHECK_NOTHROW(ilc.parse(mbuf1));
     CHECK(ilc.newMode == 4);
 
     Modbus::Buffer mbuf2;
@@ -461,7 +461,7 @@ TEST_CASE("Multiple calls to processResponse", "[ILC]") {
     mbuf2.write<uint8_t>('C');
     mbuf2.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.parse(mbuf2));
+    CHECK_NOTHROW(ilc.parse(mbuf2));
 
     CHECK(ilc.responseUniqueID == 0x010203040506);
     CHECK(ilc.responseILCAppType == 7);
@@ -508,44 +508,44 @@ TEST_CASE("Response cache management", "[ILC]") {
         return mbuf;
     };
 
-    REQUIRE_NOTHROW(ilc.parse(constructResponse(18, 'A')));
+    CHECK_NOTHROW(ilc.parse(constructResponse(18, 'A')));
     CHECK(ilc.serverIDCallCounter == 1);
     CHECK(ilc.responseFirmwareName == "AbC");
 
     ilc.reportServerID(19);
-    REQUIRE_NOTHROW(ilc.parse(constructResponse(19, 'A')));
+    CHECK_NOTHROW(ilc.parse(constructResponse(19, 'A')));
     CHECK(ilc.serverIDCallCounter == 2);
     CHECK(ilc.responseFirmwareName == "AbC");
 
     ilc.reportServerID(11);
-    REQUIRE_NOTHROW(ilc.parse(constructResponse(11, 'A')));
+    CHECK_NOTHROW(ilc.parse(constructResponse(11, 'A')));
     CHECK(ilc.serverIDCallCounter == 3);
     CHECK(ilc.responseFirmwareName == "AbC");
 
     ilc.reportServerID(12);
-    REQUIRE_NOTHROW(ilc.parse(constructResponse(12, 'A')));
+    CHECK_NOTHROW(ilc.parse(constructResponse(12, 'A')));
     CHECK(ilc.serverIDCallCounter == 4);
     CHECK(ilc.responseFirmwareName == "AbC");
 
     ilc.reportServerID(20);
-    REQUIRE_NOTHROW(ilc.parse(constructResponse(20, 'a')));
+    CHECK_NOTHROW(ilc.parse(constructResponse(20, 'a')));
     CHECK(ilc.serverIDCallCounter == 5);
     CHECK(ilc.responseFirmwareName == "abC");
 
-    REQUIRE_THROWS_AS(ilc.parse(constructResponse(20, 'a')), std::out_of_range);
+    CHECK_THROWS_AS(ilc.parse(constructResponse(20, 'a')), std::out_of_range);
 
     ilc.reportServerID(21);
-    REQUIRE_NOTHROW(ilc.parse(constructResponse(21, 'x')));
+    CHECK_NOTHROW(ilc.parse(constructResponse(21, 'x')));
     CHECK(ilc.serverIDCallCounter == 6);
     CHECK(ilc.responseFirmwareName == "xbC");
 
     ilc.reportServerID(22);
-    REQUIRE_NOTHROW(ilc.parse(constructResponse(22, 'h')));
+    CHECK_NOTHROW(ilc.parse(constructResponse(22, 'h')));
     CHECK(ilc.serverIDCallCounter == 7);
     CHECK(ilc.responseFirmwareName == "hbC");
 
     ilc.reportServerID(22);
-    REQUIRE_NOTHROW(ilc.parse(constructResponse(22, 'h')));
+    CHECK_NOTHROW(ilc.parse(constructResponse(22, 'h')));
     CHECK(ilc.serverIDCallCounter == 8);
     CHECK(ilc.responseFirmwareName == "hbC");
 }

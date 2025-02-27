@@ -36,18 +36,15 @@ public:
 };
 
 TestList::TestList(uint8_t _expectedAddress) : expectedAddress(_expectedAddress) {
-    addResponse(
-            3,
-            [this](Modbus::Parser parser) {
-                CHECK(parser.func() == 3);
-                CHECK(parser.read<uint8_t>() == 6);
-                uint16_t reg1 = parser.read<uint16_t>();
-                uint16_t reg2 = parser.read<uint16_t>();
-                uint16_t reg3 = parser.read<uint16_t>();
-                REQUIRE_NOTHROW(parser.checkCRC());
-                processReadRegister(parser.address(), reg1, reg2, reg3);
-            },
-            131);
+    add_response(3, [this](Modbus::Parser parser) {
+        CHECK(parser.func() == 3);
+        CHECK(parser.read<uint8_t>() == 6);
+        uint16_t reg1 = parser.read<uint16_t>();
+        uint16_t reg2 = parser.read<uint16_t>();
+        uint16_t reg3 = parser.read<uint16_t>();
+        CHECK_NOTHROW(parser.checkCRC());
+        processReadRegister(parser.address(), reg1, reg2, reg3);
+    });
 }
 
 void TestList::processReadRegister(uint8_t address, uint16_t reg1, uint16_t reg2, uint16_t reg3) {
@@ -66,9 +63,9 @@ TEST_CASE("Call functions", "[Calls]") {
     buslist.callFunction(43, 86, 200, static_cast<float>(0.1122), static_cast<int16_t>(-1234),
                          static_cast<uint64_t>(0x0123456789abcdef));
 
-    REQUIRE(buslist.size() == 2);
+    CHECK(buslist.size() == 2);
 
-    REQUIRE(buslist[0].buffer.size() == 11);
+    CHECK(buslist[0].buffer.size() == 11);
     CHECK(buslist[0].buffer[0] == 0x7b);
     CHECK(buslist[0].buffer[1] == 0x11);
     CHECK(buslist[0].buffer[2] == 0xfe);
@@ -81,7 +78,7 @@ TEST_CASE("Call functions", "[Calls]") {
     CHECK(buslist[0].buffer[9] == 0x4b);
     CHECK(buslist[0].buffer[10] == 0xa7);
 
-    REQUIRE(buslist[1].buffer.size() == 18);
+    CHECK(buslist[1].buffer.size() == 18);
     CHECK(buslist[1].buffer[0] == 0x2b);
     CHECK(buslist[1].buffer[1] == 0x56);
     CHECK(buslist[1].buffer[2] == 0x3d);
@@ -109,13 +106,13 @@ TEST_CASE("Call function, parser return", "[Parsing]") {
 
     std::vector<uint8_t> data({0x11, 0x03, 0x06, 0xAE, 0x41, 0x56, 0x52, 0x43, 0x40, 0x49, 0xAD});
 
-    REQUIRE_NOTHROW(buslist.parse(data));
+    CHECK_NOTHROW(buslist.parse(data));
 }
 
 TEST_CASE("Call 10 functions, parser return", "[Parsing]") {
     TestList buslist(1);
 
-    auto generateReply = [](uint8_t address) -> std::vector<uint8_t> {
+    auto generate_reply = [](uint8_t address) -> std::vector<uint8_t> {
         Buffer mbuf(std::vector<uint8_t>({address, 0x03, 0x06, 0xAE, 0x41, 0x56, 0x52, 0x43, 0x40}));
         mbuf.writeCRC();
         return mbuf;
@@ -127,14 +124,14 @@ TEST_CASE("Call 10 functions, parser return", "[Parsing]") {
 
     for (int address = 1; address < 10; address++) {
         buslist.expectedAddress = address;
-        REQUIRE_NOTHROW(buslist.parse(generateReply(address)));
+        CHECK_NOTHROW(buslist.parse(generate_reply(address)));
     }
 }
 
 TEST_CASE("Missing response", "[BusListErrors]") {
     TestList buslist(1);
 
-    auto generateReply = [](uint8_t address) -> std::vector<uint8_t> {
+    auto generate_reply = [](uint8_t address) -> std::vector<uint8_t> {
         Buffer mbuf(std::vector<uint8_t>({address, 0x03, 0x06, 0xAE, 0x41, 0x56, 0x52, 0x43, 0x40}));
         mbuf.writeCRC();
         return mbuf;
@@ -146,14 +143,14 @@ TEST_CASE("Missing response", "[BusListErrors]") {
 
     for (uint8_t address = 1; address < 10; address++) {
         buslist.expectedAddress = address;
-        REQUIRE_NOTHROW(buslist.parse(generateReply(address)));
+        CHECK_NOTHROW(buslist.parse(generate_reply(address)));
     }
 
     buslist.reset();
 
     for (uint8_t address = 1; address < 10; address++) {
         buslist.expectedAddress = address;
-        REQUIRE_THROWS_AS(buslist.parse(generateReply(address + 1)), MissingResponse);
+        CHECK_THROWS_AS(buslist.parse(generate_reply(address + 1)), WrongResponse);
     }
 
     buslist.reset();
@@ -161,23 +158,81 @@ TEST_CASE("Missing response", "[BusListErrors]") {
     // test MissingResponse is thrown properly in expected processing sequences
 
     buslist.expectedAddress = 1;
-    REQUIRE_THROWS_AS(buslist.parse(generateReply(2)), MissingResponse);
+    CHECK_THROWS_AS(buslist.parse(generate_reply(2)), WrongResponse);
     buslist.expectedAddress = 2;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(2)));
+    CHECK_NOTHROW(buslist.parse(generate_reply(2)));
     buslist.expectedAddress = 3;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(3)));
+    CHECK_NOTHROW(buslist.parse(generate_reply(3)));
     buslist.expectedAddress = 4;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(4)));
+    CHECK_NOTHROW(buslist.parse(generate_reply(4)));
     buslist.expectedAddress = 5;
-    REQUIRE_THROWS_AS(buslist.parse(generateReply(7)), MissingResponse);
+    CHECK_THROWS_AS(buslist.parse(generate_reply(7)), WrongResponse);
     buslist.expectedAddress = 6;
-    REQUIRE_THROWS_AS(buslist.parse(generateReply(7)), MissingResponse);
+    CHECK_THROWS_AS(buslist.parse(generate_reply(7)), WrongResponse);
     buslist.expectedAddress = 7;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(7)));
+    CHECK_NOTHROW(buslist.parse(generate_reply(7)));
     buslist.expectedAddress = 8;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(8)));
+    CHECK_NOTHROW(buslist.parse(generate_reply(8)));
     buslist.expectedAddress = 9;
-    REQUIRE_NOTHROW(buslist.parse(generateReply(9)));
+    CHECK_NOTHROW(buslist.parse(generate_reply(9)));
     buslist.expectedAddress = 9;
-    REQUIRE_THROWS_AS(buslist.parse(generateReply(10)), std::out_of_range);
+    CHECK_THROWS_AS(buslist.parse(generate_reply(10)), std::out_of_range);
+}
+
+TEST_CASE("Modbus error response", "[ModbusError]") {
+    TestList buslist(1);
+
+    auto generate_reply = [](uint8_t address) -> std::vector<uint8_t> {
+        Buffer mbuf(std::vector<uint8_t>({address, 0x03, 0x06, 0xAE, 0x41, 0x56, 0x52, 0x43, 0x40}));
+        mbuf.writeCRC();
+        return mbuf;
+    };
+
+    auto generate_error_reply = [](uint8_t address) -> std::vector<uint8_t> {
+        Buffer mbuf(std::vector<uint8_t>({address, 0x83, 0x01}));
+        mbuf.writeCRC();
+        return mbuf;
+    };
+
+    for (uint8_t address = 1; address < 10; address++) {
+        buslist.callFunction(address, 3, 200, static_cast<uint16_t>(0x1234), static_cast<uint16_t>(0x0003));
+    }
+
+    for (uint8_t address = 1; address < 10; address++) {
+        buslist.expectedAddress = address;
+        CHECK_THROWS_AS(buslist.parse(generate_error_reply(address)), ErrorResponse);
+    }
+
+    buslist.reset();
+
+    for (uint8_t address = 1; address < 10; address++) {
+        buslist.expectedAddress = address;
+        if (address & 0x01) {
+            CHECK_THROWS_AS(buslist.parse(generate_error_reply(address)), ErrorResponse);
+        } else {
+            CHECK_NOTHROW(buslist.parse(generate_reply(address)));
+        }
+    }
+
+    uint8_t expected_address = 0;
+
+    buslist.set_error_response(0x03, [&expected_address](uint8_t address, uint8_t called) -> void {
+        CHECK(address == expected_address);
+        CHECK(called == 0x83);
+    });
+
+    buslist.reset();
+
+    for (uint8_t address = 1; address < 10; address++) {
+        buslist.expectedAddress = address;
+        expected_address = address;
+        CHECK_NOTHROW(buslist.parse(generate_error_reply(address)));
+    }
+}
+
+TEST_CASE("Response length calculations", "[ResponseLength]") {
+    TestList buslist(1);
+
+    CHECK(buslist.responseLength({}) == -1);
+    CHECK(buslist.responseLength({0x01, 0x02}) == -1);
 }

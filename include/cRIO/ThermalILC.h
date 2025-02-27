@@ -99,7 +99,7 @@ public:
      * @param address ILC address to query.
      */
     void reportThermalStatus(uint8_t address) {
-        callFunction(address, ILC_THERMAL_CMD::REPORT_THERMAL_STATUS, 300);
+        callFunction(address, ILC_THERMAL_CMD::REPORT_THERMAL_STATUS, 500);
     }
 
     /**
