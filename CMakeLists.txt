@@ -184,29 +184,35 @@ endif()
 
 message(STATUS "installdir ${CMAKE_INSTALL_INCLUDEDIR}")
 
-find_package(Catch2 REQUIRED)
+find_package(Catch2 3 REQUIRED)
 
 if (NOT Catch2_FOUND)
   message(STATUS "catch2 not found. Tests will be skipped.")
-else()
-  include(CTest)
-  include(Catch)
 
-  add_library(test_main ${PROJECT_SOURCE_DIR}/tests/TestsMain.cpp)
-  target_link_libraries(test_main Catch2::Catch2)
-
-  file(GLOB test-sources ${PROJECT_SOURCE_DIR}/tests/test_*.cpp)
-  add_executable(tests ${test-sources} ${PROJECT_SOURCE_DIR}/tests/TestFPGA.cpp)
-  target_include_directories(tests
-    SYSTEM PUBLIC
-    PUBLIC
-      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-      $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests>
-      $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIRS}>
+  FetchContent_Declare(
+    catch2
+    GIT_REPOSITORY https://github.com/catchorg/catch2.git
+    GIT_TAG        v4.8.0
   )
-  target_link_libraries(tests test_main ts_cRIOcpp yaml-cpp readline spdlog fmt Catch2::Catch2 pthread)
 
-  catch_discover_tests(tests
-    WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests
-  )
+  FetchContent_MakeAvailable(catch2)
+
 endif()
+
+include(CTest)
+include(Catch)
+
+file(GLOB test-sources ${PROJECT_SOURCE_DIR}/tests/test_*.cpp)
+add_executable(tests ${test-sources} ${PROJECT_SOURCE_DIR}/tests/TestFPGA.cpp)
+target_include_directories(tests
+  SYSTEM PUBLIC
+  PUBLIC
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/tests>
+    $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDE_DIRS}>
+)
+target_link_libraries(tests ts_cRIOcpp yaml-cpp readline spdlog fmt Catch2::Catch2WithMain pthread)
+
+catch_discover_tests(tests
+  WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/tests
+)

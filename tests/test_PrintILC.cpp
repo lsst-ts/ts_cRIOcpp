@@ -20,7 +20,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch.hpp>
+#include <catch2/catch_all.hpp>
 
 #include <cRIO/IntelHex.h>
 #include <cRIO/PrintILC.h>

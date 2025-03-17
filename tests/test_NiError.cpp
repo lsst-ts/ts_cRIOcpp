@@ -21,9 +21,10 @@
  * along with this program.  If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <catch2/catch.hpp>
 #include <list>
 #include <string>
+
+#include <catch2/catch_all.hpp>
 
 #include <cRIO/NiError.h>
 
