@@ -19,12 +19,10 @@ endif
 
 TEST_CPPFLAGS := -I. \
 	-I"../include" \
-	$(shell pkg-config --cflags catch2-with-main $(silence)) \
-	$(shell pkg-config --cflags yaml-cpp $(silence))
+	$(shell pkg-config --cflags catch2 yaml-cpp fmt $(silence))
 
 CPP_FLAGS += \
-	$(shell pkg-config --libs catch2-with-main $(silence)) \
-	$(shell pkg-config --libs yaml-cpp $(silence))
+	$(shell pkg-config --libs catch2 yaml-cpp fmt $(silence)) 
 
 compile: libcRIOtest.a $(BINARIES) $(TEST_REQ_READLINE)
 
@@ -39,6 +37,10 @@ clean:
 
 ../lib/libcRIOcpp.a:
 	@$(MAKE) -C ../ lib/libcRIOcpp.a SIMULATOR=1
+
+test_%.cpp.o: test_%.cpp.d
+	@echo '[CPT] $(patsubst %.d,%,$<)'
+	${co}$(CPP) $(CPP_FLAGS) -DCATCH_CONFIG_MAIN $(TEST_CPPFLAGS) -c -fmessage-length=0 -o $@ -Wl,--gc-sections $(patsubst %.d,%,$<)
 
 %.cpp.o: %.cpp.d
 	@echo '[CPP] $(patsubst %.d,%,$<)'

@@ -24,6 +24,7 @@
 #include <iostream>
 
 #include <spdlog/fmt/fmt.h>
+#include <fmt/ranges.h>
 
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/PrintILC.h>
