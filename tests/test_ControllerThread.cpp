@@ -44,6 +44,14 @@ public:
     }
 };
 
+class NonRepeatTask : public Task {
+public:
+    task_return_t run() override {
+        tv++;
+        return Task::DONT_RESCHEDULE;
+    }
+};
+
 TEST_CASE("Run ControllerThread and stop it", "[ControllerThread]") {
     tv = 0;
     REQUIRE(tv == 0);
@@ -89,6 +97,8 @@ TEST_CASE("Queue at different times", "[ControllerThread]") {
 
     auto when = std::chrono::steady_clock::now() + 500ms;
 
+    ControllerThread::instance().clear();
+
     for (int i = 0; i < 3; i++) {
         ControllerThread::instance().enqueue_at(std::make_shared<TestTask>(), when);
         when -= 1ms;
@@ -125,6 +135,43 @@ TEST_CASE("Queue at different times", "[ControllerThread]") {
     ControllerThread::instance().stop();
 
     REQUIRE(tv == 9);
+}
+
+TEST_CASE("Removing tasks from the queue", "[ControllerThread]") {
+    tv = 0;
+    auto when = std::chrono::steady_clock::now() + 100ms;
+
+    auto test_task = std::make_shared<NonRepeatTask>();
+
+    ControllerThread::instance().clear();
+
+    for (int i = 0; i < 100; i++) {
+        ControllerThread::instance().enqueue_at(test_task, when);
+        when += 5ms;
+    }
+
+    REQUIRE(ControllerThread::instance().size() == 100);
+
+    ControllerThread::instance().start();
+
+    REQUIRE(ControllerThread::instance().size() == 100);
+
+    std::this_thread::sleep_for(101ms);
+
+    CHECK(tv == 1);
+    CHECK(ControllerThread::instance().size() == 99);
+
+    CHECK(ControllerThread::instance().remove(test_task) == true);
+
+    CHECK(ControllerThread::instance().size() == 0);
+
+    std::this_thread::sleep_for(200ms);
+
+    CHECK(tv == 1);
+
+    ControllerThread::instance().stop();
+
+    REQUIRE(tv == 1);
 }
 
 std::atomic<int> rv = 0;

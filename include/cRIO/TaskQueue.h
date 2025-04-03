@@ -32,15 +32,31 @@
 namespace LSST {
 namespace cRIO {
 
-typedef std::pair<std::chrono::time_point<std::chrono::steady_clock>, std::shared_ptr<Task>> task_t;
+typedef std::pair<std::chrono::steady_clock::time_point, std::shared_ptr<Task>> task_t;
 
+/**
+ * Scheduling entry. Holds task to execute and time when it shall be executed.
+ */
 class TaskEntry : public task_t {
 public:
-    TaskEntry(std::chrono::time_point<std::chrono::steady_clock> when, std::shared_ptr<Task> what)
-            : task_t(when, what) {}
+    TaskEntry(std::chrono::steady_clock::time_point when, std::shared_ptr<Task> what) : task_t(when, what) {}
 };
 
-class TaskQueue : public std::priority_queue<TaskEntry, std::vector<TaskEntry>, std::greater<TaskEntry>> {};
+/**
+ * Task queue management structure. Time-based priority queue, providing a
+ * quick access to the next (time-wise) task to execute.
+ */
+class TaskQueue : public std::priority_queue<TaskEntry, std::vector<TaskEntry>, std::greater<TaskEntry>> {
+public:
+    /**
+     * Remove all task copies from the queue.
+     *
+     * @param what Task to remove from the queue.
+     *
+     * @return True if at least a single instance of the task was removed.
+     */
+    bool remove(std::shared_ptr<Task> what);
+};
 
 }  // namespace cRIO
 }  // namespace LSST
