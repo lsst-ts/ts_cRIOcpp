@@ -4,6 +4,7 @@ Version History
 
 v1.13.1
 -------
+* TaskQueue remove method
 * Flush method to flush transport's serial port buffers
 
 v1.13.0
