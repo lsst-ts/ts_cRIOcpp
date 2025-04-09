@@ -35,23 +35,22 @@ using namespace LSST::cRIO;
 ControllerThread::ControllerThread(token) { SPDLOG_DEBUG("ControllerThread: ControllerThread()"); }
 
 ControllerThread::~ControllerThread() {
-    delete _interruptWatcherThread;
-    _clear();
+    delete _interrupt_watcher_thread;
+    clear();
 }
 
 void ControllerThread::enqueue(std::shared_ptr<Task> task) {
     enqueue_at(task, std::chrono::steady_clock::now() + 1ms);
 }
 
-void ControllerThread::enqueue_at(std::shared_ptr<Task> task,
-                                  std::chrono::time_point<std::chrono::steady_clock> when) {
+void ControllerThread::enqueue_at(std::shared_ptr<Task> task, std::chrono::steady_clock::time_point when) {
     SPDLOG_TRACE("ControllerThread: enqueue at {}",
                  std::chrono::duration_cast<std::chrono::seconds>(when.time_since_epoch()).count());
     {
         std::lock_guard<std::mutex> lg(runMutex);
         try {
             if (task->validate()) {
-                _taskQueue.push(TaskEntry(when, task));
+                _task_queue.push(TaskEntry(when, task));
             }
         } catch (std::exception& ex) {
             task->reportException(ex);
@@ -60,9 +59,16 @@ void ControllerThread::enqueue_at(std::shared_ptr<Task> task,
     runCondition.notify_one();
 }
 
+bool ControllerThread::remove(std::shared_ptr<Task> task) {
+    {
+        std::lock_guard<std::mutex> lg(runMutex);
+        return _task_queue.remove(task);
+    }
+}
+
 void ControllerThread::startInterruptWatcherTask(FPGA* fpga) {
-    _interruptWatcherThread = new InterruptWatcherThread(fpga);
-    _interruptWatcherThread->start();
+    _interrupt_watcher_thread = new InterruptWatcherThread(fpga);
+    _interrupt_watcher_thread->start();
 }
 
 void ControllerThread::setInterruptHandler(std::shared_ptr<InterruptHandler> handler, uint8_t irq) {
@@ -70,24 +76,24 @@ void ControllerThread::setInterruptHandler(std::shared_ptr<InterruptHandler> han
         throw std::runtime_error(fmt::format("Interrupt number should fall between 1 and {} - {} specified",
                                              CRIO_INTERRUPTS, irq));
     }
-    if (_interruptHandlers[irq - 1] != nullptr) {
+    if (_interrupt_handlers[irq - 1] != nullptr) {
         throw std::runtime_error(
                 fmt::format("Cannot set handler for interrupt {}, as the handler was already set", irq));
     }
-    _interruptHandlers[irq - 1] = handler;
+    _interrupt_handlers[irq - 1] = handler;
 }
 
 void ControllerThread::run(std::unique_lock<std::mutex>& lock) {
     SPDLOG_INFO("ControllerThread: Run");
     // process already queued tasks
-    _processTasks();
+    _process_tasks();
     while (keepRunning) {
-        if (_taskQueue.empty()) {
+        if (_task_queue.empty()) {
             runCondition.wait(lock);
         } else {
-            runCondition.wait_until(lock, _taskQueue.top().first);
+            runCondition.wait_until(lock, _task_queue.top().first);
         }
-        _processTasks();
+        _process_tasks();
     }
     SPDLOG_INFO("ControllerThread: Completed");
 }
@@ -95,46 +101,46 @@ void ControllerThread::run(std::unique_lock<std::mutex>& lock) {
 void ControllerThread::checkInterrupts(uint32_t triggeredIterrupts) {
     for (uint8_t i = 0; i < CRIO_INTERRUPTS; i++, triggeredIterrupts >>= 1) {
         if ((triggeredIterrupts & 0x01) == 0x01) {
-            if (_interruptHandlers[i] == nullptr) {
+            if (_interrupt_handlers[i] == nullptr) {
                 SPDLOG_WARN("FPGA signaled non-handled interrupt {}.", i + 1);
                 continue;
             }
-            _interruptHandlers[i]->handleInterrupt(i + 1);
+            _interrupt_handlers[i]->handleInterrupt(i + 1);
         }
     }
 }
 
-void ControllerThread::_clear() {
-    SPDLOG_TRACE("ControllerThread: _clear()");
+void ControllerThread::clear() {
+    SPDLOG_TRACE("ControllerThread: clear()");
     {
         std::lock_guard<std::mutex> lg(runMutex);
         TaskQueue empty;
-        std::swap(_taskQueue, empty);
+        std::swap(_task_queue, empty);
     }
 }
 
-// runMutex must be locked by calling method to guard _taskQueue access!!
-void ControllerThread::_processTasks() {
-    if (_taskQueue.empty()) {
+// runMutex must be locked by calling method to guard _task_queue access!!
+void ControllerThread::_process_tasks() {
+    if (_task_queue.empty()) {
         return;
     }
 
     auto now = std::chrono::steady_clock::now();
-    auto task = _taskQueue.top();
+    auto task = _task_queue.top();
     while (task.first <= now) {
-        _taskQueue.pop();
+        _task_queue.pop();
         try {
             auto wait = task.second->run();
             if (wait != Task::DONT_RESCHEDULE) {
-                _taskQueue.push(TaskEntry(std::chrono::steady_clock::now() + std::chrono::milliseconds(wait),
-                                          task.second));
+                _task_queue.push(TaskEntry(std::chrono::steady_clock::now() + std::chrono::milliseconds(wait),
+                                           task.second));
             }
         } catch (std::exception& ex) {
             task.second->reportException(ex);
         }
-        if (_taskQueue.empty()) {
+        if (_task_queue.empty()) {
             return;
         }
-        task = _taskQueue.top();
+        task = _task_queue.top();
     }
 }
