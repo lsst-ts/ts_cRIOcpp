@@ -52,15 +52,33 @@ public:
 
     void startInterruptWatcherTask(FPGA* fpga);
 
-    /* Put command into queue.
+    /* Add task into queue.
      *
-     * @param command Command to enqueue. ControllerThread takes ownership of
-     * the passed Command and will dispose it (delete it) after command is
-     * executed or when queue is cleared.
+     * @param task Task to enqueue.
      */
     void enqueue(std::shared_ptr<Task> task);
 
-    void enqueue_at(std::shared_ptr<Task> task, std::chrono::time_point<std::chrono::steady_clock> when);
+    /**
+     * Add task into queue to execute at the given time.
+     */
+    void enqueue_at(std::shared_ptr<Task> task, std::chrono::steady_clock::time_point when);
+
+    /**
+     * Remove task from queue. All copies of the tasks will be removed.
+     *
+     * @param task task to be removed
+     */
+    bool remove(std::shared_ptr<Task> task);
+
+    /**
+     * Remove all tasks from the queue.
+     */
+    void clear();
+
+    /**
+     * Return numer of tasks in the queue.
+     */
+    size_t size() { return _task_queue.size(); }
 
     /**
      * Sets interrupt handler.
@@ -70,9 +88,9 @@ public:
      */
     void setInterruptHandler(std::shared_ptr<InterruptHandler> handler, uint8_t irq);
 
-    static void setExitRequested() { instance()._exitRequested = true; }
+    static void setExitRequested() { instance()._exit_requested = true; }
 
-    static bool exitRequested() { return instance()._exitRequested; }
+    static bool exitRequested() { return instance()._exit_requested; }
 
     void checkInterrupts(uint32_t triggeredIterrupts);
 
@@ -80,25 +98,23 @@ protected:
     void run(std::unique_lock<std::mutex>& lock) override;
 
 private:
-    void _clear();
+    void _process_tasks();
 
-    void _processTasks();
+    TaskQueue _task_queue;
 
-    TaskQueue _taskQueue;
-
-    std::atomic<bool> _exitRequested = false;
+    std::atomic<bool> _exit_requested = false;
 
     static constexpr uint8_t CRIO_INTERRUPTS = 32;
 
     /**
      * Tasks run at specific interrupt.
      */
-    std::shared_ptr<InterruptHandler> _interruptHandlers[CRIO_INTERRUPTS] = {
+    std::shared_ptr<InterruptHandler> _interrupt_handlers[CRIO_INTERRUPTS] = {
             nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
             nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr,
             nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr, nullptr};
 
-    InterruptWatcherThread* _interruptWatcherThread = nullptr;
+    InterruptWatcherThread* _interrupt_watcher_thread = nullptr;
 
     friend class InterruptWatcherTask;
 };
