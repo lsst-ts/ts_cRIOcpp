@@ -6,6 +6,7 @@ v1.13.1
 -------
 * TaskQueue remove method
 * Flush method to flush transport's serial port buffers
+* PID class + processing
 
 v1.13.0
 -------
