@@ -23,15 +23,15 @@
 using namespace LSST::cRIO;
 
 bool TaskQueue::remove(std::shared_ptr<Task> what) {
-	bool removed = false;
-	auto iter = c.begin();
-	while (iter != c.end()) {
-		if (iter->second.get() == what.get()) {
-			iter = c.erase(iter);
-			removed = true;
-		} else {
-			iter++;
-		}
-	}
-	return removed;
+    bool removed = false;
+    auto iter = c.begin();
+    while (iter != c.end()) {
+        if (iter->second.get() == what.get()) {
+            iter = c.erase(iter);
+            removed = true;
+        } else {
+            iter++;
+        }
+    }
+    return removed;
 }

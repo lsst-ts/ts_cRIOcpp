@@ -19,12 +19,10 @@ endif
 
 TEST_CPPFLAGS := -I. \
 	-I"../include" \
-	$(shell pkg-config --cflags catch2-with-main $(silence)) \
-	$(shell pkg-config --cflags yaml-cpp $(silence))
+	$(shell pkg-config --cflags catch2-with-main yaml-cpp spdlog fmt $(silence)) \
 
 CPP_FLAGS += \
-	$(shell pkg-config --libs catch2-with-main $(silence)) \
-	$(shell pkg-config --libs yaml-cpp $(silence))
+	$(shell pkg-config --libs catch2-with-main yaml-cpp spdlog fmt $(silence)) \
 
 compile: libcRIOtest.a $(BINARIES) $(TEST_REQ_READLINE)
 
