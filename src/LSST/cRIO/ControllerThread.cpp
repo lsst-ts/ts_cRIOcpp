@@ -130,7 +130,10 @@ void ControllerThread::_process_tasks() {
     while (task.first <= now) {
         _task_queue.pop();
         try {
+            runMutex.unlock();
             auto wait = task.second->run();
+            runMutex.lock();
+
             if (wait != Task::DONT_RESCHEDULE) {
                 _task_queue.push(TaskEntry(std::chrono::steady_clock::now() + std::chrono::milliseconds(wait),
                                            task.second));

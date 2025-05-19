@@ -223,13 +223,6 @@ int CSC::_daemonize() {
                           << std::endl;
                 exit(EXIT_FAILURE);
             }
-            if (runAs != NULL) {
-                if (chown(_daemon.pidfile, runAs->pw_uid, runGroup->gr_gid)) {
-                    std::cerr << "Error: Cannot change owner of " << _daemon.pidfile << ":" << strerror(errno)
-                              << std::endl;
-                    exit(EXIT_FAILURE);
-                }
-            }
             char retbuf[2000];
             memset(retbuf, 0, sizeof(retbuf));
             signal(SIGALRM, [](int) {
