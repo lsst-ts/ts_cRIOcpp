@@ -54,18 +54,34 @@ struct PIDParameters {
     }
 
     /**
-     * Load parameters from YAML node.
+     * Load PID parameters from YAML node.
      *
      * @param node YAML node with PID, N and Timestep keys
      *
      * @raise YAML::Exception on error
      */
-    void load(const YAML::Node &node) {
+    virtual void load(const YAML::Node &node) {
         timestep = node["Timestep"].as<double>(1);
         P = node["P"].as<double>();
         I = node["I"].as<double>();
         D = node["D"].as<double>();
         N = node["N"].as<double>();
+    }
+
+    /**
+     * Load PID parameters from YAML node, with default specified.
+     *
+     * @param node YAML node with PID, N and Timestep keys
+     * @param default_params default parameters - will be used for missing parameters
+     *
+     * @raise YAML::Exception on error
+     */
+    virtual void load(const YAML::Node &node, const PIDParameters &default_params) {
+        timestep = node["Timestep"].as<double>(default_params.timestep);
+        P = node["P"].as<double>(default_params.P);
+        I = node["I"].as<double>(default_params.I);
+        D = node["D"].as<double>(default_params.D);
+        N = node["N"].as<double>(default_params.N);
     }
 
     //* Length of step (seconds)
