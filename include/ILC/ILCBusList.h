@@ -31,6 +31,23 @@ namespace ILC {
 
 enum Mode { Standby = 0, Disabled = 1, Enabled = 2, Bootloader = 3, Fault = 4, ClearFaults = 5 };
 
+enum Status { MajorFault = 0x0001, MinorFault = 0x0002, FaultOverride = 0x0008 };
+
+enum Fault {
+    UniqueIdCRC = 0x0001,
+    AppType = 0x0002,
+    NoApplication = 0x0004,
+    AppCRC = 0x0008,
+    NoTEDS = 0x0010,
+    TEDS1 = 0x0020,
+    TEDS2 = 0x0040,
+    WatchdogReset = 0x0100,
+    BrownOut = 0x0200,
+    EventTrap = 0x0400,
+    SSR = 0x1000,
+    AUX = 0x2000
+};
+
 /**
  * Handles basic @glos{ILC} communication. Provides methods to run @glos{ILC}
  * functions and callback for responses.
@@ -189,8 +206,6 @@ protected:
      */
     virtual std::vector<const char *> getStatusString(uint16_t status);
 
-    enum ILCStatus { MajorFault = 0x0001, MinorFault = 0x0002, FaultOverride = 0x0008 };
-
     /**
      * Returns last know mode (state) of the @glos{ILC} at the address.
      *
@@ -210,21 +225,6 @@ protected:
      * @return vector of strings with fault description
      */
     virtual std::vector<const char *> getFaultString(uint16_t fault);
-
-    enum ILCFault {
-        UniqueIRC = 0x0001,
-        AppType = 0x0002,
-        NoILC = 0x0004,
-        ILCAppCRC = 0x0008,
-        NoTEDS = 0x0010,
-        TEDS1 = 0x0020,
-        TEDS2 = 0x0040,
-        WatchdogReset = 0x0100,
-        BrownOut = 0x0200,
-        EventTrap = 0x0400,
-        SSR = 0x1000,
-        AUX = 0x2000
-    };
 
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for

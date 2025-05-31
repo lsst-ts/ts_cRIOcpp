@@ -33,6 +33,13 @@ namespace cRIO {
  */
 constexpr int NUM_TS_ILC = 96;
 
+enum ThermalILCStatus {
+    RefResistor = 0x0040,
+    RTDError = 0x0080,
+    HeaterBreaker = 0x0400,
+    FanBreaker = 0x0800
+};
+
 /**
  * Class for communication with Thermal ILCs.
  *
@@ -48,13 +55,6 @@ public:
     ThermalILC(uint8_t bus);
 
     std::vector<const char*> getStatusString(uint16_t status) override;
-
-    enum ThermalILCStatus {
-        RefResistor = 0x0040,
-        RTDError = 0x0080,
-        HeaterBreaker = 0x0400,
-        FanBreaker = 0x0800
-    };
 
     /**
      * Return thermal status. This is the lower nibble returned from thermal demand and status functions.
