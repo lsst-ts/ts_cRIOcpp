@@ -112,14 +112,14 @@ const char *ILCBusList::getModeStr(uint8_t mode) {
 std::vector<const char *> ILCBusList::getStatusString(uint16_t status) {
     std::vector<const char *> ret;
 
-    if (status & ILCStatus::MajorFault) {
+    if (status & Status::MajorFault) {
         ret.push_back("Major Fault");
     }
-    if (status & ILCStatus::MinorFault) {
+    if (status & Status::MinorFault) {
         ret.push_back("Minor Fault");
     }
     // 0x0003 reserved
-    if (status & FaultOverride) {
+    if (status & Status::FaultOverride) {
         ret.push_back("Fault Override");
     }
     // remaining status is ILC specific, implemented in its *ILC subclass
@@ -130,42 +130,42 @@ std::vector<const char *> ILCBusList::getStatusString(uint16_t status) {
 std::vector<const char *> ILCBusList::getFaultString(uint16_t fault) {
     std::vector<const char *> ret;
 
-    if (fault & ILCFault::UniqueIRC) {
+    if (fault & Fault::UniqueIdCRC) {
         ret.push_back("Unique ID CRC error");
     }
-    if (fault & ILCFault::AppType) {
+    if (fault & Fault::AppType) {
         ret.push_back("App Type & Network Node Type do not match");
     }
-    if (fault & ILCFault::NoILC) {
+    if (fault & Fault::NoApplication) {
         ret.push_back("No ILC App programmed");
     }
-    if (fault & ILCFault::ILCAppCRC) {
+    if (fault & Fault::AppCRC) {
         ret.push_back("ILC App CRC error");
     }
-    if (fault & ILCFault::NoTEDS) {
+    if (fault & Fault::NoTEDS) {
         ret.push_back("No TEDS found");
     }
-    if (fault & ILCFault::TEDS1) {
+    if (fault & Fault::TEDS1) {
         ret.push_back("TEDS copy 1 error");
     }
-    if (fault & ILCFault::TEDS2) {
+    if (fault & Fault::TEDS2) {
         ret.push_back("TEDS copy 2 error");
     }
     // 0x0080 reserved
-    if (fault & ILCFault::WatchdogReset) {
+    if (fault & Fault::WatchdogReset) {
         ret.push_back("Reset due to Watchdog Timeout");
     }
-    if (fault & ILCFault::BrownOut) {
+    if (fault & Fault::BrownOut) {
         ret.push_back("Brown Out");
     }
-    if (fault & ILCFault::EventTrap) {
+    if (fault & Fault::EventTrap) {
         ret.push_back("Event Trap");
     }
     // 0x0800 Electromechanical only
-    if (fault & ILCFault::SSR) {
+    if (fault & Fault::SSR) {
         ret.push_back("SSR power fail");
     }
-    if (fault & ILCFault::AUX) {
+    if (fault & Fault::AUX) {
         ret.push_back("Aux power fail");
     }
 

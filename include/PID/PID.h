@@ -53,6 +53,8 @@ public:
      */
     PID(PIDParameters parameters);
 
+    virtual ~PID() {}
+
     /**
      * Update PID parameters.
      */
@@ -63,7 +65,7 @@ public:
     /**
      * Run PID calculations, produce output.
      */
-    double process(double setpoint, double measurement);
+    virtual double process(double setpoint, double measurement);
 
     /**
      * Keep constant PID output. Used during slews.
