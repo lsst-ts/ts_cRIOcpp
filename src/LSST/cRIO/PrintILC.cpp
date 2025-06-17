@@ -23,8 +23,7 @@
 #include <iomanip>
 #include <iostream>
 
-#include <spdlog/fmt/fmt.h>
-#include <spdlog/fmt/ranges.h>
+#include <fmt/ranges.h>
 
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/PrintILC.h>
