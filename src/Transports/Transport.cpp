@@ -59,7 +59,8 @@ void Transport::execute_command(std::vector<uint8_t> command, Modbus::BusList& b
     }
 
     if (answer.empty()) {
-        throw std::runtime_error(fmt::format("Empty answer to {}", Modbus::hexDump(command)));
+        bus_list.missing_response();
+        throw MissingResponse(command);
     }
 
     bus_list.parse(answer);

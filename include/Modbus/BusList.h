@@ -309,6 +309,11 @@ public:
     void add_response(uint8_t func, std::function<void(Parser)> action,
                       std::function<void(uint8_t, uint8_t)> error_action = nullptr);
 
+    /***
+     * Called when response wasn't received.
+     */
+    virtual void missing_response();
+
     void set_error_response(uint8_t func, std::function<void(uint8_t, uint8_t)> error_action);
 
     ErrorRecord get_error_record(uint8_t address) { return _errors[address]; }

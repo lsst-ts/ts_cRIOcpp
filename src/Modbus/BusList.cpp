@@ -100,6 +100,8 @@ void BusList::add_response(uint8_t func, std::function<void(Parser)> action,
     _functions.emplace(func, ResponseRecord(action, error_action));
 }
 
+void BusList::missing_response() { _parsed_index++; };
+
 void BusList::set_error_response(uint8_t func, std::function<void(uint8_t, uint8_t)> error_action) {
     _functions.at(func).error_action = error_action;
 }

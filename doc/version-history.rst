@@ -4,7 +4,8 @@ Version History
 
 v1.14.0
 -------
-* PIDParameters load method with default PIDParameters
+* PIDParameters load method with default PIDParameters.
+* BusList::missing_response method.
 
 v1.13.1
 -------

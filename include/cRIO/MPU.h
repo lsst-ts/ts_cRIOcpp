@@ -74,6 +74,8 @@ public:
 
     int responseLength(const std::vector<uint8_t> &response) override;
 
+    void missing_response() override;
+
     /**
      * Read input registers.
      */
