@@ -26,9 +26,27 @@
 #include <vector>
 
 #include <cRIO/Thread.h>
+#include <Modbus/Buffer.h>
 #include <Modbus/BusList.h>
 
 namespace Transports {
+
+/**
+ * Error thrown when a response is missing. This is mostly caused by an @glos{ILC} on
+ * the bus being dead/not reacting to the command send.
+ */
+class MissingResponse : public std::runtime_error {
+public:
+    /**
+     * Construct missing response exception.
+     *
+     * @param address Expected @glos{ILC} address, for which response wasn't received
+     * @param func Expected function which wasn't responded by the @glos{ILC}
+     */
+    MissingResponse(const Modbus::Buffer& commanded)
+            : std::runtime_error(
+                      fmt::format("Missing response to command '{0}'", Modbus::hexDump(commanded))) {}
+};
 
 /**
  * Base transport class. Provides abstract interface to write and read bytes to

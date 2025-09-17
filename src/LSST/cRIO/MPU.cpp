@@ -145,6 +145,11 @@ int MPU::responseLength(const std::vector<uint8_t> &response) {
     }
 }
 
+void MPU::missing_response() {
+    _commanded_info.pop_front();
+    BusList::missing_response();
+}
+
 void MPU::readInputStatus(uint16_t start_register_address, uint16_t count, uint32_t timing) {
     callFunction(_node_address, READ_INPUT_STATUS, timing, start_register_address, count);
     _commanded_info.emplace_back(start_register_address, count);
