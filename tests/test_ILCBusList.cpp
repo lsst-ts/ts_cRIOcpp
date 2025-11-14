@@ -134,7 +134,7 @@ TEST_CASE("Parse response", "[ILC]") {
     TestILC ilc(1);
 
     auto constructCommands = [&ilc]() {
-        ilc.reset();
+        ilc.next_message();
         ilc.reportServerID(132);
     };
 
@@ -187,7 +187,7 @@ TEST_CASE("Parse response", "[ILC]") {
 
     mbuf.write<uint8_t>(0xff);
 
-    ilc.reset();
+    ilc.next_message();
     CHECK_THROWS_AS(ilc.parse(mbuf), Modbus::LongResponse);
 
     // invalid CRC
@@ -237,7 +237,6 @@ TEST_CASE("Unmatched response", "[ILC]") {
     TestILC ilc(1);
 
     auto constructCommands = [&ilc]() {
-        ilc.reset();
         ilc.clear();
         ilc.reportServerID(132);
         ilc.reportServerStatus(140);
@@ -316,7 +315,6 @@ TEST_CASE("Unmatched response", "[ILC]") {
     CHECK_THROWS_AS(ilc.parse(mbuf3), Modbus::LongResponse);
 
     // missing command
-    ilc.reset();
     ilc.clear();
     ilc.reportServerID(132);
 
@@ -324,7 +322,6 @@ TEST_CASE("Unmatched response", "[ILC]") {
     CHECK_THROWS_AS(ilc.parse(mbuf2), std::out_of_range);
 
     // invalid address
-    ilc.reset();
     ilc.clear();
     ilc.reportServerID(132);
     ilc.reportServerStatus(141);
@@ -332,7 +329,6 @@ TEST_CASE("Unmatched response", "[ILC]") {
     CHECK_THROWS_AS(ilc.parse(mbuf2), Modbus::WrongResponse);
 
     // missing reply
-    ilc.reset();
     ilc.clear();
     ilc.resetServer(121);
     CHECK_THROWS_AS(ilc.parse(mbuf1), Modbus::WrongResponse);
@@ -412,7 +408,7 @@ TEST_CASE("Error response", "[ILC]") {
     mbuf_ok.write<uint8_t>('C');
     mbuf_ok.writeCRC();
 
-    ilc.reset();
+    ilc.next_message();
 
     CHECK_NOTHROW(ilc.parse(mbuf_ok));
     CHECK(ilc.responseUniqueID == 0x010203040506);

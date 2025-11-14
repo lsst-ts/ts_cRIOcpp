@@ -113,7 +113,7 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
     uint64_t endTs = 0;
     int endTsShift = 0;
 
-    ilc.reset();
+    ilc.next_message();
 
     std::vector<uint8_t> decoded;
     for (uint16_t *p = buffer + 4; p < buffer + responseLen; p++) {

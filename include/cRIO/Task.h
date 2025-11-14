@@ -37,7 +37,7 @@ typedef uint32_t task_return_t;
  */
 class Task {
 public:
-    Task(uint32_t irq_mask = 0) : _irq_mask(irq_mask) {}
+    Task() {}
     virtual ~Task() {}
 
     /**
@@ -57,9 +57,6 @@ public:
     virtual void reportException(const std::exception &ex) {};
 
     static constexpr task_return_t DONT_RESCHEDULE = 0xFFFFFFFF;
-
-private:
-    uint32_t _irq_mask;
 };
 
 }  // namespace cRIO

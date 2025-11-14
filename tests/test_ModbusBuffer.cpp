@@ -97,7 +97,7 @@ TEST_CASE("WriteUxx", "[ModbusBuffer]") {
     REQUIRE(buf[5] == 0xab);
     REQUIRE(buf[6] == 0xcd);
 
-    mbuf.reset();
+    mbuf.start_next_message();
 
     REQUIRE(mbuf.read<uint8_t>() == 0x12);
     REQUIRE(mbuf.read<uint16_t>() == 0x3456);
@@ -135,7 +135,7 @@ TEST_CASE("WriteIxx", "[ModbusBuffer]") {
     REQUIRE(buf[12] == 0xab);
     REQUIRE(buf[13] == 0xcd);
 
-    mbuf.reset();
+    mbuf.start_next_message();
 
     REQUIRE(mbuf.read<uint8_t>() == 0x12);
     REQUIRE(mbuf.read<uint16_t>() == 0x3456);
@@ -164,7 +164,7 @@ TEST_CASE("WriteSGL", "[ModbusBuffer]") {
     REQUIRE(buf[6] == 0x30);
     REQUIRE(buf[7] == 0xfd);
 
-    mbuf.reset();
+    mbuf.start_next_message();
 
     REQUIRE(mbuf.read<float>() == 0.123f);
     REQUIRE(mbuf.read<float>() == -6758.1234f);
@@ -184,7 +184,7 @@ TEST_CASE("Calculate function response CRC", "[ModbusBuffer]") {
     REQUIRE(buf[7] == 0x05);
     REQUIRE(buf[8] == 0xad);
 
-    mbuf.reset();
+    mbuf.start_next_message();
 
     REQUIRE(mbuf.read<uint8_t>() == 140);
     REQUIRE(mbuf.read<uint8_t>() == 18);
@@ -216,7 +216,7 @@ TEST_CASE("Call function with arguments", "[ModbusBuffer]") {
     mbuf.testFunction(123, 17, 23, static_cast<uint8_t>(0xfe), static_cast<uint16_t>(0xffcc),
                       static_cast<float>(M_PI));
 
-    mbuf.reset();
+    mbuf.start_next_message();
 
     REQUIRE(mbuf.read<uint8_t>() == 123);
     REQUIRE(mbuf.read<uint8_t>() == 17);
@@ -235,7 +235,7 @@ TEST_CASE("Test broadcast", "[ModbusBuffer]") {
 
     mbuf.testBroadcast(250, 89, 2, 300, data, 22);
 
-    mbuf.reset();
+    mbuf.start_next_message();
 
     REQUIRE(mbuf.read<uint8_t>() == 250);
     REQUIRE(mbuf.read<uint8_t>() == 89);
@@ -259,7 +259,7 @@ TEST_CASE("Test changed calculations", "[ModbusBuffer]") {
     std::vector<uint8_t> changed;
 
     auto readAll = [&mbuf](int32_t nrp = -977453, uint32_t rp = 87346) {
-        mbuf.reset();
+        mbuf.start_next_message();
 
         REQUIRE(mbuf.read<uint8_t>() == 11);
         REQUIRE(mbuf.read<uint8_t>() == 23);

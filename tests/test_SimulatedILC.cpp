@@ -48,7 +48,7 @@ TEST_CASE("Simulate response", "[SimulationBuffer]") {
     REQUIRE(buf[6] == 0x9260);
     REQUIRE(buf[7] == 0x93fa);
 
-    ilc.reset();
+    ilc.start_next_message();
 
     REQUIRE(ilc.read<float>() == 0.123f);
     REQUIRE(ilc.read<float>() == -6758.1234f);
