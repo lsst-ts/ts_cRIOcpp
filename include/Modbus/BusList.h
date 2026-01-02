@@ -213,7 +213,7 @@ public:
      * Reset bus list parsing processing. Move index of the parsed responses
      * back to beggining, indicating a new responses might be parsed.
      */
-    void reset() { _parsed_index = 0; }
+    void next_message() { _parsed_index = 0; }
 
     /**
      * Calls Modbus function. Timing parameter is passed to the @glos{FPGA},

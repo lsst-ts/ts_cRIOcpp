@@ -2,6 +2,11 @@
 Version History
 ###############
 
+v1.15.0
+-------
+
+* rename reset messages to disambiguate calls with device's reset.
+
 v1.14.0
 -------
 * PIDParameters load method with default PIDParameters.

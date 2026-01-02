@@ -146,14 +146,14 @@ TEST_CASE("Missing response", "[BusListErrors]") {
         CHECK_NOTHROW(buslist.parse(generate_reply(address)));
     }
 
-    buslist.reset();
+    buslist.next_message();
 
     for (uint8_t address = 1; address < 10; address++) {
         buslist.expectedAddress = address;
         CHECK_THROWS_AS(buslist.parse(generate_reply(address + 1)), WrongResponse);
     }
 
-    buslist.reset();
+    buslist.next_message();
 
     // test MissingResponse is thrown properly in expected processing sequences
 
@@ -203,7 +203,7 @@ TEST_CASE("Modbus error response", "[ModbusError]") {
         CHECK_THROWS_AS(buslist.parse(generate_error_reply(address)), ErrorResponse);
     }
 
-    buslist.reset();
+    buslist.next_message();
 
     for (uint8_t address = 1; address < 10; address++) {
         buslist.expectedAddress = address;
@@ -221,7 +221,7 @@ TEST_CASE("Modbus error response", "[ModbusError]") {
         CHECK(called == 0x83);
     });
 
-    buslist.reset();
+    buslist.next_message();
 
     for (uint8_t address = 1; address < 10; address++) {
         buslist.expectedAddress = address;

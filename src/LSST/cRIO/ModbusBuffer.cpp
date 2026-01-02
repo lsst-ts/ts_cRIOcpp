@@ -38,7 +38,7 @@ ModbusBuffer::ModbusBuffer() { clear(); }
 
 ModbusBuffer::~ModbusBuffer() {}
 
-void ModbusBuffer::reset() {
+void ModbusBuffer::start_next_message() {
     _index = 0;
     _crc.reset();
     _recordChanges = false;
@@ -51,7 +51,7 @@ void ModbusBuffer::clear(bool onlyBuffers) {
         std::queue<std::pair<uint8_t, uint8_t>> emptyQ;
         _commanded.swap(emptyQ);
     }
-    reset();
+    start_next_message();
 }
 
 bool ModbusBuffer::endOfBuffer() { return _index >= _buffer.size(); }

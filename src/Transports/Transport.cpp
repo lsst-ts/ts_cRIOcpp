@@ -64,5 +64,5 @@ void Transport::execute_command(std::vector<uint8_t> command, Modbus::BusList& b
     }
 
     bus_list.parse(answer);
-    bus_list.reset();
+    bus_list.next_message();
 }

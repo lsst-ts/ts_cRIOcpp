@@ -158,7 +158,7 @@ public:
      * internal CRC counter, so CRC will be recalculated during subsequent
      * reads.
      */
-    virtual void reset();
+    virtual void start_next_message();
 
     /**
      * Clears modbus buffer.

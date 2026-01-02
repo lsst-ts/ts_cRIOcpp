@@ -99,7 +99,7 @@ TEST_CASE("Test SimulatedTransport", "[SimulatedTransport]") {
     CHECK(test_device.getRegister(1002) == 0);
     CHECK(test_device.getRegister(1003) == 12);
 
-    test_device.reset();
+    test_device.next_message();
 
     test_device.readHoldingRegisters(1000, 4);
     transport.commands(test_device, std::chrono::seconds(1));
