@@ -39,7 +39,7 @@ FPGASerialDevice::FPGASerialDevice(uint32_t fpga_session, int write_fifo, int re
 void FPGASerialDevice::write(const unsigned char* buf, size_t len) {
     assert(len < 255);
 
-    uint8_t header[2] = {1, static_cast<uint8_t>(len)};
+    uint8_t header[2] = {WRITE, static_cast<uint8_t>(len)};
     NiThrowError("Writing FIFO write header",
                  NiFpga_WriteFifoU8(_fpga_session, _write_fifo, header, 2, 0, NULL));
     NiThrowError("Writing FIFO write data",
@@ -73,23 +73,30 @@ std::vector<uint8_t> FPGASerialDevice::read(size_t len, std::chrono::microsecond
 
         uint8_t data[255];
 
-        uint8_t req = 2;
-        NiThrowError("Reading FIFO requesting response",
+        uint8_t req = READ;
+        NiThrowError("Requesting transport response",
                      NiFpga_WriteFifoU8(_fpga_session, _write_fifo, &req, 1, 0, NULL));
 
-        uint8_t response[2];
-        NiThrowError("Reading FIFO reading response and its length",
-                     NiFpga_ReadFifoU8(_fpga_session, _read_fifo, response, 2, 1, NULL));
+        uint8_t response;
+        NiThrowError("Reading transport response code",
+                     NiFpga_ReadFifoU8(_fpga_session, _read_fifo, &response, 1, 1, NULL));
 
-        if (response[0] != 2) {
-            throw std::runtime_error(
-                    fmt::format("Invalid reply from FIFO #{} - {}, expected 2", _read_fifo, response[0]));
+        if (response == ERROR_RESPONSE) {
+            report_error(req);
         }
-        if (response[1] != 0) {
-            NiThrowError("ThermalFPGA::readMPUFIFO: reading response",
-                         NiFpga_ReadFifoU8(_fpga_session, _read_fifo, data, response[1], 0, NULL));
 
-            ret.insert(ret.end(), data, data + response[1]);
+        if (response != READ) {
+            throw std::runtime_error(
+                    fmt::format("Invalid reply from FIFO #{} - {}, expected 2", _read_fifo, response));
+        }
+
+        NiThrowError("Reading transport response length",
+                     NiFpga_ReadFifoU8(_fpga_session, _read_fifo, &response, 1, 1, NULL));
+        if (response != 0) {
+            NiThrowError("ThermalFPGA::readMPUFIFO: reading response",
+                         NiFpga_ReadFifoU8(_fpga_session, _read_fifo, data, response, 0, NULL));
+
+            ret.insert(ret.end(), data, data + response);
             if (ret.size() >= len) {
                 break;
             }
@@ -114,7 +121,7 @@ void FPGASerialDevice::commands(Modbus::BusList& bus_list, std::chrono::microsec
 }
 
 void FPGASerialDevice::flush() {
-    uint8_t req = 3;
+    uint8_t req = FLUSH;
     NiThrowError("Reading FIFO requesting port flush",
                  NiFpga_WriteFifoU8(_fpga_session, _write_fifo, &req, 1, 0, NULL));
 
@@ -122,28 +129,47 @@ void FPGASerialDevice::flush() {
     NiThrowError("Reading FIFO flush response ",
                  NiFpga_ReadFifoU8(_fpga_session, _read_fifo, &response, 1, 1, NULL));
 
-    if (response != req) {
+    if (response == ERROR_RESPONSE) {
+        report_error(req);
+    }
+
+    if (response != FLUSH) {
         throw std::runtime_error(
-                fmt::format("Invalid response from FIFO #{} on flush request - expected 3, recieved {}",
-                            _read_fifo, response));
+                fmt::format("Invalid response from FIFO #{} on flush request - expected {}, recieved {}",
+                            _read_fifo, req, response));
     }
 }
 
 void FPGASerialDevice::telemetry(uint64_t& write_bytes, uint64_t& read_bytes) {
-    uint8_t req = 0;
+    uint8_t req = TELEMETRY;
     NiThrowError("Reading FIFO requesting telemetry",
                  NiFpga_WriteFifoU8(_fpga_session, _write_fifo, &req, 1, 0, NULL));
 
-    uint8_t response[17];
-    NiThrowError("Reading FIFO reading telemetry",
-                 NiFpga_ReadFifoU8(_fpga_session, _read_fifo, response, 17, 1, NULL));
+    uint8_t response_code;
+    NiThrowError("Reading transport telemetry response code",
+                 NiFpga_ReadFifoU8(_fpga_session, _read_fifo, &response_code, 1, 1, NULL));
 
-    if (response[0] != 0) {
-        throw std::runtime_error(
-                fmt::format("Invalid response from FIFO #{} on telemetry request - expected 0, received {}",
-                            _read_fifo, response[0]));
+    if (response_code == ERROR_RESPONSE) {
+        report_error(req);
     }
 
-    write_bytes = be64toh(*(reinterpret_cast<const uint64_t*>(response + 1)));
-    read_bytes = be64toh(*(reinterpret_cast<const uint64_t*>(response + 9)));
+    if (response_code != TELEMETRY) {
+        throw std::runtime_error(
+                fmt::format("Invalid response from FIFO #{} on telemetry request - expected {}, received {}",
+                            _read_fifo, req, response_code));
+    }
+
+    uint8_t response[16];
+    NiThrowError("Reading transport telemetry",
+                 NiFpga_ReadFifoU8(_fpga_session, _read_fifo, response, 16, 0, NULL));
+
+    write_bytes = be64toh(*(reinterpret_cast<const uint64_t*>(response + 0)));
+    read_bytes = be64toh(*(reinterpret_cast<const uint64_t*>(response + 8)));
+}
+
+void FPGASerialDevice::report_error(uint8_t req) {
+    uint8_t error_code[4];
+    NiThrowError("Reading transport error code",
+                 NiFpga_ReadFifoU8(_fpga_session, _read_fifo, error_code, 4, 1, NULL));
+    throw CommunicationError(req, be32toh(*(reinterpret_cast<const int32_t*>(error_code))));
 }

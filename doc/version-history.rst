@@ -2,10 +2,15 @@
 Version History
 ###############
 
+v1.16.0
+-------
+
+* Handle 0xFF (255) error response in the FPGASerialDevice.
+
 v1.15.0
 -------
 
-* rename reset messages to disambiguate calls with device's reset.
+* Rename reset messages to disambiguate calls with device's reset.
 
 v1.14.0
 -------

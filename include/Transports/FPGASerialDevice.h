@@ -29,6 +29,15 @@
 
 namespace Transports {
 
+enum PROTOCOL_CODE {
+    TELEMETRY = 0,
+    WRITE = 1,
+    READ = 2,
+    FLUSH = 3,
+    /// FPGA error response - responds instead of request.
+    ERROR_RESPONSE = 0xff
+};
+
 /**
  * Communicate with various serial devices hooked on cRIO serial ports.
  */
@@ -56,6 +65,13 @@ public:
     void flush() override;
 
     void telemetry(uint64_t& write_bytes, uint64_t& read_bytes) override;
+
+protected:
+    /**
+     * Read and throw internal FPGA error code. The error code is written after
+     * error is raised in FPGA communication loop.
+     */
+    virtual void report_error(uint8_t req);
 
 private:
     uint32_t _fpga_session;

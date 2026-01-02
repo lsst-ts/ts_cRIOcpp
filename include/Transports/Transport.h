@@ -49,6 +49,18 @@ public:
 };
 
 /**
+ * Reports communication error.
+ *
+ * @param code Communication error value. Specific to transport.
+ */
+class CommunicationError : public std::runtime_error {
+public:
+    CommunicationError(uint8_t req, int32_t code)
+            : std::runtime_error(fmt::format(
+                      "Communication error in serial line transport - request: {}, error: {}", req, code)) {}
+};
+
+/**
  * Base transport class. Provides abstract interface to write and read bytes to
  * serial devices. The methods can throw errors on failures.
  */
