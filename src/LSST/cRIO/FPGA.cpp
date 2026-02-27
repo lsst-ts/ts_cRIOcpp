@@ -116,6 +116,9 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
     ilc.next_message();
 
     std::vector<uint8_t> decoded;
+
+    int wrong_response_counter = 0;
+
     for (uint16_t *p = buffer + 4; p < buffer + responseLen; p++) {
         switch (*p & 0xF000) {
             // data..
@@ -135,11 +138,17 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
                     while (true) {
                         try {
                             ilc.parse(decoded);
+                            wrong_response_counter = 0;
                             break;
                         } catch (Modbus::WrongResponse &wr) {
-                            // ILC code takes care of reporting this error. For
-                            // FPGA, it means to skip the ILC - there wasn't
-                            // response from it
+                            if (wrong_response_counter == 0) {
+                                SPDLOG_WARN(
+                                        "While processing ILC response, {}. Most likely an ILC is not "
+                                        "responding to commands.",
+                                        wr.what());
+                            }
+                            wrong_response_counter++;
+                            // this most likely means ILC did not respond.
                         }
                     }
                     decoded.clear();

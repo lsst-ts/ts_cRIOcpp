@@ -152,17 +152,13 @@ public:
      *
      * @param func error function number
      * @param error error code
-     *
-     * @return true if the error is new and shall be reported. False otherwise.
      */
-    bool record(uint8_t func, uint8_t error);
+    void record(uint8_t func, uint8_t error);
 
 private:
     uint8_t last_error_function;
     uint8_t last_error_code;
     uint64_t error_count;
-    std::chrono::milliseconds _ignore_period;
-    std::chrono::time_point<std::chrono::steady_clock> _ignore_until;
 };
 
 /**
@@ -322,7 +318,6 @@ public:
 
 private:
     std::map<uint8_t, ResponseRecord> _functions;
-
     std::map<uint8_t, ErrorRecord> _errors;
 
     size_t _parsed_index = 0;

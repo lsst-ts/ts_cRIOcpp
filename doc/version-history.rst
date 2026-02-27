@@ -5,7 +5,7 @@ Version History
 v1.16.1
 -------
 
-* Add ignore time to WrongResponse error records.
+* Log WrongResponse occurence in FPGA::ilcCommands, not in Modbus::BusList.
 
 v1.16.0
 -------
