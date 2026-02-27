@@ -30,25 +30,25 @@ ErrorRecord::ErrorRecord() {
     last_error_function = 0;
     last_error_code = 0;
     error_count = 0;
+
+    _ignore_period = std::chrono::milliseconds(2000);
+    _ignore_until = std::chrono::steady_clock::now() - 2 * _ignore_period;
 }
 
 bool ErrorRecord::record(uint8_t func, uint8_t error) {
-    last_occurence = std::chrono::steady_clock::now();
+    auto now = std::chrono::steady_clock::now();
 
-    if (last_error_function == func && error == last_error_code && error_count > 0) {
+    if (now < _ignore_until || (last_error_function == func && error == last_error_code && error_count > 0)) {
         error_count++;
+        _ignore_until = now + _ignore_period;
         return false;
     }
+
     last_error_function = func;
     last_error_code = error;
     error_count++;
+    _ignore_until = now + _ignore_period;
     return true;
-}
-
-void ErrorRecord::reset() {
-    last_error_function = 0;
-    last_error_code = 0;
-    error_count = 0;
 }
 
 ErrorResponse::ErrorResponse(uint8_t address, uint8_t func)
@@ -88,8 +88,8 @@ void BusList::parse(Parser parser) {
             throw ErrorResponse(address, called);
         }
     } else {
-        _functions.at(called).action(parser);
         _parsed_index++;
+        _functions.at(called).action(parser);
     }
 
     // throw UnexpectedResponse(address, called);

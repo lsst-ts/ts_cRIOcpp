@@ -157,16 +157,12 @@ public:
      */
     bool record(uint8_t func, uint8_t error);
 
-    /**
-     * Reset error record. Error count is set to 0.
-     */
-    void reset();
-
 private:
     uint8_t last_error_function;
     uint8_t last_error_code;
     uint64_t error_count;
-    std::chrono::time_point<std::chrono::steady_clock> last_occurence;
+    std::chrono::milliseconds _ignore_period;
+    std::chrono::time_point<std::chrono::steady_clock> _ignore_until;
 };
 
 /**
@@ -211,7 +207,7 @@ public:
 
     /**
      * Reset bus list parsing processing. Move index of the parsed responses
-     * back to beggining, indicating a new responses might be parsed.
+     * back to beginning, indicating a new responses might be parsed.
      */
     void next_message() { _parsed_index = 0; }
 

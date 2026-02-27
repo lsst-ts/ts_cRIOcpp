@@ -2,6 +2,11 @@
 Version History
 ###############
 
+v1.16.1
+-------
+
+* Add ignore time to WrongResponse error records.
+
 v1.16.0
 -------
 
