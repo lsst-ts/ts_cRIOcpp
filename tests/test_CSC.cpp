@@ -110,9 +110,10 @@ TEST_CASE("Daemonize", "[CSC]") {
     optind = 1;
 
     const int argc = 4;
-    char pid_template[200];
-    strcpy(pid_template, "/tmp/test.pid-XXXXXX");
-    char* pid_file = mktemp(pid_template);
+
+    char pid_file[21];
+    strcpy(pid_file, "/tmp/test.pid-XXXXXX");
+    int pf = mkstemp(pid_file);
 
     const char* const argv[argc] = {"test", "-p", pid_file, "TEST"};
 
@@ -127,7 +128,6 @@ TEST_CASE("Daemonize", "[CSC]") {
     delete fpga;
 
     // open PID, kill what's in
-    int pf = open(pid_file, O_RDONLY);
     REQUIRE(pf >= 0);
     char pid_buf[20];
     REQUIRE(read(pf, pid_buf, 20) > 0);
