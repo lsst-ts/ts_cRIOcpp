@@ -57,7 +57,7 @@ node {
              }
         }
 
-        junitPublisher 'ts_cRIOcpp/tests/*.xml'
+        junit 'ts_cRIOcpp/tests/*.xml'
     }
 
     stage('Build documentation')

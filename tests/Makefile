@@ -30,7 +30,7 @@ run: compile
 	@$(foreach b,$(ALL_BINARIES),echo '[RUN] ${b}'; ./${b};)
 
 junit: compile
-	@$(foreach b,$(ALL_BINARIES),echo '[JUT] ${b}'; ./${b} -r junit -o ${b}.xml;)
+	@$(foreach b,$(ALL_BINARIES),echo '[JUT] ${b}'; ./${b} -r junit -o ${b}.xml && echo "$b OK" || echo "$b failure"; )
 
 clean:
 	@$(foreach df,$(ALL_BINARIES) $(patsubst %,%.cpp.o,$(ALL_BINARIES)) $(patsubst %,%.o,${TEST_LIB}) $(DEPS) $(JUNIT_FILES),echo '[RM ] ${df}'; $(RM) ${df};)
