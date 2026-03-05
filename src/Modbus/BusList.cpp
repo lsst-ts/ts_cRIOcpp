@@ -20,8 +20,6 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <spdlog/spdlog.h>
-
 #include <Modbus/BusList.h>
 
 using namespace Modbus;
@@ -32,23 +30,10 @@ ErrorRecord::ErrorRecord() {
     error_count = 0;
 }
 
-bool ErrorRecord::record(uint8_t func, uint8_t error) {
-    last_occurence = std::chrono::steady_clock::now();
-
-    if (last_error_function == func && error == last_error_code && error_count > 0) {
-        error_count++;
-        return false;
-    }
+void ErrorRecord::record(uint8_t func, uint8_t error) {
     last_error_function = func;
     last_error_code = error;
     error_count++;
-    return true;
-}
-
-void ErrorRecord::reset() {
-    last_error_function = 0;
-    last_error_code = 0;
-    error_count = 0;
 }
 
 ErrorResponse::ErrorResponse(uint8_t address, uint8_t func)
@@ -69,13 +54,9 @@ void BusList::parse(Parser parser) {
 
     if (address != exp_address || (called & ~MODBUS_ERROR_MASK) != exp_func) {
         _parsed_index++;
-        bool new_error = _errors[exp_address].record(called, 0xff);
+        _errors[exp_address].record(called, 0xff);
 
-        auto wr = WrongResponse(address, exp_address, called, exp_func);
-        if (new_error) {
-            SPDLOG_WARN(wr.what());
-        }
-        throw wr;
+        throw WrongResponse(address, exp_address, called, exp_func);
     }
 
     if (called & MODBUS_ERROR_MASK) {
@@ -88,8 +69,8 @@ void BusList::parse(Parser parser) {
             throw ErrorResponse(address, called);
         }
     } else {
-        _functions.at(called).action(parser);
         _parsed_index++;
+        _functions.at(called).action(parser);
     }
 
     // throw UnexpectedResponse(address, called);

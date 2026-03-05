@@ -152,21 +152,13 @@ public:
      *
      * @param func error function number
      * @param error error code
-     *
-     * @return true if the error is new and shall be reported. False otherwise.
      */
-    bool record(uint8_t func, uint8_t error);
-
-    /**
-     * Reset error record. Error count is set to 0.
-     */
-    void reset();
+    void record(uint8_t func, uint8_t error);
 
 private:
     uint8_t last_error_function;
     uint8_t last_error_code;
     uint64_t error_count;
-    std::chrono::time_point<std::chrono::steady_clock> last_occurence;
 };
 
 /**
@@ -211,7 +203,7 @@ public:
 
     /**
      * Reset bus list parsing processing. Move index of the parsed responses
-     * back to beggining, indicating a new responses might be parsed.
+     * back to beginning, indicating a new responses might be parsed.
      */
     void next_message() { _parsed_index = 0; }
 
@@ -326,7 +318,6 @@ public:
 
 private:
     std::map<uint8_t, ResponseRecord> _functions;
-
     std::map<uint8_t, ErrorRecord> _errors;
 
     size_t _parsed_index = 0;

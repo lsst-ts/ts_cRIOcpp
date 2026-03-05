@@ -133,10 +133,7 @@ TEST_CASE("Generic functions", "[ILC]") {
 TEST_CASE("Parse response", "[ILC]") {
     TestILC ilc(1);
 
-    auto constructCommands = [&ilc]() {
-        ilc.next_message();
-        ilc.reportServerID(132);
-    };
+    auto constructCommands = [&ilc]() { ilc.reportServerID(132); };
 
     constructCommands();
 
@@ -237,7 +234,6 @@ TEST_CASE("Unmatched response", "[ILC]") {
     TestILC ilc(1);
 
     auto constructCommands = [&ilc]() {
-        ilc.clear();
         ilc.reportServerID(132);
         ilc.reportServerStatus(140);
     };
@@ -307,66 +303,66 @@ TEST_CASE("Unmatched response", "[ILC]") {
     // invalid length
     constructCommands();
     CHECK_THROWS_AS(ilc.parse(mbuf1.data(), mbuf1.size() - 1), std::out_of_range);
+    CHECK_NOTHROW(ilc.parse(mbuf2));
 
     Modbus::Buffer mbuf3(mbuf1);
     mbuf3.write<uint8_t>(0xff);
 
     constructCommands();
     CHECK_THROWS_AS(ilc.parse(mbuf3), Modbus::LongResponse);
+    CHECK_NOTHROW(ilc.parse(mbuf2));
 
     // missing command
-    ilc.clear();
     ilc.reportServerID(132);
 
     CHECK_NOTHROW(ilc.parse(mbuf1));
     CHECK_THROWS_AS(ilc.parse(mbuf2), std::out_of_range);
 
     // invalid address
-    ilc.clear();
     ilc.reportServerID(132);
     ilc.reportServerStatus(141);
     CHECK_NOTHROW(ilc.parse(mbuf1));
     CHECK_THROWS_AS(ilc.parse(mbuf2), Modbus::WrongResponse);
 
     // missing reply
-    ilc.clear();
     ilc.resetServer(121);
     CHECK_THROWS_AS(ilc.parse(mbuf1), Modbus::WrongResponse);
     CHECK_THROWS_AS(ilc.parse(mbuf2), std::out_of_range);
 
-    // recheck correct reply are processed
-    constructCommands();
+    // recheck correct replies are processed
+    ilc.next_message();
     CHECK_NOTHROW(ilc.parse(mbuf1));
     CHECK_NOTHROW(ilc.parse(mbuf2));
 
     // invalid CRC
-    mbuf2[2] = 0xe8;
+    Modbus::Buffer mbuf2_err(mbuf2);
+    mbuf2_err[2] = 0xe8;
 
     constructCommands();
     CHECK_NOTHROW(ilc.parse(mbuf1));
-    CHECK_THROWS_AS(ilc.parse(mbuf2), Modbus::CRCError);
+    CHECK_THROWS_AS(ilc.parse(mbuf2_err), Modbus::CRCError);
 
     // invalid function
-    mbuf2[1] = 1;
+    mbuf2_err[1] = 1;
 
     constructCommands();
     CHECK_NOTHROW(ilc.parse(mbuf1));
-    CHECK_THROWS_AS(ilc.parse(mbuf2), Modbus::WrongResponse);
+    CHECK_THROWS_AS(ilc.parse(mbuf2_err), Modbus::WrongResponse);
+}
+
+TEST_CASE("Reset function", "[ILC]") {
+    TestILC ilc(1);
 
     // reset function
-    Modbus::Buffer mbuf4;
-    mbuf4.write<uint8_t>(17);
-    mbuf4.write<uint8_t>(107);
-    mbuf4.writeCRC();
+    Modbus::Buffer mbuf;
+    mbuf.write<uint8_t>(17);
+    mbuf.write<uint8_t>(107);
+    mbuf.writeCRC();
 
-    mbuf2[1] = 18;
-    mbuf2[2] = 4;
-
-    constructCommands();
     ilc.resetServer(17);
-    CHECK_NOTHROW(ilc.parse(mbuf1));
-    CHECK_NOTHROW(ilc.parse(mbuf2));
-    CHECK_NOTHROW(ilc.parse(mbuf4));
+
+    CHECK_NOTHROW(ilc.parse(mbuf));
+    CHECK_THROWS_AS(ilc.parse(mbuf), std::out_of_range);
 
     CHECK(ilc.lastReset == 17);
 }

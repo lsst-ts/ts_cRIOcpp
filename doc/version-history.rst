@@ -2,6 +2,11 @@
 Version History
 ###############
 
+v1.16.1
+-------
+
+* Log WrongResponse occurence in FPGA::ilcCommands, not in Modbus::BusList.
+
 v1.16.0
 -------
 
