@@ -26,7 +26,7 @@
 
 using namespace LSST::cRIO;
 
-class MyLimitTrigger : public LimitTrigger<const char *> {
+class MyLimitTrigger : public LimitTrigger<const char*> {
 public:
     MyLimitTrigger(int minOccurence) : executedCount(0) {
         reset();
@@ -39,11 +39,11 @@ public:
     }
 
     int executedCount;
-    const char *message;
+    const char* message;
 
 protected:
     bool trigger() override { return ++_counter >= _minOccurence; }
-    void execute(const char *msg) override {
+    void execute(const char* msg) override {
         executedCount++;
         message = msg;
     }
@@ -60,12 +60,12 @@ TEST_CASE("Simple LimitTrigger", "[LimitTrigger]") {
     REQUIRE(limitTrigger.executedCount == 0);
     REQUIRE(limitTrigger.message == NULL);
 
-    const char *m1 = "should trigger";
+    const char* m1 = "should trigger";
     limitTrigger.check(m1);
     REQUIRE(limitTrigger.executedCount == 1);
     REQUIRE(limitTrigger.message == m1);
 
-    const char *m2 = "next trigger";
+    const char* m2 = "next trigger";
     limitTrigger.check(m2);
     REQUIRE(limitTrigger.executedCount == 2);
     REQUIRE(limitTrigger.message == m2);
@@ -76,7 +76,7 @@ TEST_CASE("Simple LimitTrigger", "[LimitTrigger]") {
 
     REQUIRE(limitTrigger.executedCount == 2);
 
-    const char *m3 = "triggers again!";
+    const char* m3 = "triggers again!";
     limitTrigger.check(m3);
     REQUIRE(limitTrigger.executedCount == 3);
     REQUIRE(limitTrigger.message == m3);

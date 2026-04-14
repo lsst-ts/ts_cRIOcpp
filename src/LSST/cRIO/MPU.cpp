@@ -119,7 +119,7 @@ MPU::MPU(uint8_t node_address) : _bus(0), _node_address(node_address) {
     });
 }
 
-int MPU::responseLength(const std::vector<uint8_t> &response) {
+int MPU::responseLength(const std::vector<uint8_t>& response) {
     if (response.size() < 2) {
         return -1;
     }
@@ -165,7 +165,7 @@ void MPU::presetHoldingRegister(uint16_t register_address, uint16_t value, uint3
     _commanded_info.emplace_back(register_address, 0);
 }
 
-void MPU::presetHoldingRegisters(uint16_t start_register_address, const std::vector<uint16_t> &values,
+void MPU::presetHoldingRegisters(uint16_t start_register_address, const std::vector<uint16_t>& values,
                                  uint32_t timing) {
     callFunction(_node_address, PRESET_HOLDING_REGISTERS, timing, start_register_address,
                  static_cast<uint16_t>(values.size()), static_cast<uint8_t>(values.size() * 2), values);
@@ -178,7 +178,7 @@ uint16_t MPU::getRegister(uint16_t address) {
     std::lock_guard<std::mutex> lg(_registerMutex);
     try {
         return _registers.at(address);
-    } catch (std::out_of_range &e) {
+    } catch (std::out_of_range& e) {
         throw std::runtime_error(
                 fmt::format("Cannot retrieve holding register {} (0x{:04x})", address, address));
     }

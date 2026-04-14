@@ -72,7 +72,7 @@ public:
      */
     MPU(uint8_t node_address);
 
-    int responseLength(const std::vector<uint8_t> &response) override;
+    int responseLength(const std::vector<uint8_t>& response) override;
 
     void missing_response() override;
 
@@ -106,7 +106,7 @@ public:
      * @param values register values
      * @param timing timeout (in microseconds)
      */
-    void presetHoldingRegisters(uint16_t start_register_address, const std::vector<uint16_t> &values,
+    void presetHoldingRegisters(uint16_t start_register_address, const std::vector<uint16_t>& values,
                                 uint32_t timing = 100000);
 
     /**

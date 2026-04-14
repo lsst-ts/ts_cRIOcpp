@@ -29,7 +29,7 @@ namespace cRIO {
 
 struct NiErrors {
     int32_t status;
-    const char *desc;
+    const char* desc;
 };
 
 NiErrors errors[] = {
@@ -194,9 +194,9 @@ NiErrors errors[] = {
          "some: open sessions"},
         {0, nullptr}};
 
-const char *NiStatus(int32_t status) {
+const char* NiStatus(int32_t status) {
     // non-0 negative status are errors, positive are warnings
-    for (NiErrors *err = errors; err->desc != nullptr; err++) {
+    for (NiErrors* err = errors; err->desc != nullptr; err++) {
         if (err->status == abs(status)) return err->desc;
     }
     return "Unknow error/warning status";

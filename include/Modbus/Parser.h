@@ -44,7 +44,7 @@ namespace Modbus {
  * @param len length of the buffer
  */
 template <typename dt>
-static const std::string hexDump(const dt *buf, size_t len) {
+static const std::string hexDump(const dt* buf, size_t len) {
     std::ostringstream os;
     os << std::setfill('0') << std::hex;
     for (size_t i = 0; i < len; i++) {
@@ -58,7 +58,7 @@ static const std::string hexDump(const dt *buf, size_t len) {
 }
 
 template <typename dt>
-static const std::string hexDump(const std::vector<dt> &data) {
+static const std::string hexDump(const std::vector<dt>& data) {
     return hexDump<dt>(data.data(), data.size());
 }
 
@@ -88,7 +88,7 @@ public:
      * @param buf Buffer with data received
      * @param len Buffer length
      */
-    LongResponse(uint8_t *buf, size_t len)
+    LongResponse(uint8_t* buf, size_t len)
             : std::runtime_error(std::string("Too long response - received ") + hexDump(buf, len)) {}
 };
 
@@ -129,7 +129,7 @@ public:
      * @param buf target buffer to read the data
      * @param len how many bytes shall be read
      */
-    void readBuffer(void *buf, size_t len) {
+    void readBuffer(void* buf, size_t len) {
         if (_data + len > size()) {
             throw std::out_of_range(fmt::format(
                     "Attempt to access data beyond buffer end (buffer index {}, but buffer length is {}).",
@@ -249,7 +249,7 @@ inline uint64_t Parser::read() {
 template <>
 inline float Parser::read() {
     uint32_t d = read<uint32_t>();
-    float *db = reinterpret_cast<float *>(&d);
+    float* db = reinterpret_cast<float*>(&d);
     return *db;
 }
 

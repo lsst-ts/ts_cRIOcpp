@@ -32,7 +32,7 @@ using namespace LSST::cRIO;
 void callError() {
     try {
         NiThrowError(-61060, "In a Galaxy Far, {}", "Far Away");
-    } catch (NiError &ni) {
+    } catch (NiError& ni) {
         REQUIRE(ni.what() == std::string("In a Galaxy Far, Far Away: NiFpga_Status_IrqTimeout: The timeout "
                                          "expired before any of the IRQs were asserted"));
     }
@@ -41,7 +41,7 @@ void callError() {
 void callWarning() {
     try {
         NiThrowError(63195, "What do you get if you multiply {} by {}? {:+.02f}", "six", "nine", 42.);
-    } catch (NiWarning &ni) {
+    } catch (NiWarning& ni) {
         REQUIRE(ni.what() ==
                 std::string("What do you get if you multiply six by nine? +42.00: "
                             "NiFpga_Status_InvalidSession: The session is invalid or has been closed"));

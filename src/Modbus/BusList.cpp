@@ -43,7 +43,7 @@ ErrorResponse::ErrorResponse(uint8_t address, uint8_t func)
 
 BusList::BusList() {}
 
-int BusList::responseLength(const std::vector<uint8_t> &response) { return -1; }
+int BusList::responseLength(const std::vector<uint8_t>& response) { return -1; }
 
 void BusList::parse(Parser parser) {
     auto exp_address = at(_parsed_index).buffer.address();

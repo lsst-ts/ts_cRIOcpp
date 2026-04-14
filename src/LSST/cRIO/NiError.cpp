@@ -28,21 +28,21 @@
 namespace LSST {
 namespace cRIO {
 
-NiError::NiError(const std::string &msg, NiFpga_Status status)
+NiError::NiError(const std::string& msg, NiFpga_Status status)
         : std::runtime_error(msg + ": " + NiStatus(status)) {
     if (status != 0) {
         SPDLOG_ERROR("FPGA error {0} in {1}: {2}", status, msg, NiStatus(status));
     }
 }
 
-NiWarning::NiWarning(const std::string &msg, NiFpga_Status status)
+NiWarning::NiWarning(const std::string& msg, NiFpga_Status status)
         : std::runtime_error(msg + ": " + NiStatus(status)) {
     if (status != 0) {
         SPDLOG_WARN("FPGA warning {0} in {1}: {2}", status, msg, NiStatus(status));
     }
 }
 
-void NiThrowError(const char *func, const char *ni_func, NiFpga_Status status) {
+void NiThrowError(const char* func, const char* ni_func, NiFpga_Status status) {
     NiThrowError(std::string(func) + " " + ni_func, status);
 }
 

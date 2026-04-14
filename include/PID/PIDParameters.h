@@ -37,7 +37,7 @@ namespace PID {
 struct PIDParameters {
     PIDParameters() { timestep = P = I = D = N = NAN; }
 
-    PIDParameters(const PIDParameters &pid) {
+    PIDParameters(const PIDParameters& pid) {
         timestep = pid.timestep;
         P = pid.P;
         I = pid.I;
@@ -60,7 +60,7 @@ struct PIDParameters {
      *
      * @raise YAML::Exception on error
      */
-    virtual void load(const YAML::Node &node) {
+    virtual void load(const YAML::Node& node) {
         timestep = node["Timestep"].as<double>(1);
         P = node["P"].as<double>();
         I = node["I"].as<double>();
@@ -76,7 +76,7 @@ struct PIDParameters {
      *
      * @raise YAML::Exception on error
      */
-    virtual void load(const YAML::Node &node, const PIDParameters &default_params) {
+    virtual void load(const YAML::Node& node, const PIDParameters& default_params) {
         timestep = node["Timestep"].as<double>(default_params.timestep);
         P = node["P"].as<double>(default_params.P);
         I = node["I"].as<double>(default_params.I);

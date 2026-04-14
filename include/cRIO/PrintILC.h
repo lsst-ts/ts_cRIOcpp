@@ -111,7 +111,7 @@ public:
      * @param address @glos{ILC} address
      * @param hex Intel Hex file to load into ILC
      */
-    void programILC(FPGA *fpga, uint8_t address, IntelHex &hex);
+    void programILC(FPGA* fpga, uint8_t address, IntelHex& hex);
 
     /**
      * Please consult LTS-646 for details about the ILC commands.
@@ -192,7 +192,7 @@ private:
     uint16_t _startAddress;
     uint16_t _dataLength;
 
-    void _writeHex(FPGA *fpga, uint8_t address, IntelHex &hex);
+    void _writeHex(FPGA* fpga, uint8_t address, IntelHex& hex);
 };
 
 }  // namespace cRIO

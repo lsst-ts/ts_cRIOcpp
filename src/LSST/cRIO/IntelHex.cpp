@@ -31,13 +31,13 @@ using namespace LSST::cRIO;
 
 IntelHex::IntelHex() {}
 
-void IntelHex::load(const std::string &fileName) {
+void IntelHex::load(const std::string& fileName) {
     std::ifstream inputStream(fileName);
     load(inputStream);
     inputStream.close();
 }
 
-void IntelHex::load(std::istream &inputStream) {
+void IntelHex::load(std::istream& inputStream) {
     _hexData.clear();
     _lineNo = 0;
     std::string lineText;
@@ -61,7 +61,7 @@ void IntelHex::load(std::istream &inputStream) {
                             _lineNo, 0xFFFF,
                             fmt::format("Invalid extension size - expected 2, got {}", hexLine.data.size()));
                 }
-                extensionData = *(reinterpret_cast<uint16_t *>(hexLine.data.data())) > 0;
+                extensionData = *(reinterpret_cast<uint16_t*>(hexLine.data.data())) > 0;
                 break;
             case IntelRecordType::EndOfFile:
                 return;
@@ -71,7 +71,7 @@ void IntelHex::load(std::istream &inputStream) {
     }
 }
 
-std::vector<uint8_t> IntelHex::getData(uint16_t &startAddress) {
+std::vector<uint8_t> IntelHex::getData(uint16_t& startAddress) {
     _sortByAddress();
 
     startAddress = _hexData.front().address;
@@ -95,7 +95,7 @@ std::vector<uint8_t> IntelHex::getData(uint16_t &startAddress) {
     return ret;
 }
 
-void IntelHex::_processLine(const char *line, IntelHexLine *hexLine, IntelRecordType::Types &recordType) {
+void IntelHex::_processLine(const char* line, IntelHexLine* hexLine, IntelRecordType::Types& recordType) {
     int offset = 1;
     if (line[0] != ':') {
         throw LoadError(_lineNo, 0xFFFF,
