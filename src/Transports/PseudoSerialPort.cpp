@@ -36,30 +36,28 @@
 
 #include <spdlog/spdlog.h>
 
-#include "Transports/FPGASerialPort.h"
+#include "Transports/PseudoSerialPort.h"
 
 using namespace Transports;
 
-FPGASerialPort::FPGASerialPort(uint32_t fpga_session, int write_fifo, int read_fifo, const char* device_name,
-                               std::chrono::microseconds quiet_time)
-        : FPGASerialDevice(fpga_session, write_fifo, read_fifo, quiet_time),
-          _device_name(device_name),
-          _read_timeout(1) {
+PseudoSerialPort::PseudoSerialPort(std::shared_ptr<Transport> real_port, const char* device_name)
+        : _device_name(device_name), _read_timeout(1) {
+    _real_port = real_port;
     _port_fd = -1;
 }
 
-FPGASerialPort::~FPGASerialPort() {
+PseudoSerialPort::~PseudoSerialPort() {
     if (_port_fd > 0) {
         ::close(_port_fd);
     }
 }
 
-void FPGASerialPort::init_pt() {
+void PseudoSerialPort::init_pt() {
     if (_port_fd > 0) {
         throw std::runtime_error(fmt::format("Port for device {} already assigned.", _device_name));
     }
 
-    int _port_fd = posix_openpt(O_RDWR);
+    _port_fd = posix_openpt(O_RDWR);
     grantpt(_port_fd);
     unlockpt(_port_fd);
 
@@ -68,7 +66,29 @@ void FPGASerialPort::init_pt() {
     SPDLOG_DEBUG("Port {} created for device {}.", tty_name, _device_name);
 }
 
-void FPGASerialPort::run(std::unique_lock<std::mutex>& lock) {
+void PseudoSerialPort::open() { _real_port->open(); }
+
+void PseudoSerialPort::close() { _real_port->close(); }
+
+void PseudoSerialPort::write(const unsigned char* buf, size_t len) { _real_port->write(buf, len); }
+
+std::vector<uint8_t> PseudoSerialPort::read(size_t len, std::chrono::microseconds timeout,
+                                            LSST::cRIO::Thread* calling_thread) {
+    return _real_port->read(len, timeout, calling_thread);
+}
+
+void PseudoSerialPort::commands(Modbus::BusList& bus_list, std::chrono::microseconds timeout,
+                                LSST::cRIO::Thread* calling_thread) {
+    _real_port->commands(bus_list, timeout, calling_thread);
+}
+
+void PseudoSerialPort::flush() { _real_port->flush(); }
+
+void PseudoSerialPort::telemetry(uint64_t& write_bytes, uint64_t& read_bytes) {
+    _real_port->telemetry(write_bytes, read_bytes);
+}
+
+void PseudoSerialPort::run(std::unique_lock<std::mutex>& lock) {
     while (keepRunning) {
         auto data = read(_buffer_len, _read_timeout);
 
@@ -83,6 +103,6 @@ void FPGASerialPort::run(std::unique_lock<std::mutex>& lock) {
             write(buffer, bytes);
         }
 
-        runCondition.wait(lock);
+        runCondition.wait_for(lock, std::chrono::microseconds(1));
     }
 }

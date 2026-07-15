@@ -20,32 +20,36 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#ifndef __Transports_FPGASerialPort__
-#define __Transports_FPGASerialPort__
+#ifndef __Transports_PseudoSerialPort__
+#define __Transports_PseudoSerialPort__
 
 #include <chrono>
 
 #include "cRIO/Thread.h"
-#include "FPGASerialDevice.h"
+#include "Transport.h"
 
 namespace Transports {
 
 /**
- * Thread running serial port communication, using FPGA resources. A virtual
- * (pseudo serial) port is opened and offered to external programs to
- * communicate with the device.
+ * Encapsulates Transport to work as pseudo-serial port.
  */
-class FPGASerialPort : public FPGASerialDevice, public LSST::cRIO::Thread {
+class PseudoSerialPort : public Transport, public LSST::cRIO::Thread {
 public:
-    FPGASerialPort(uint32_t fpga_session, int write_fifo, int read_fifo, const char* device_name,
-                   std::chrono::microseconds quiet_time);
+    PseudoSerialPort(std::shared_ptr<Transport> real_port, const char* device_name);
 
-    virtual ~FPGASerialPort();
+    virtual ~PseudoSerialPort();
 
-    /**
-     * Opens and initialize pseudo-serial connection.
-     */
     void init_pt();
+
+    void open() override;
+    void close() override;
+    void write(const unsigned char* buf, size_t len) override;
+    std::vector<uint8_t> read(size_t len, std::chrono::microseconds timeout,
+                              LSST::cRIO::Thread* calling_thread = NULL) override;
+    void commands(Modbus::BusList& bus_list, std::chrono::microseconds timeout,
+                  LSST::cRIO::Thread* calling_thread = NULL) override;
+    void flush() override;
+    void telemetry(uint64_t& write_bytes, uint64_t& read_bytes) override;
 
     std::string tty_name;
 
@@ -59,8 +63,10 @@ private:
 
     int _buffer_len = 100;
     std::chrono::microseconds _read_timeout;
+
+    std::shared_ptr<Transport> _real_port;
 };
 
 }  // namespace Transports
 
-#endif  // !__Transports_FPGASerialPort__
+#endif  // !__Transports_PseudoSerialPort__

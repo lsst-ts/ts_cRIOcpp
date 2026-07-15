@@ -66,6 +66,8 @@ public:
  */
 class Transport {
 public:
+    virtual ~Transport() {}
+
     /**
      * Opens transport connection.
      *

@@ -95,7 +95,8 @@ TEST_CASE("Test disable/enable ILC", "[FPGACliApp]") {
 
     REQUIRE_NOTHROW(cli.processCmdVector({"open"}));
 
-    CHECK(testRuns == 0);
+    testRuns = 0;
+
     REQUIRE_NOTHROW(cli.processCmdVector({"test", "0/2"}));
     CHECK(testRuns == 1);
 

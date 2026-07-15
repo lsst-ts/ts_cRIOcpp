@@ -138,7 +138,7 @@ public:
         if (cmds.size() == 0) {
             dir = get_current_dir_name();
         } else {
-            dir = new char[cmds[0].length() + 1];
+            dir = (char*)malloc(cmds[0].length() + 1);
             memcpy(dir, cmds[0].c_str(), cmds[0].length() + 1);
         }
         _fpga_singleton = false;
