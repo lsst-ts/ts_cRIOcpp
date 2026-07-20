@@ -71,6 +71,11 @@ void ControllerThread::startInterruptWatcherTask(FPGA* fpga) {
     _interrupt_watcher_thread->start();
 }
 
+void ControllerThread::stopInterruptWatcherTask() {
+    _interrupt_watcher_thread->stop();
+    _interrupt_watcher_thread = NULL;
+}
+
 void ControllerThread::setInterruptHandler(std::shared_ptr<InterruptHandler> handler, uint8_t irq) {
     if ((irq == 0) || (irq > CRIO_INTERRUPTS)) {
         throw std::runtime_error(fmt::format("Interrupt number should fall between 1 and {} - {} specified",

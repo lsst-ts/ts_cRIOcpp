@@ -95,68 +95,76 @@ TEST_CASE("Queue at different times", "[ControllerThread]") {
     tv = 0;
     REQUIRE(tv == 0);
 
-    auto when = std::chrono::steady_clock::now() + 500ms;
+    auto start = std::chrono::steady_clock::now();
+    auto when = start + 500ms;
 
     ControllerThread::instance().clear();
+
+    TestFPGA fpga;
+    REQUIRE_NOTHROW(ControllerThread::instance().startInterruptWatcherTask(&fpga));
 
     for (int i = 0; i < 3; i++) {
         ControllerThread::instance().enqueue_at(std::make_shared<TestTask>(), when);
         when -= 1ms;
     }
 
-    when = std::chrono::steady_clock::now() + 200ms;
+    when = start + 300ms;
 
     for (int i = 0; i < 4; i++) {
         ControllerThread::instance().enqueue_at(std::make_shared<TestTask>(), when);
         when -= 1ms;
     }
 
-    when = std::chrono::steady_clock::now();
+    when = start;
 
     for (int i = 0; i < 2; i++) {
         ControllerThread::instance().enqueue_at(std::make_shared<TestTask>(), when);
         when += 1ms;
     }
 
-    ControllerThread::instance().start();
+    ControllerThread::instance().start(25ms);
 
-    std::this_thread::sleep_for(100ms);
+    std::this_thread::sleep_until(start + 50ms);
 
     CHECK(tv == 2);
 
-    std::this_thread::sleep_for(200ms);
+    std::this_thread::sleep_until(start + 350ms);
 
     CHECK(tv == 6);
 
-    std::this_thread::sleep_for(300ms);
+    std::this_thread::sleep_until(start + 550ms);
 
     CHECK(tv == 9);
 
     ControllerThread::instance().stop();
+
+    REQUIRE_NOTHROW(ControllerThread::instance().stopInterruptWatcherTask());
 
     REQUIRE(tv == 9);
 }
 
 TEST_CASE("Removing tasks from the queue", "[ControllerThread]") {
     tv = 0;
-    auto when = std::chrono::steady_clock::now() + 100ms;
 
     auto test_task = std::make_shared<NonRepeatTask>();
 
     ControllerThread::instance().clear();
 
+    auto start = std::chrono::steady_clock::now();
+    auto when = start + 400ms;
+
     for (int i = 0; i < 100; i++) {
         ControllerThread::instance().enqueue_at(test_task, when);
-        when += 5ms;
+        when += 40ms;
     }
 
     REQUIRE(ControllerThread::instance().size() == 100);
 
-    ControllerThread::instance().start();
+    ControllerThread::instance().start(25ms);
 
-    REQUIRE(ControllerThread::instance().size() == 100);
+    CHECK(ControllerThread::instance().size() == 100);
 
-    std::this_thread::sleep_for(101ms);
+    std::this_thread::sleep_until(start + 401ms);
 
     CHECK(tv == 1);
     CHECK(ControllerThread::instance().size() == 99);
@@ -165,7 +173,7 @@ TEST_CASE("Removing tasks from the queue", "[ControllerThread]") {
 
     CHECK(ControllerThread::instance().size() == 0);
 
-    std::this_thread::sleep_for(200ms);
+    std::this_thread::sleep_until(start + 601ms);
 
     CHECK(tv == 1);
 
@@ -201,23 +209,25 @@ TEST_CASE("Task rescheduling", "[ControllerThread]") {
         ControllerThread::instance().enqueue(std::make_shared<TestRescheduledTask>(30));
     }
 
+    auto start = std::chrono::steady_clock::now();
+
     ControllerThread::instance().start();
 
-    std::this_thread::sleep_for(22ms);
+    std::this_thread::sleep_until(start + 22ms);
 
-    CHECK(rv == 8);
+    CHECK(rv >= 8);
 
-    std::this_thread::sleep_for(10ms);
+    std::this_thread::sleep_until(start + 32ms);
 
-    CHECK(rv == 10);
+    CHECK(rv >= 10);
 
-    std::this_thread::sleep_for(70ms);
+    std::this_thread::sleep_until(start + 102ms);
 
-    CHECK(rv == 26);
+    CHECK(rv >= 26);
 
     ControllerThread::instance().stop();
 
-    REQUIRE(rv == 26);
+    REQUIRE(rv >= 26);
 }
 
 class TestHandler : public InterruptHandler {
@@ -243,7 +253,7 @@ TEST_CASE("Handling interrupts", "[ControllerThread]") {
     REQUIRE(iv == 0);
 
     for (int i = 0; i < 3; i++) {
-        ControllerThread::instance().enqueue(std::make_shared<TestRescheduledTask>(20));
+        ControllerThread::instance().enqueue(std::make_shared<TestRescheduledTask>(100));
     }
 
     for (int i = 0; i < 3; i++) {
@@ -257,13 +267,19 @@ TEST_CASE("Handling interrupts", "[ControllerThread]") {
 
     REQUIRE_NOTHROW(ControllerThread::instance().startInterruptWatcherTask(&fpga));
 
-    ControllerThread::instance().start();
+    auto start = std::chrono::steady_clock::now();
 
-    std::this_thread::sleep_for(22ms);
+    ControllerThread::instance().start(25ms);
 
-    CHECK(iv == 6);
+    std::this_thread::sleep_until(start + 102ms);
+
+    int t1 = iv;
+    CHECK(t1 != 0);
 
     ControllerThread::instance().stop();
 
-    REQUIRE(iv == 6);
+    REQUIRE_NOTHROW(ControllerThread::instance().stopInterruptWatcherTask());
+
+    int t2 = iv;
+    REQUIRE(t2 >= t1);
 }

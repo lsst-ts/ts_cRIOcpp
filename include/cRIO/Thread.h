@@ -44,7 +44,7 @@ public:
     /**
      * Starts the thread. Starts new thread running the loop.
      *
-     * @param timeout start timeout. Defaults to 1ms.
+     * @param timeout start timeout. Defaults to 25ms.
      *
      * @note If the call blocks indefinitely, most likely cause is the
      * overridden run method not releasing locks (either directly, or
@@ -52,7 +52,7 @@ public:
      *
      * @throw runtime_error when thread was already started
      */
-    void start(std::chrono::microseconds timeout = 5ms);
+    void start(std::chrono::microseconds timeout = 25ms);
 
     /**
      * Stops and join thread.
@@ -61,7 +61,7 @@ public:
      *
      * @throw runtime_error when timeout is crossed
      */
-    void stop(std::chrono::microseconds timeout = 2ms);
+    void stop(std::chrono::microseconds timeout = 200ms);
 
     /**
      * Returns true if thread is joinable (~is running).
@@ -92,7 +92,7 @@ protected:
      * Mutex protecting keepRunning access, can be used in condition variable.
      */
     std::mutex runMutex;
-    std::atomic<bool> keepRunning = false;
+    bool keepRunning = false;
 
     /**
      * Condition variable for outside notifications. Notified when keepRunning

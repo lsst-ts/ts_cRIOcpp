@@ -23,6 +23,7 @@
 #define _XOPEN_SOURCE 700
 
 #include <fcntl.h>
+#include <iostream>
 #include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
@@ -89,6 +90,7 @@ void PseudoSerialPort::telemetry(uint64_t& write_bytes, uint64_t& read_bytes) {
 }
 
 void PseudoSerialPort::run(std::unique_lock<std::mutex>& lock) {
+    std::cout << "Keep running: " << keepRunning << " " << (keepRunning == true) << std::endl;
     while (keepRunning) {
         auto data = read(_buffer_len, _read_timeout);
 
@@ -105,4 +107,5 @@ void PseudoSerialPort::run(std::unique_lock<std::mutex>& lock) {
 
         runCondition.wait_for(lock, std::chrono::microseconds(1));
     }
+    std::cout << "Stopped: " << keepRunning << " " << (keepRunning == true) << std::endl;
 }

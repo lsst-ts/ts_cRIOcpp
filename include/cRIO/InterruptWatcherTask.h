@@ -34,7 +34,7 @@ namespace cRIO {
 
 class InterruptWatcherThread : public Thread {
 public:
-    InterruptWatcherThread(FPGA* fpga) : _fpga(fpga) {}
+    InterruptWatcherThread(FPGA* fpga) : _fpga(fpga), _triggeredInterrupts(0) {}
     ~InterruptWatcherThread() { stop(std::chrono::seconds(2)); }
 
 protected:
@@ -42,7 +42,7 @@ protected:
 
 private:
     FPGA* _fpga;
-    uint32_t _triggeredInterrupts = 0;
+    uint32_t _triggeredInterrupts;
 };
 
 class InterruptWatcherTask : public Task {
