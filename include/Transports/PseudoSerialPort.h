@@ -24,8 +24,8 @@
 #define __Transports_PseudoSerialPort__
 
 #include <chrono>
+#include <thread>
 
-#include "cRIO/Thread.h"
 #include "Transport.h"
 
 namespace Transports {
@@ -33,13 +33,15 @@ namespace Transports {
 /**
  * Encapsulates Transport to work as pseudo-serial port.
  */
-class PseudoSerialPort : public Transport, public LSST::cRIO::Thread {
+class PseudoSerialPort : public Transport {
 public:
     PseudoSerialPort(std::shared_ptr<Transport> real_port, const char* device_name);
 
     virtual ~PseudoSerialPort();
 
     void init_pt();
+
+    void start();
 
     void open() override;
     void close() override;
@@ -54,7 +56,7 @@ public:
     std::string tty_name;
 
 protected:
-    void run(std::unique_lock<std::mutex>& lock) override;
+    void run();
 
 private:
     int _port_fd;
@@ -65,6 +67,8 @@ private:
     std::chrono::microseconds _read_timeout;
 
     std::shared_ptr<Transport> _real_port;
+
+    std::thread* _thread;
 };
 
 }  // namespace Transports

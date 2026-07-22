@@ -79,6 +79,8 @@ public:
     virtual int run(int argc, char* const argv[]) {
         command_vec cmds = processArgs(argc, argv);
 
+        _startLog();
+
         if (_autoOpen) {
             command_vec cmds;
             openFPGA(cmds);

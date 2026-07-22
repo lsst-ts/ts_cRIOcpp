@@ -32,6 +32,9 @@
 #include <sys/stat.h>
 #include <unistd.h>
 
+#include <spdlog/async.h>
+#include <spdlog/sinks/stdout_color_sinks.h>
+
 #include <readline/readline.h>
 #include <readline/history.h>
 
@@ -522,6 +525,13 @@ void CliApp::printCommandHelp(const Command* cmd) {
     }
 
     std::cout << cmd->help << std::endl << std::endl;
+}
+
+void CliApp::_startLog() {
+    spdlog::init_thread_pool(8192, 1);
+    addSink(std::make_shared<spdlog::sinks::stdout_color_sink_mt>());
+
+    setSinks();
 }
 
 }  // namespace cRIO

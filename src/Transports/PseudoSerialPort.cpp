@@ -67,6 +67,15 @@ void PseudoSerialPort::init_pt() {
     SPDLOG_DEBUG("Port {} created for device {}.", tty_name, _device_name);
 }
 
+void PseudoSerialPort::start() {
+    if (_thread) {
+        delete _thread;
+    }
+
+    _thread = new std::thread(&PseudoSerialPort::run, this);
+    _thread->detach();
+}
+
 void PseudoSerialPort::open() { _real_port->open(); }
 
 void PseudoSerialPort::close() { _real_port->close(); }
@@ -89,9 +98,8 @@ void PseudoSerialPort::telemetry(uint64_t& write_bytes, uint64_t& read_bytes) {
     _real_port->telemetry(write_bytes, read_bytes);
 }
 
-void PseudoSerialPort::run(std::unique_lock<std::mutex>& lock) {
-    std::cout << "Keep running: " << keepRunning << " " << (keepRunning == true) << std::endl;
-    while (keepRunning) {
+void PseudoSerialPort::run() {
+    while (true) {
         auto data = read(_buffer_len, _read_timeout);
 
         if (data.size() > 0) {
@@ -104,8 +112,5 @@ void PseudoSerialPort::run(std::unique_lock<std::mutex>& lock) {
         if (bytes > 0) {
             write(buffer, bytes);
         }
-
-        runCondition.wait_for(lock, std::chrono::microseconds(1));
     }
-    std::cout << "Stopped: " << keepRunning << " " << (keepRunning == true) << std::endl;
 }
