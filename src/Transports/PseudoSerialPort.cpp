@@ -64,6 +64,12 @@ void PseudoSerialPort::init_pt() {
 
     tty_name = ptsname(_port_fd);
 
+    int flags = fcntl(_port_fd, F_GETFL, 0);
+    if (fcntl(_port_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
+        throw std::runtime_error(fmt::format("Cannot set flags for {} device {}: {}.", tty_name, _device_name,
+                                             strerror(errno)));
+    }
+
     SPDLOG_DEBUG("Port {} created for device {}.", tty_name, _device_name);
 }
 
@@ -111,6 +117,11 @@ void PseudoSerialPort::run() {
         auto bytes = ::read(_port_fd, buffer, _buffer_len);
         if (bytes > 0) {
             write(buffer, bytes);
+        } else if (bytes == -1) {
+            if (errno != EAGAIN) {
+                SPDLOG_ERROR("Cannot read from {} device {}: {}.", tty_name, _device_name, strerror(errno));
+                break;
+            }
         }
     }
 }
