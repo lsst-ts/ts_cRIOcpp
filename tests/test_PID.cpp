@@ -32,7 +32,7 @@
 using namespace LSST::PID;
 
 TEST_CASE("Constant_PID", "[PID]") {
-    PID *pids[6];
+    PID* pids[6];
     PIDParameters pparams;
     pparams.timestep = 1;
     pparams.P = 1;
@@ -60,7 +60,7 @@ TEST_CASE("Constant_PID", "[PID]") {
 }
 
 TEST_CASE("PID_convergence", "[PID]") {
-    PID *pids[6];
+    PID* pids[6];
     PIDParameters pparams;
     pparams.timestep = 0.1;
     pparams.P = 0.5;

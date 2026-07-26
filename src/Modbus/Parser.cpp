@@ -57,12 +57,12 @@ void Parser::checkCRC() {
 
 uint64_t Parser::readU48() {
     uint64_t ret = 0;
-    readBuffer(reinterpret_cast<uint8_t *>(&ret) + 2, 6);
+    readBuffer(reinterpret_cast<uint8_t*>(&ret) + 2, 6);
     return be64toh(ret);
 }
 
 std::string Parser::readString(size_t length) {
     uint8_t buf[length];
     readBuffer(buf, length);
-    return std::string((const char *)buf, length);
+    return std::string((const char*)buf, length);
 }

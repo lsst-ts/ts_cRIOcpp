@@ -77,7 +77,7 @@ public:
      */
     void thaw() { _frozen = false; }
 
-    double get_offset(bool *changed);
+    double get_offset(bool* changed);
 
 protected:
     PIDParameters _current_parameters;

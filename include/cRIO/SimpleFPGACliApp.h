@@ -79,6 +79,8 @@ public:
     virtual int run(int argc, char* const argv[]) {
         command_vec cmds = processArgs(argc, argv);
 
+        _startLog();
+
         if (_autoOpen) {
             command_vec cmds;
             openFPGA(cmds);
@@ -134,16 +136,18 @@ public:
             std::cerr << "FPGA already opened!" << std::endl;
             return 1;
         }
-        char dir[255];
+        char* dir;
         if (cmds.size() == 0) {
-            getcwd(dir, 255);
+            dir = get_current_dir_name();
         } else {
+            dir = (char*)malloc(cmds[0].length() + 1);
             memcpy(dir, cmds[0].c_str(), cmds[0].length() + 1);
         }
         _fpga_singleton = false;
         _fpga = newFPGA(dir, _fpga_singleton);
         _fpga->initialize();
         _fpga->open();
+        free(dir);
         return 0;
     }
 

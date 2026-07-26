@@ -47,7 +47,7 @@ FPGA::FPGA(fpgaType type) : SimpleFPGA(type) {
     }
 }
 
-void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
+void FPGA::ilcCommands(ILC::ILCBusList& ilc, int32_t timeout) {
     // no messages to send
     if (ilc.size() == 0) {
         return;
@@ -108,7 +108,7 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
     // data received from ILCs (& 0x9000)
     // end of frame (0xA000)
     // 8 bytes of end timestamp (& 0xB000)
-    uint64_t *beginD = reinterpret_cast<uint64_t *>(buffer);
+    uint64_t* beginD = reinterpret_cast<uint64_t*>(buffer);
     uint64_t beginTs = le64toh(*beginD);
     uint64_t endTs = 0;
     int endTsShift = 0;
@@ -119,7 +119,7 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
 
     int wrong_response_counter = 0;
 
-    for (uint16_t *p = buffer + 4; p < buffer + responseLen; p++) {
+    for (uint16_t* p = buffer + 4; p < buffer + responseLen; p++) {
         switch (*p & 0xF000) {
             // data..
             case FIFO::RX_MASK & 0xF000:
@@ -140,7 +140,7 @@ void FPGA::ilcCommands(ILC::ILCBusList &ilc, int32_t timeout) {
                             ilc.parse(decoded);
                             wrong_response_counter = 0;
                             break;
-                        } catch (Modbus::WrongResponse &wr) {
+                        } catch (Modbus::WrongResponse& wr) {
                             if (wrong_response_counter == 0) {
                                 SPDLOG_WARN(
                                         "While processing ILC response, {}. Most likely an ILC is not "

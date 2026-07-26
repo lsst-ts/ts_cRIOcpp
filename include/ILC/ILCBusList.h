@@ -195,7 +195,7 @@ protected:
      *
      * @return status description (enabled, standby,..).
      */
-    const char *getModeStr(uint8_t mode);
+    const char* getModeStr(uint8_t mode);
 
     /**
      * Return string with short text describing all code 18 status response.
@@ -204,7 +204,7 @@ protected:
      *
      * @return vector of strings with status description
      */
-    virtual std::vector<const char *> getStatusString(uint16_t status);
+    virtual std::vector<const char*> getStatusString(uint16_t status);
 
     /**
      * Returns last know mode (state) of the @glos{ILC} at the address.
@@ -224,7 +224,7 @@ protected:
      *
      * @return vector of strings with fault description
      */
-    virtual std::vector<const char *> getFaultString(uint16_t fault);
+    virtual std::vector<const char*> getFaultString(uint16_t fault);
 
     /**
      * Callback for reponse to ServerID request. See LTS-646 Code 17 (0x11) for

@@ -60,13 +60,18 @@ struct Argument {
 
 AClass : public cRIO::Application {
 public:
-    AClass(const char* description) : Application(description), counter(0) {}
+    AClass(const char* description);
     float counter;
 
 protected:
     void printUsage() override;
     void processArg(int opt, char* optarg) override;
 };
+
+AClass::AClass(const char* description) : Application(description), counter(0) {
+    addArgument('a', "Append - increase counter.");
+    addArgument('h', "Print application help.");
+}
 
 void AClass::printUsage() {
     std::cout << "A simple app. Accept -h for help. Pass -i to start interactive mode." << std::endl;

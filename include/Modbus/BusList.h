@@ -245,7 +245,7 @@ public:
      * @endcode
      */
     template <typename... dt>
-    void callFunction(uint8_t address, uint8_t func, uint32_t timing, const dt &...params) {
+    void callFunction(uint8_t address, uint8_t func, uint32_t timing, const dt&... params) {
         emplace(end(), CommandRecord(Buffer(address, func, params...), timing));
     }
 
@@ -258,7 +258,7 @@ public:
      * @return Total size of the response expected. If the passed response doesn't contain
      * all data needed to calculate its length, returns -1.
      */
-    virtual int responseLength(const std::vector<uint8_t> &response);
+    virtual int responseLength(const std::vector<uint8_t>& response);
 
     /**
      * Process @glos{ILC} response. Address and function of the response are checked if
@@ -278,7 +278,7 @@ public:
      *
      * @see ::parse(Parser)
      */
-    void parse(uint8_t *data, size_t len) { parse(std::vector<uint8_t>(data, data + len)); }
+    void parse(uint8_t* data, size_t len) { parse(std::vector<uint8_t>(data, data + len)); }
 
     /**
      * Add response callbacks. Both function code and error response code shall

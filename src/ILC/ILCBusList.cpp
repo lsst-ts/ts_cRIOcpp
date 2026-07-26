@@ -92,7 +92,7 @@ uint8_t ILCBusList::nextBroadcastCounter() {
     return _broadcastCounter;
 }
 
-const char *ILCBusList::getModeStr(uint8_t mode) {
+const char* ILCBusList::getModeStr(uint8_t mode) {
     switch (mode) {
         case Mode::Standby:
             return "Standby";
@@ -109,8 +109,8 @@ const char *ILCBusList::getModeStr(uint8_t mode) {
     }
 }
 
-std::vector<const char *> ILCBusList::getStatusString(uint16_t status) {
-    std::vector<const char *> ret;
+std::vector<const char*> ILCBusList::getStatusString(uint16_t status) {
+    std::vector<const char*> ret;
 
     if (status & Status::MajorFault) {
         ret.push_back("Major Fault");
@@ -127,8 +127,8 @@ std::vector<const char *> ILCBusList::getStatusString(uint16_t status) {
     return ret;
 }
 
-std::vector<const char *> ILCBusList::getFaultString(uint16_t fault) {
-    std::vector<const char *> ret;
+std::vector<const char*> ILCBusList::getFaultString(uint16_t fault) {
+    std::vector<const char*> ret;
 
     if (fault & Fault::UniqueIdCRC) {
         ret.push_back("Unique ID CRC error");
@@ -179,7 +179,7 @@ void ILCBusList::changeILCMode(uint8_t address, uint16_t mode) {
             (getLastMode(address) == Mode::Bootloader && mode == Mode::Standby)) {
             timeout = 100000;
         }
-    } catch (std::out_of_range &err) {
+    } catch (std::out_of_range& err) {
     }
     callFunction(address, ILC_CMD::CHANGE_MODE, timeout, mode);
 }

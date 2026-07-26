@@ -2,6 +2,11 @@
 Version History
 ###############
 
+v1.17.0
+-------
+
+* FPGASerialPort class - opens virtual terminal to communicate with FPGA device.
+
 v1.16.1
 -------
 

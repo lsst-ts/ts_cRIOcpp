@@ -62,7 +62,7 @@ CSC::CSC(const char* name, const char* description) : Application(name, descript
     addArgument('u', "<user>:<group> run under user & group", ':');
 }
 
-CSC::~CSC() {}
+CSC::~CSC() { spdlog::shutdown(); }
 
 void sigHandler(int sig) {
     SPDLOG_INFO("Exiting on signal {}", sig);

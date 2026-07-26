@@ -254,6 +254,11 @@ protected:
     void printCommands();
 
     /**
+     * Starts terminal logging.
+     */
+    void _startLog();
+
+    /**
      * Exits the application.
      *
      * @param cmds commands to be processed

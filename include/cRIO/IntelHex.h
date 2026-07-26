@@ -48,7 +48,7 @@ struct IntelHexLine {
 
 class LoadError : public std::runtime_error {
 public:
-    LoadError(size_t line, uint16_t address, const std::string &arg) : std::runtime_error(arg) {
+    LoadError(size_t line, uint16_t address, const std::string& arg) : std::runtime_error(arg) {
         _line = line;
         _address = address;
     }
@@ -73,8 +73,8 @@ public:
      *
      * @throws LoadError on error
      */
-    void load(const std::string &fileName);
-    void load(std::istream &inputStream);
+    void load(const std::string& fileName);
+    void load(std::istream& inputStream);
 
     /**
      * Returns data to be written into ILC. Only three bytes out of every four
@@ -84,10 +84,10 @@ public:
      * @param startAddress returns memory start address
      * @return vector with data
      */
-    std::vector<uint8_t> getData(uint16_t &startAddress);
+    std::vector<uint8_t> getData(uint16_t& startAddress);
 
 private:
-    void _processLine(const char *line, IntelHexLine *hexLine, IntelRecordType::Types &recordType);
+    void _processLine(const char* line, IntelHexLine* hexLine, IntelRecordType::Types& recordType);
     void _sortByAddress();
 
     std::vector<IntelHexLine> _hexData;

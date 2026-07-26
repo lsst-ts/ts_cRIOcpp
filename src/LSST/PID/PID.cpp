@@ -67,7 +67,7 @@ void PID::freeze() {
     _frozen = true;
 }
 
-double PID::get_offset(bool *changed) {
+double PID::get_offset(bool* changed) {
     if (abs(_offset) > 0 && _frozen == false) {
         if (abs(_offset) < (THAW_STEP + 1)) {
             _offset = 0;

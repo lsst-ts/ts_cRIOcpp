@@ -52,6 +52,8 @@ public:
 
     void startInterruptWatcherTask(FPGA* fpga);
 
+    void stopInterruptWatcherTask();
+
     /* Add task into queue.
      *
      * @param task Task to enqueue.

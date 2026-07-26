@@ -23,7 +23,7 @@
 namespace LSST {
 namespace cRIO {
 
-const char *version() { return VERSION; }
+const char* version() { return VERSION; }
 
 }  // namespace cRIO
 }  // namespace LSST

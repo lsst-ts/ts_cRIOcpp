@@ -51,7 +51,7 @@ public:
      */
     virtual void execute() = 0;
 
-    void reportException(const std::exception &ex) override { ackFailed(ex.what()); }
+    void reportException(const std::exception& ex) override { ackFailed(ex.what()); }
 
     /**
      * Acknowledges the command is in progress.

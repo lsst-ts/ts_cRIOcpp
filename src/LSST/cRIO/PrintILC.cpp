@@ -52,22 +52,22 @@ void PrintILC::writeApplicationStats(uint8_t address, uint16_t dataCRC, uint16_t
     SimulatedILC buf;
 
     uint16_t v = htole16(dataCRC);
-    buf.writeBuffer(reinterpret_cast<uint8_t *>(&v), 2);
+    buf.writeBuffer(reinterpret_cast<uint8_t*>(&v), 2);
     buf.write<uint16_t>(0);
 
     v = htole16(startAddress);
-    buf.writeBuffer(reinterpret_cast<uint8_t *>(&v), 2);
+    buf.writeBuffer(reinterpret_cast<uint8_t*>(&v), 2);
     buf.write<uint16_t>(0);
 
     v = htole16(dataLength);
-    buf.writeBuffer(reinterpret_cast<uint8_t *>(&v), 2);
+    buf.writeBuffer(reinterpret_cast<uint8_t*>(&v), 2);
     buf.write<uint16_t>(0);
 
     callFunction(address, ILC_CLI_CMD::WRITE_APPLICATION_STATS, 500000, dataCRC, startAddress, dataLength,
                  buf.getCalcCrc());
 }
 
-void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
+void PrintILC::programILC(FPGA* fpga, uint8_t address, IntelHex& hex) {
     clear();
 
     static constexpr int32_t ILC_TIMEOUT = 1000;
@@ -98,7 +98,7 @@ void PrintILC::programILC(FPGA *fpga, uint8_t address, IntelHex &hex) {
             changeILCMode(address, ILC::Mode::Bootloader);
             fpga->ilcCommands(*this, ILC_TIMEOUT);
             clear();
-        } catch (std::runtime_error &er) {
+        } catch (std::runtime_error& er) {
             // particularly bootloader version 5.0 (used at M2 ILCs) shows
             // problems reporting status. The following code rectivies that.
             clear();
@@ -266,7 +266,7 @@ void PrintILC::printSepline() {
     _printout++;
 }
 
-void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
+void PrintILC::_writeHex(FPGA* fpga, uint8_t address, IntelHex& hex) {
     // align data to 256 bytes pages
     std::vector<uint8_t> data = hex.getData(_startAddress);
 
@@ -288,8 +288,8 @@ void PrintILC::_writeHex(FPGA *fpga, uint8_t address, IntelHex &hex) {
         data.push_back(((i % 4) == 3) ? 0x00 : 0xFF);
     }
 
-    uint8_t *startData = data.data();
-    uint8_t *endData = data.data() + data.size();
+    uint8_t* startData = data.data();
+    uint8_t* endData = data.data() + data.size();
     uint16_t dataAddress = _startAddress;
     while (startData < endData) {
         std::vector<uint8_t> page(APPLICATION_PAGE_LENGTH);

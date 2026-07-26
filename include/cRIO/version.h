@@ -29,7 +29,7 @@ namespace cRIO {
  *
  * @return version of cRIO library
  */
-const char *version();
+const char* version();
 
 }  // namespace cRIO
 }  // namespace LSST

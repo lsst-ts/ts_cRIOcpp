@@ -45,7 +45,7 @@ public:
      * @param msg Message associated with the error.
      * @param status Ni error status.
      */
-    NiError(const std::string &msg, NiFpga_Status status);
+    NiError(const std::string& msg, NiFpga_Status status);
 };
 
 /**
@@ -60,7 +60,7 @@ public:
      * @param msg message associated with warning
      * @param status NI error status
      */
-    NiWarning(const std::string &msg, NiFpga_Status status);
+    NiWarning(const std::string& msg, NiFpga_Status status);
 };
 
 /**
@@ -74,7 +74,7 @@ public:
  *
  * @see NiError
  */
-inline void NiThrowError(const std::string &msg, NiFpga_Status status) {
+inline void NiThrowError(const std::string& msg, NiFpga_Status status) {
     if (status == 0) {
         return;
     }
@@ -86,7 +86,7 @@ inline void NiThrowError(const std::string &msg, NiFpga_Status status) {
 }
 
 template <typename... dt>
-void NiThrowError(NiFpga_Status status, const char *msg, const dt &...params) {
+void NiThrowError(NiFpga_Status status, const char* msg, const dt&... params) {
     if (status == 0) {
         return;
     }
@@ -110,7 +110,7 @@ void NiThrowError(NiFpga_Status status, const char *msg, const dt &...params) {
  *
  * @see NiError
  */
-void NiThrowError(const char *func, const char *ni_func, NiFpga_Status status);
+void NiThrowError(const char* func, const char* ni_func, NiFpga_Status status);
 
 }  // namespace cRIO
 }  // namespace LSST
