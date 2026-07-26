@@ -45,6 +45,7 @@ PseudoSerialPort::PseudoSerialPort(std::shared_ptr<Transport> real_port, const c
         : _device_name(device_name), _read_timeout(1) {
     _real_port = real_port;
     _port_fd = -1;
+    _thread = NULL;
 }
 
 PseudoSerialPort::~PseudoSerialPort() {

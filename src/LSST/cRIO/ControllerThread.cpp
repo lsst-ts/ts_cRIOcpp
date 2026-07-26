@@ -73,6 +73,7 @@ void ControllerThread::startInterruptWatcherTask(FPGA* fpga) {
 
 void ControllerThread::stopInterruptWatcherTask() {
     _interrupt_watcher_thread->stop();
+    delete _interrupt_watcher_thread;
     _interrupt_watcher_thread = NULL;
 }
 
