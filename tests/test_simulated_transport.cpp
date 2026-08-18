@@ -52,14 +52,14 @@ TestTransport::TestTransport() { _test_val.value = 10; }
 
 void TestTransport::generate_response(const unsigned char* buf, size_t len) {
     Modbus::Parser parser(std::vector<uint8_t>(buf, buf + len));
-    _response.push_back(parser.address());
+    _response.vector.push_back(parser.address());
     switch (parser.func()) {
         case MPU::READ_HOLDING_REGISTERS: {
             uint16_t reg = parser.read<uint16_t>();
             uint16_t reg_len = parser.read<uint16_t>() * 2;
 
-            _response.push_back(parser.func());
-            _response.push_back(reg_len);
+            _response.vector.push_back(parser.func());
+            _response.vector.push_back(reg_len);
 
             for (size_t i = 0; i < reg_len; i += 2, reg++) {
                 switch (reg) {
@@ -68,20 +68,20 @@ void TestTransport::generate_response(const unsigned char* buf, size_t len) {
                     case 1001:
                     case 1002:
                     case 1003:
-                        _response.push_back(_test_val.bytes[7 - 2 * (reg - 1000)]);
-                        _response.push_back(_test_val.bytes[6 - 2 * (reg - 1000)]);
+                        _response.vector.push_back(_test_val.bytes[7 - 2 * (reg - 1000)]);
+                        _response.vector.push_back(_test_val.bytes[6 - 2 * (reg - 1000)]);
                         break;
                     default:
-                        _response.push_back(1);
-                        _response.push_back(2);
+                        _response.vector.push_back(1);
+                        _response.vector.push_back(2);
                         break;
                 }
             }
             break;
         }
         default:
-            _response.push_back(Modbus::BusList::MODBUS_ERROR_MASK | parser.func());
-            _response.push_back(1);
+            _response.vector.push_back(Modbus::BusList::MODBUS_ERROR_MASK | parser.func());
+            _response.vector.push_back(1);
     }
 
     _response.writeCRC();

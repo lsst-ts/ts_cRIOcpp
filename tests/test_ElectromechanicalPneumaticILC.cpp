@@ -168,7 +168,7 @@ TEST_CASE("Test DAA force set", "[ElectromechanicalPneumaticILC]") {
     response.write<float>(345.10);
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.parse(response.data(), response.size()));
+    REQUIRE_NOTHROW(ilc.parse(response.vector.data(), response.vector.size()));
 
     REQUIRE(ilc.primaryForce == Approx(-123.45));
     REQUIRE(ilc.secondaryForce == Approx(345.10));
@@ -193,7 +193,7 @@ TEST_CASE("Test SAA force actuator readout", "[ElectromechanicalPneumaticILC]") 
     response.write<float>(13.7);
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.parse(response.data(), response.size()));
+    REQUIRE_NOTHROW(ilc.parse(response.vector.data(), response.vector.size()));
 
     REQUIRE(ilc.primaryForce == Approx(13.7));
     REQUIRE(std::isnan(ilc.secondaryForce));
@@ -219,7 +219,7 @@ TEST_CASE("Test DAA force actuator readout", "[ElectromechanicalPneumaticILC]") 
     response.write<float>(-67.4);
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.parse(response.data(), response.size()));
+    REQUIRE_NOTHROW(ilc.parse(response.vector.data(), response.vector.size()));
 
     REQUIRE(ilc.primaryForce == Approx(15.9));
     REQUIRE(ilc.secondaryForce == Approx(-67.4));
@@ -270,7 +270,7 @@ TEST_CASE("Test parsing of calibration data", "[ElectromechanicalPneumaticILC]")
 
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.parse(response.data(), response.size()));
+    REQUIRE_NOTHROW(ilc.parse(response.vector.data(), response.vector.size()));
 
     auto check4 = [](float base, float values[4]) {
         for (int i = 0; i < 4; i++) {
@@ -309,5 +309,5 @@ TEST_CASE("Test parsing of pressure data", "[ElectromechanicalPneumaticILC]") {
 
     response.writeCRC();
 
-    REQUIRE_NOTHROW(ilc.parse(response.data(), response.size()));
+    REQUIRE_NOTHROW(ilc.parse(response.vector.data(), response.vector.size()));
 }

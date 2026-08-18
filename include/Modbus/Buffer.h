@@ -28,6 +28,8 @@
 #include <stdexcept>
 #include <vector>
 
+#include "Modbus/HexDump.h"
+
 namespace Modbus {
 
 /**
@@ -64,7 +66,7 @@ public:
  * Represents a single Modbus message. Use BusList to organize a set of Modbus
  * messages or callbacks on various functions.
  */
-class Buffer : public std::vector<uint8_t> {
+class Buffer {
 public:
     /**
      * Construct an empty buffer.
@@ -76,7 +78,9 @@ public:
      *
      * @param data Buffer's data
      */
-    Buffer(std::vector<uint8_t> data) : std::vector<uint8_t>(data) {}
+    Buffer(std::vector<uint8_t> data) : vector(data) {}
+
+    const std::string hexDump() { return Modbus::hexDump(vector); }
 
     /**
      * Construct buffer for a given Modbus function. Assumes subnet, data
@@ -142,7 +146,7 @@ public:
      *
      * @return Buffer command address
      */
-    uint8_t address() { return at(0); }
+    uint8_t address() { return vector.at(0); }
 
     /**
      * Return function call stored in the Modbus buffer. Essentially returns
@@ -150,7 +154,7 @@ public:
      *
      * @return Function call code
      */
-    uint8_t func() { return at(1); }
+    uint8_t func() { return vector.at(1); }
 
     /**
      * Add to buffer Modbus function. Assumes subnet, data lengths and triggers are
@@ -179,12 +183,14 @@ public:
         writeCRC();
     }
 
+    std::vector<uint8_t> vector;
+
 protected:
-    virtual void pushBuffer(uint8_t data) { push_back(data); }
+    virtual void pushBuffer(uint8_t data) { vector.push_back(data); }
 
     inline void pushBuffer(uint8_t* data, std::size_t length) {
         for (std::size_t i = 0; i < length; i++) {
-            push_back(data[i]);
+            vector.push_back(data[i]);
         }
     }
 

@@ -20,7 +20,7 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <Transports/SimulatedTransport.h>
+#include "Transports/SimulatedTransport.h"
 
 using namespace Transports;
 
@@ -36,17 +36,17 @@ std::vector<uint8_t> SimulatedTransport::read(size_t len, std::chrono::microseco
     if (len == 0) {
         len = 1;
     };
-    if (len < _response.size()) {
-        auto ret = std::vector<uint8_t>(_response.begin(), _response.begin() + len);
+    if (len < _response.vector.size()) {
+        auto ret = std::vector<uint8_t>(_response.vector.begin(), _response.vector.begin() + len);
         _bytes_read += len;
-        _response = std::vector<uint8_t>(_response.begin() + len, _response.end());
+        _response = std::vector<uint8_t>(_response.vector.begin() + len, _response.vector.end());
         return ret;
     }
 
     auto ret = _response;
-    _response.clear();
-    _bytes_read += ret.size();
-    return ret;
+    _response.vector.clear();
+    _bytes_read += ret.vector.size();
+    return ret.vector;
 }
 
 void SimulatedTransport::commands(Modbus::BusList& bus_list, std::chrono::microseconds timeout,
@@ -54,7 +54,7 @@ void SimulatedTransport::commands(Modbus::BusList& bus_list, std::chrono::micros
     auto end = std::chrono::steady_clock::now() + timeout;
 
     for (auto cmd : bus_list) {
-        execute_command(cmd.buffer, bus_list, end, calling_thread);
+        execute_command(cmd.buffer.vector, bus_list, end, calling_thread);
     }
 
     bus_list.clear();

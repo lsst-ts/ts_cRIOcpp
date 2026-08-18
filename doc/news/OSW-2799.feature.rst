@@ -1,0 +1,1 @@
+Change Modbus::Buffer to use composite for std::vector instead of inheritance.

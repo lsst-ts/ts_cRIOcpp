@@ -25,42 +25,16 @@
 
 #include <cstdint>
 #include <cstring>
-#include <iomanip>
-#include <sstream>
 #include <stdexcept>
 #include <string>
 #include <vector>
 
 #include <spdlog/fmt/fmt.h>
 
-#include <Modbus/Buffer.h>
+#include "Modbus/Buffer.h"
+#include "Modbus/HexDump.h"
 
 namespace Modbus {
-
-/**
- * Dumps hex data to ostring stream.
- *
- * @param dt buffer to print
- * @param len length of the buffer
- */
-template <typename dt>
-static const std::string hexDump(const dt* buf, size_t len) {
-    std::ostringstream os;
-    os << std::setfill('0') << std::hex;
-    for (size_t i = 0; i < len; i++) {
-        if (i > 0) {
-            os << " ";
-        }
-        os << std::setw(sizeof(dt) * 2) << +(buf[i]);
-    }
-    os << std::dec;
-    return os.str();
-}
-
-template <typename dt>
-static const std::string hexDump(const std::vector<dt>& data) {
-    return hexDump<dt>(data.data(), data.size());
-}
 
 /**
  * Exception thrown when calculated CRC doesn't match received CRC.
@@ -104,6 +78,8 @@ public:
      * @param buffer Buffer to parse
      */
     Parser(std::vector<uint8_t> buffer) { parse(buffer); }
+
+    Parser(const Buffer& buffer) { parse(buffer.vector); }
 
     /**
      * Sets the given buffer as the one to be parsed.

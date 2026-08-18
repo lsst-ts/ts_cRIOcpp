@@ -111,19 +111,19 @@ TEST_CASE("Generic functions", "[ILC]") {
     ilc.reportServerStatus(31);
     ilc.resetServer(134);
 
-    Modbus::Parser parser(ilc[0].buffer);
+    Modbus::Parser parser(ilc[0].buffer.vector);
 
     CHECK(parser.address() == 125);
     CHECK(parser.func() == 17);
     CHECK_NOTHROW(parser.checkCRC());
 
-    parser.parse(ilc[1].buffer);
+    parser.parse(ilc[1].buffer.vector);
 
     CHECK(parser.address() == 31);
     CHECK(parser.func() == 18);
     CHECK_NOTHROW(parser.checkCRC());
 
-    parser.parse(ilc[2].buffer);
+    parser.parse(ilc[2].buffer.vector);
 
     CHECK(parser.address() == 134);
     CHECK(parser.func() == 107);
@@ -164,8 +164,8 @@ TEST_CASE("Parse response", "[ILC]") {
     mbuf.write<uint8_t>('C');
     mbuf.writeCRC();
 
-    CHECK(mbuf[18] == 0xe7);
-    CHECK(mbuf[19] == 0xa9);
+    CHECK(mbuf.vector[18] == 0xe7);
+    CHECK(mbuf.vector[19] == 0xa9);
 
     CHECK_NOTHROW(ilc.parse(mbuf));
 
@@ -180,18 +180,18 @@ TEST_CASE("Parse response", "[ILC]") {
 
     // invalid length
     constructCommands();
-    CHECK_THROWS_AS(ilc.parse(mbuf.data(), 10), std::out_of_range);
+    CHECK_THROWS_AS(ilc.parse(mbuf.vector.data(), 10), std::out_of_range);
 
     mbuf.write<uint8_t>(0xff);
 
     ilc.next_message();
-    CHECK_THROWS_AS(ilc.parse(mbuf), Modbus::LongResponse);
+    CHECK_THROWS_AS(ilc.parse(mbuf.vector), Modbus::LongResponse);
 
     // invalid CRC
-    mbuf[18] = 0xe8;
+    mbuf.vector[18] = 0xe8;
 
     constructCommands();
-    CHECK_THROWS_AS(ilc.parse(mbuf), Modbus::CRCError);
+    CHECK_THROWS_AS(ilc.parse(mbuf.vector), Modbus::CRCError);
 }
 
 TEST_CASE("Change ILC mode response", "[ILC]") {
@@ -278,11 +278,11 @@ TEST_CASE("Unmatched response", "[ILC]") {
     mbuf2.write<uint16_t>(0x0004);
     mbuf2.writeCRC();
 
-    CHECK(mbuf1[18] == 0xe7);
-    CHECK(mbuf1[19] == 0xa9);
+    CHECK(mbuf1.vector[18] == 0xe7);
+    CHECK(mbuf1.vector[19] == 0xa9);
 
-    CHECK(mbuf2[7] == 0x05);
-    CHECK(mbuf2[8] == 0xad);
+    CHECK(mbuf2.vector[7] == 0x05);
+    CHECK(mbuf2.vector[8] == 0xad);
 
     CHECK_NOTHROW(ilc.parse(mbuf1));
     CHECK_NOTHROW(ilc.parse(mbuf2));
@@ -302,7 +302,7 @@ TEST_CASE("Unmatched response", "[ILC]") {
 
     // invalid length
     constructCommands();
-    CHECK_THROWS_AS(ilc.parse(mbuf1.data(), mbuf1.size() - 1), std::out_of_range);
+    CHECK_THROWS_AS(ilc.parse(mbuf1.vector.data(), mbuf1.vector.size() - 1), std::out_of_range);
     CHECK_NOTHROW(ilc.parse(mbuf2));
 
     Modbus::Buffer mbuf3(mbuf1);
@@ -326,8 +326,8 @@ TEST_CASE("Unmatched response", "[ILC]") {
 
     // missing reply
     ilc.resetServer(121);
-    CHECK_THROWS_AS(ilc.parse(mbuf1), Modbus::WrongResponse);
-    CHECK_THROWS_AS(ilc.parse(mbuf2), std::out_of_range);
+    CHECK_THROWS_AS(ilc.parse(mbuf1.vector), Modbus::WrongResponse);
+    CHECK_THROWS_AS(ilc.parse(mbuf2.vector), std::out_of_range);
 
     // recheck correct replies are processed
     ilc.next_message();
@@ -336,14 +336,14 @@ TEST_CASE("Unmatched response", "[ILC]") {
 
     // invalid CRC
     Modbus::Buffer mbuf2_err(mbuf2);
-    mbuf2_err[2] = 0xe8;
+    mbuf2_err.vector[2] = 0xe8;
 
     constructCommands();
     CHECK_NOTHROW(ilc.parse(mbuf1));
     CHECK_THROWS_AS(ilc.parse(mbuf2_err), Modbus::CRCError);
 
     // invalid function
-    mbuf2_err[1] = 1;
+    mbuf2_err.vector[1] = 1;
 
     constructCommands();
     CHECK_NOTHROW(ilc.parse(mbuf1));
@@ -497,7 +497,7 @@ TEST_CASE("Response cache management", "[ILC]") {
         mbuf.write<uint8_t>('C');
         mbuf.writeCRC();
 
-        return mbuf;
+        return mbuf.vector;
     };
 
     CHECK_NOTHROW(ilc.parse(constructResponse(18, 'A')));
