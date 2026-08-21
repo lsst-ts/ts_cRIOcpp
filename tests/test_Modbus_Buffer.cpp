@@ -26,8 +26,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <Modbus/Buffer.h>
-#include <Modbus/Parser.h>
+#include "Modbus/Buffer.h"
+#include "Modbus/HexDump.h"
+#include "Modbus/Parser.h"
 
 using namespace Modbus;
 
@@ -180,4 +181,10 @@ TEST_CASE("Call function with arguments (constructor)", "[Call]") {
     CHECK(mbuf.vector[8] == 0xdb);
     CHECK(mbuf.vector[9] == 0xbb);
     CHECK(mbuf.vector[10] == 0xad);
+}
+
+TEST_CASE("Hex dumping", "[Modbus::hexDump]") {
+    std::vector<uint8_t> data({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 255});
+
+    REQUIRE(Modbus::hexDump(data.data(), data.size()) == "01 02 03 04 05 06 07 08 09 0a 0b ff");
 }

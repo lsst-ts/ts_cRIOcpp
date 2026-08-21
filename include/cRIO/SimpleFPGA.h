@@ -138,7 +138,7 @@ public:
                 auto now = std::chrono::system_clock::now();
                 auto in_time_t = std::chrono::system_clock::to_time_t(now);
                 _debug_stream << std::put_time(std::gmtime(&in_time_t), "%Y-%m-%dZ%T:") << message << " "
-                              << mb.hexDump<dt>(mb.getBuffer(), mb.getLength()) << std::endl;
+                              << Modbus::hexDump<dt>(mb.getBuffer(), mb.getLength()) << std::endl;
             } catch (const std::ios_base::failure& e) {
                 SPDLOG_WARN("Cannot write to debug file: {}", e.what());
                 closeDebugFile();

@@ -20,8 +20,9 @@
 
 #include <iostream>
 
-#include <cRIO/Application.h>
-#include <cRIO/ModbusBuffer.h>
+#include "cRIO/Application.h"
+#include "cRIO/ModbusBuffer.h"
+#include "Modbus/HexDump.h"
 
 namespace LSST {
 namespace cRIO {
@@ -225,7 +226,7 @@ get_the_answer command.
      */
     template <typename dt>
     static const void printHexBuffer(dt* buf, size_t len, std::ostream& os = std::cout) {
-        os << ModbusBuffer::hexDump<dt>(buf, len);
+        os << Modbus::hexDump<dt>(buf, len);
     }
 
     static const void printDecodedBuffer(uint16_t* buf, size_t len, std::ostream& os = std::cout);
