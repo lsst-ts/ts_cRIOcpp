@@ -22,10 +22,8 @@
 #define CRIO_MODBUSBUFFER_H_
 
 #include <functional>
-#include <iomanip>
 #include <map>
 #include <queue>
-#include <sstream>
 #include <string>
 #include <stdexcept>
 #include <vector>
@@ -55,7 +53,8 @@
 
 #include <endian.h>
 
-#include <cRIO/DataTypes.h>
+#include "cRIO/DataTypes.h"
+#include "Modbus/HexDump.h"
 
 #endif
 
@@ -179,25 +178,6 @@ public:
      * @return read data
      */
     std::vector<uint8_t> getReadData(int32_t length);
-
-    /**
-     * Dumps hex data to ostring stream.
-     *
-     * @param
-     */
-    template <typename dt>
-    static const std::string hexDump(dt* buf, size_t len) {
-        std::ostringstream os;
-        os << std::setfill('0') << std::hex;
-        for (size_t i = 0; i < len; i++) {
-            if (i > 0) {
-                os << " ";
-            }
-            os << std::setw(sizeof(dt) * 2) << +(buf[i]);
-        }
-        os << std::dec;
-        return os.str();
-    }
 
     /**
      * Reads data from buffer. Updates CRC as it reads the data. Size of

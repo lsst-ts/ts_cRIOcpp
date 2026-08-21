@@ -37,7 +37,7 @@ TEST_CASE("Test MPU read input status", "[MPU]") {
 
     CHECK(mpu.size() == 1);
 
-    auto commands = mpu[0].buffer;
+    auto commands = mpu[0].buffer.vector;
 
     CHECK(commands.size() == 8);
 
@@ -95,7 +95,7 @@ TEST_CASE("Test MPU read holding registers", "[MPU]") {
 
     CHECK(mpu.size() == 1);
 
-    auto commands = mpu[0].buffer;
+    auto commands = mpu[0].buffer.vector;
 
     CHECK(commands.size() == 8);
 
@@ -137,7 +137,7 @@ TEST_CASE("Test MPU reading multiple registers - failed response", "[MPU]") {
 
     CHECK(mpu.size() == 1);
 
-    auto commands = mpu[0].buffer;
+    auto commands = mpu[0].buffer.vector;
 
     CHECK(commands.size() == 8);
 
@@ -180,7 +180,7 @@ TEST_CASE("Test MPU reading multiple registers - failed response", "[MPU]") {
 
     CHECK(mpu.size() == 1);
 
-    commands = mpu[0].buffer;
+    commands = mpu[0].buffer.vector;
 
     CHECK(commands.size() == 8);
 
@@ -198,7 +198,7 @@ TEST_CASE("Test MPU reading multiple registers - successful response", "[MPU]") 
     TestMPU mpu(12);
     mpu.readHoldingRegisters(3, 10, 101);
 
-    auto commands = mpu[0].buffer;
+    auto commands = mpu[0].buffer.vector;
 
     CHECK(commands.size() == 8);
 
@@ -238,7 +238,7 @@ TEST_CASE("Test MPU reading multiple registers - successful response", "[MPU]") 
 
     CHECK(mpu.size() == 2);
 
-    commands = mpu[1].buffer;
+    commands = mpu[1].buffer.vector;
 
     CHECK(commands[0] == 12);
     CHECK(commands[1] == 3);
@@ -293,7 +293,7 @@ TEST_CASE("Test MPU preset holding register", "[MPU]") {
 
     CHECK(mpu.size() == 1);
 
-    auto commands = mpu[0].buffer;
+    auto commands = mpu[0].buffer.vector;
 
     CHECK(commands.size() == 8);
 
@@ -317,7 +317,7 @@ TEST_CASE("Test MPU preset holding registers", "[MPU]") {
 
     CHECK(mpu.size() == 1);
 
-    auto commands = mpu[0].buffer;
+    auto commands = mpu[0].buffer.vector;
 
     CHECK(commands.size() == 9 + 2 * regs.size());
 
@@ -346,7 +346,7 @@ TEST_CASE("Test MPU preset holding registers by simplymodbus.ca", "[MPU]") {
 
     CHECK(mpu.size() == 1);
 
-    auto commands = mpu[0].buffer;
+    auto commands = mpu[0].buffer.vector;
 
     CHECK(commands.size() == 9 + 2 * regs.size());
 

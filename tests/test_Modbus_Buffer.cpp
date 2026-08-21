@@ -26,8 +26,9 @@
 
 #include <catch2/catch_test_macros.hpp>
 
-#include <Modbus/Buffer.h>
-#include <Modbus/Parser.h>
+#include "Modbus/Buffer.h"
+#include "Modbus/HexDump.h"
+#include "Modbus/Parser.h"
 
 using namespace Modbus;
 
@@ -38,10 +39,10 @@ TEST_CASE("CalculateCRC", "[Write]") {
     mbuf.write<uint8_t>(17);
     mbuf.writeCRC();
 
-    REQUIRE(mbuf.size() == 4);
+    REQUIRE(mbuf.vector.size() == 4);
 
-    REQUIRE(mbuf[2] == 0xe3);
-    REQUIRE(mbuf[3] == 0x4c);
+    REQUIRE(mbuf.vector[2] == 0xe3);
+    REQUIRE(mbuf.vector[3] == 0x4c);
 }
 
 TEST_CASE("CalculateLongCRC", "[Write]") {
@@ -53,10 +54,10 @@ TEST_CASE("CalculateLongCRC", "[Write]") {
 
     mbuf.writeCRC();
 
-    REQUIRE(mbuf.size() == 21);
+    REQUIRE(mbuf.vector.size() == 21);
 
-    CHECK(mbuf[19] == 0xA7);
-    CHECK(mbuf[20] == 0x9F);
+    CHECK(mbuf.vector[19] == 0xA7);
+    CHECK(mbuf.vector[20] == 0x9F);
 }
 
 TEST_CASE("WriteUxx", "[Write]") {
@@ -70,14 +71,14 @@ TEST_CASE("WriteUxx", "[Write]") {
 
     // bytes are written left shifted by 1, and masked with 0x12
 
-    REQUIRE(mbuf.size() == 17);
-    CHECK(mbuf[0] == 0x12);
-    CHECK(mbuf[1] == 0x34);
-    CHECK(mbuf[2] == 0x56);
-    CHECK(mbuf[3] == 0x78);
-    CHECK(mbuf[4] == 0x90);
-    CHECK(mbuf[5] == 0xab);
-    CHECK(mbuf[6] == 0xcd);
+    REQUIRE(mbuf.vector.size() == 17);
+    CHECK(mbuf.vector[0] == 0x12);
+    CHECK(mbuf.vector[1] == 0x34);
+    CHECK(mbuf.vector[2] == 0x56);
+    CHECK(mbuf.vector[3] == 0x78);
+    CHECK(mbuf.vector[4] == 0x90);
+    CHECK(mbuf.vector[5] == 0xab);
+    CHECK(mbuf.vector[6] == 0xcd);
 }
 
 TEST_CASE("WriteIxx", "[ILC]") {
@@ -90,19 +91,19 @@ TEST_CASE("WriteIxx", "[ILC]") {
     mbuf.write<int32_t>(0xf890abcd);
     mbuf.writeCRC();
 
-    CHECK(mbuf[0] == 0x1);
-    CHECK(mbuf[1] == 0x2);
-    CHECK(mbuf[2] == 0x12);
-    CHECK(mbuf[3] == 0x34);
-    CHECK(mbuf[4] == 0x56);
-    CHECK(mbuf[5] == 0x78);
-    CHECK(mbuf[6] == 0x90);
-    CHECK(mbuf[7] == 0xab);
-    CHECK(mbuf[8] == 0xcd);
-    CHECK(mbuf[9] == 0xf8);
-    CHECK(mbuf[10] == 0x90);
-    CHECK(mbuf[11] == 0xab);
-    CHECK(mbuf[12] == 0xcd);
+    CHECK(mbuf.vector[0] == 0x1);
+    CHECK(mbuf.vector[1] == 0x2);
+    CHECK(mbuf.vector[2] == 0x12);
+    CHECK(mbuf.vector[3] == 0x34);
+    CHECK(mbuf.vector[4] == 0x56);
+    CHECK(mbuf.vector[5] == 0x78);
+    CHECK(mbuf.vector[6] == 0x90);
+    CHECK(mbuf.vector[7] == 0xab);
+    CHECK(mbuf.vector[8] == 0xcd);
+    CHECK(mbuf.vector[9] == 0xf8);
+    CHECK(mbuf.vector[10] == 0x90);
+    CHECK(mbuf.vector[11] == 0xab);
+    CHECK(mbuf.vector[12] == 0xcd);
 
     Parser parser(mbuf);
 
@@ -124,18 +125,18 @@ TEST_CASE("WriteSGL", "[ModbusBuffer]") {
     mbuf.write(-6758.1234f);
     mbuf.writeCRC();
 
-    CHECK(mbuf[0] == 1);
-    CHECK(mbuf[1] == 2);
+    CHECK(mbuf.vector[0] == 1);
+    CHECK(mbuf.vector[1] == 2);
 
-    CHECK(mbuf[2] == 0x3d);
-    CHECK(mbuf[3] == 0xfb);
-    CHECK(mbuf[4] == 0xe7);
-    CHECK(mbuf[5] == 0x6d);
+    CHECK(mbuf.vector[2] == 0x3d);
+    CHECK(mbuf.vector[3] == 0xfb);
+    CHECK(mbuf.vector[4] == 0xe7);
+    CHECK(mbuf.vector[5] == 0x6d);
 
-    CHECK(mbuf[6] == 0xc5);
-    CHECK(mbuf[7] == 0xd3);
-    CHECK(mbuf[8] == 0x30);
-    CHECK(mbuf[9] == 0xfd);
+    CHECK(mbuf.vector[6] == 0xc5);
+    CHECK(mbuf.vector[7] == 0xd3);
+    CHECK(mbuf.vector[8] == 0x30);
+    CHECK(mbuf.vector[9] == 0xfd);
 
     Parser parser(mbuf);
 
@@ -151,33 +152,39 @@ TEST_CASE("Call function with arguments", "[Call]") {
     mbuf.callFunction(123, 17, static_cast<uint8_t>(0xfe), static_cast<uint16_t>(0xffcc),
                       static_cast<float>(M_PI));
 
-    REQUIRE(mbuf.size() == 11);
-    CHECK(mbuf[0] == 123);
-    CHECK(mbuf[1] == 17);
-    CHECK(mbuf[2] == 0xfe);
-    CHECK(mbuf[3] == 0xff);
-    CHECK(mbuf[4] == 0xcc);
-    CHECK(mbuf[5] == 64);
-    CHECK(mbuf[6] == 73);
-    CHECK(mbuf[7] == 15);
-    CHECK(mbuf[8] == 219);
-    CHECK(mbuf[9] == 70);
-    CHECK(mbuf[10] == 175);
+    REQUIRE(mbuf.vector.size() == 11);
+    CHECK(mbuf.vector[0] == 123);
+    CHECK(mbuf.vector[1] == 17);
+    CHECK(mbuf.vector[2] == 0xfe);
+    CHECK(mbuf.vector[3] == 0xff);
+    CHECK(mbuf.vector[4] == 0xcc);
+    CHECK(mbuf.vector[5] == 64);
+    CHECK(mbuf.vector[6] == 73);
+    CHECK(mbuf.vector[7] == 15);
+    CHECK(mbuf.vector[8] == 219);
+    CHECK(mbuf.vector[9] == 70);
+    CHECK(mbuf.vector[10] == 175);
 }
 
 TEST_CASE("Call function with arguments (constructor)", "[Call]") {
     Buffer mbuf(123, 17, static_cast<uint8_t>(0xef), static_cast<uint16_t>(0xffdd), static_cast<float>(M_PI));
 
-    REQUIRE(mbuf.size() == 11);
-    CHECK(mbuf[0] == 0x7b);
-    CHECK(mbuf[1] == 0x11);
-    CHECK(mbuf[2] == 0xef);
-    CHECK(mbuf[3] == 0xff);
-    CHECK(mbuf[4] == 0xdd);
-    CHECK(mbuf[5] == 0x40);
-    CHECK(mbuf[6] == 0x49);
-    CHECK(mbuf[7] == 0x0f);
-    CHECK(mbuf[8] == 0xdb);
-    CHECK(mbuf[9] == 0xbb);
-    CHECK(mbuf[10] == 0xad);
+    REQUIRE(mbuf.vector.size() == 11);
+    CHECK(mbuf.vector[0] == 0x7b);
+    CHECK(mbuf.vector[1] == 0x11);
+    CHECK(mbuf.vector[2] == 0xef);
+    CHECK(mbuf.vector[3] == 0xff);
+    CHECK(mbuf.vector[4] == 0xdd);
+    CHECK(mbuf.vector[5] == 0x40);
+    CHECK(mbuf.vector[6] == 0x49);
+    CHECK(mbuf.vector[7] == 0x0f);
+    CHECK(mbuf.vector[8] == 0xdb);
+    CHECK(mbuf.vector[9] == 0xbb);
+    CHECK(mbuf.vector[10] == 0xad);
+}
+
+TEST_CASE("Hex dumping", "[Modbus::hexDump]") {
+    std::vector<uint8_t> data({1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 255});
+
+    REQUIRE(Modbus::hexDump(data.data(), data.size()) == "01 02 03 04 05 06 07 08 09 0a 0b ff");
 }

@@ -113,7 +113,7 @@ void FPGASerialDevice::commands(Modbus::BusList& bus_list, std::chrono::microsec
     auto end = std::chrono::steady_clock::now() + timeout;
 
     for (auto cmd : bus_list) {
-        execute_command(cmd.buffer, bus_list, end, calling_thread);
+        execute_command(cmd.buffer.vector, bus_list, end, calling_thread);
         std::this_thread::sleep_for(_quiet_time);
     }
 

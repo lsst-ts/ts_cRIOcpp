@@ -65,38 +65,38 @@ TEST_CASE("Call functions", "[Calls]") {
 
     CHECK(buslist.size() == 2);
 
-    CHECK(buslist[0].buffer.size() == 11);
-    CHECK(buslist[0].buffer[0] == 0x7b);
-    CHECK(buslist[0].buffer[1] == 0x11);
-    CHECK(buslist[0].buffer[2] == 0xfe);
-    CHECK(buslist[0].buffer[3] == 0xff);
-    CHECK(buslist[0].buffer[4] == 0xcc);
-    CHECK(buslist[0].buffer[5] == 0x41);
-    CHECK(buslist[0].buffer[6] == 0xb2);
-    CHECK(buslist[0].buffer[7] == 0xa3);
-    CHECK(buslist[0].buffer[8] == 0xd7);
-    CHECK(buslist[0].buffer[9] == 0x4b);
-    CHECK(buslist[0].buffer[10] == 0xa7);
+    CHECK(buslist[0].buffer.vector.size() == 11);
+    CHECK(buslist[0].buffer.vector[0] == 0x7b);
+    CHECK(buslist[0].buffer.vector[1] == 0x11);
+    CHECK(buslist[0].buffer.vector[2] == 0xfe);
+    CHECK(buslist[0].buffer.vector[3] == 0xff);
+    CHECK(buslist[0].buffer.vector[4] == 0xcc);
+    CHECK(buslist[0].buffer.vector[5] == 0x41);
+    CHECK(buslist[0].buffer.vector[6] == 0xb2);
+    CHECK(buslist[0].buffer.vector[7] == 0xa3);
+    CHECK(buslist[0].buffer.vector[8] == 0xd7);
+    CHECK(buslist[0].buffer.vector[9] == 0x4b);
+    CHECK(buslist[0].buffer.vector[10] == 0xa7);
 
-    CHECK(buslist[1].buffer.size() == 18);
-    CHECK(buslist[1].buffer[0] == 0x2b);
-    CHECK(buslist[1].buffer[1] == 0x56);
-    CHECK(buslist[1].buffer[2] == 0x3d);
-    CHECK(buslist[1].buffer[3] == 0xe5);
-    CHECK(buslist[1].buffer[4] == 0xc9);
-    CHECK(buslist[1].buffer[5] == 0x1d);
-    CHECK(buslist[1].buffer[6] == 0xfb);
-    CHECK(buslist[1].buffer[7] == 0x2e);
-    CHECK(buslist[1].buffer[8] == 0x01);
-    CHECK(buslist[1].buffer[9] == 0x23);
-    CHECK(buslist[1].buffer[10] == 0x45);
-    CHECK(buslist[1].buffer[11] == 0x67);
-    CHECK(buslist[1].buffer[12] == 0x89);
-    CHECK(buslist[1].buffer[13] == 0xab);
-    CHECK(buslist[1].buffer[14] == 0xcd);
-    CHECK(buslist[1].buffer[15] == 0xef);
-    CHECK(buslist[1].buffer[16] == 0x0f);
-    CHECK(buslist[1].buffer[17] == 0xfd);
+    CHECK(buslist[1].buffer.vector.size() == 18);
+    CHECK(buslist[1].buffer.vector[0] == 0x2b);
+    CHECK(buslist[1].buffer.vector[1] == 0x56);
+    CHECK(buslist[1].buffer.vector[2] == 0x3d);
+    CHECK(buslist[1].buffer.vector[3] == 0xe5);
+    CHECK(buslist[1].buffer.vector[4] == 0xc9);
+    CHECK(buslist[1].buffer.vector[5] == 0x1d);
+    CHECK(buslist[1].buffer.vector[6] == 0xfb);
+    CHECK(buslist[1].buffer.vector[7] == 0x2e);
+    CHECK(buslist[1].buffer.vector[8] == 0x01);
+    CHECK(buslist[1].buffer.vector[9] == 0x23);
+    CHECK(buslist[1].buffer.vector[10] == 0x45);
+    CHECK(buslist[1].buffer.vector[11] == 0x67);
+    CHECK(buslist[1].buffer.vector[12] == 0x89);
+    CHECK(buslist[1].buffer.vector[13] == 0xab);
+    CHECK(buslist[1].buffer.vector[14] == 0xcd);
+    CHECK(buslist[1].buffer.vector[15] == 0xef);
+    CHECK(buslist[1].buffer.vector[16] == 0x0f);
+    CHECK(buslist[1].buffer.vector[17] == 0xfd);
 }
 
 TEST_CASE("Call function, parser return", "[Parsing]") {
@@ -115,7 +115,7 @@ TEST_CASE("Call 10 functions, parser return", "[Parsing]") {
     auto generate_reply = [](uint8_t address) -> std::vector<uint8_t> {
         Buffer mbuf(std::vector<uint8_t>({address, 0x03, 0x06, 0xAE, 0x41, 0x56, 0x52, 0x43, 0x40}));
         mbuf.writeCRC();
-        return mbuf;
+        return mbuf.vector;
     };
 
     for (int address = 1; address < 10; address++) {
@@ -134,7 +134,7 @@ TEST_CASE("Missing response", "[BusListErrors]") {
     auto generate_reply = [](uint8_t address) -> std::vector<uint8_t> {
         Buffer mbuf(std::vector<uint8_t>({address, 0x03, 0x06, 0xAE, 0x41, 0x56, 0x52, 0x43, 0x40}));
         mbuf.writeCRC();
-        return mbuf;
+        return mbuf.vector;
     };
 
     for (uint8_t address = 1; address < 10; address++) {
@@ -185,13 +185,13 @@ TEST_CASE("Modbus error response", "[ModbusError]") {
     auto generate_reply = [](uint8_t address) -> std::vector<uint8_t> {
         Buffer mbuf(std::vector<uint8_t>({address, 0x03, 0x06, 0xAE, 0x41, 0x56, 0x52, 0x43, 0x40}));
         mbuf.writeCRC();
-        return mbuf;
+        return mbuf.vector;
     };
 
     auto generate_error_reply = [](uint8_t address) -> std::vector<uint8_t> {
         Buffer mbuf(std::vector<uint8_t>({address, 0x83, 0x01}));
         mbuf.writeCRC();
-        return mbuf;
+        return mbuf.vector;
     };
 
     for (uint8_t address = 1; address < 10; address++) {

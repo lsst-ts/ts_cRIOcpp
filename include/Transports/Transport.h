@@ -25,9 +25,10 @@
 
 #include <vector>
 
-#include <cRIO/Thread.h>
-#include <Modbus/Buffer.h>
-#include <Modbus/BusList.h>
+#include "cRIO/Thread.h"
+#include "Modbus/Buffer.h"
+#include "Modbus/BusList.h"
+#include "Modbus/HexDump.h"
 
 namespace Transports {
 
@@ -43,7 +44,7 @@ public:
      * @param address Expected @glos{ILC} address, for which response wasn't received
      * @param func Expected function which wasn't responded by the @glos{ILC}
      */
-    MissingResponse(const Modbus::Buffer& commanded)
+    MissingResponse(const std::vector<uint8_t>& commanded)
             : std::runtime_error(
                       fmt::format("Missing response to command '{0}'", Modbus::hexDump(commanded))) {}
 };

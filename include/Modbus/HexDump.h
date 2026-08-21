@@ -1,5 +1,5 @@
 /*
- * Implements generic Modbus Buffer functions.
+ * Dumping hex strings.
  *
  * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
  * This product includes software developed by the Vera C.Rubin Observatory Project
@@ -20,41 +20,39 @@
  * this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <spdlog/spdlog.h>
+#ifndef __Modbus__HexDump__
+#define __Modbus__HexDump__
 
-#include <Modbus/Buffer.h>
-#include <Modbus/CRC.h>
+#include <iomanip>
+#include <sstream>
+#include <vector>
 
-using namespace Modbus;
-
-Exception::Exception(uint8_t address, uint8_t func, uint8_t exception)
-        : std::runtime_error(fmt::format(
-                  "ModBus Exception {2} (ModBus address {0}, ModBus response function {1} (0x{1:02x})).",
-                  address, func, exception)) {}
-
-Buffer::Buffer() {}
-
-Buffer::~Buffer() {}
-
-uint16_t Buffer::getCalcCrc() {
-    CRC crc(vector);
-    return crc.get();
+namespace Modbus {
+/**
+ * Dumps hex data to ostring stream.
+ *
+ * @param dt buffer to print
+ * @param len length of the buffer
+ */
+template <typename dt>
+static const std::string hexDump(const dt* buf, size_t len) {
+    std::ostringstream os;
+    os << std::setfill('0') << std::hex;
+    for (size_t i = 0; i < len; i++) {
+        if (i > 0) {
+            os << " ";
+        }
+        os << std::setw(sizeof(dt) * 2) << +(buf[i]);
+    }
+    os << std::dec;
+    return os.str();
 }
 
-void Buffer::callFunction(uint8_t address, uint8_t func) {
-    write(address);
-    write(func);
-    writeCRC();
+template <typename dt>
+static const std::string hexDump(const std::vector<dt>& data) {
+    return hexDump<dt>(data.data(), data.size());
 }
 
-void Buffer::writeI24(int32_t data) {
-    pushBuffer(data >> 16);
-    pushBuffer(data >> 8);
-    pushBuffer(data);
-}
+}  // namespace Modbus
 
-void Buffer::writeCRC() {
-    uint16_t crc = getCalcCrc();
-    pushBuffer(crc & 0xFF);
-    pushBuffer((crc >> 8) & 0xFF);
-}
+#endif  /// !__Modbus__HexDump__

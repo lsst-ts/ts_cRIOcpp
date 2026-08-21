@@ -63,7 +63,7 @@ void FPGA::ilcCommands(ILC::ILCBusList& ilc, int32_t timeout) {
     data.push_back(FIFO::TX_TIMESTAMP);
 
     for (auto cmd : ilc) {
-        for (auto b : cmd.buffer) {
+        for (auto b : cmd.buffer.vector) {
             data.push_back(FIFO::TX_MASK | ((static_cast<uint16_t>(b)) << 1));
         }
         data.push_back(FIFO::TX_FRAMEEND);

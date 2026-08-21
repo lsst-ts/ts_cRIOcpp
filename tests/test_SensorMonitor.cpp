@@ -69,7 +69,7 @@ TEST_CASE("Process response of the SensorValue", "[SensorValues]") {
     }
     response.writeCRC();
 
-    CHECK_NOTHROW(ilc.parse(response.data(), response.size()));
+    CHECK_NOTHROW(ilc.parse(response.vector.data(), response.vector.size()));
 
     for (size_t i = 0; i < 4; i++) {
         CHECK(ilc.values[i] == i + 0.01f * i);
