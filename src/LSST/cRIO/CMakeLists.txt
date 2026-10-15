@@ -1,0 +1,26 @@
+target_sources(cRIOcpp
+  PUBLIC
+    Application.cpp
+    CSC.cpp
+    CliApp.cpp
+    Command.cpp
+    ControllerThread.cpp
+    ElectromechanicalPneumaticILC.cpp
+    Event.cpp
+    FPGA.cpp
+    FPGACliApp.cpp
+    IntelHex.cpp
+    InterruptWatcherTask.cpp
+    MPU.cpp
+    MPUTelemetry.cpp
+    ModbusBuffer.cpp
+    NiError.cpp
+    NiStatus.cpp
+    PrintILC.cpp
+    SimpleFPGA.cpp
+    TaskQueue.cpp
+    ThermalILC.cpp
+    Thread.cpp
+)
+
+add_subdirectory(Settings)

@@ -146,7 +146,7 @@ TEST_CASE("WriteIxx", "[ModbusBuffer]") {
     REQUIRE_NOTHROW(mbuf.checkCRC());
 }
 
-TEST_CASE("WriteSGL", "[ModbusBuffer]") {
+TEST_CASE("ModbusBuffer_WriteSGL", "[ModbusBuffer]") {
     TestModbusBuffer mbuf;
     mbuf.write<float>(0.123);
     mbuf.write(-6758.1234f);
