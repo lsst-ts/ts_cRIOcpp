@@ -21,6 +21,7 @@ target_link_options(cRIOcpp_tests
 target_sources(cRIOcpp_tests
   PRIVATE
     TestFPGA.cpp
+    # TODO commented tests cannot be compiled/run. SSW-3080
     # test_Alias.cpp
     # test_Application.cpp
     # test_CSC.cpp
