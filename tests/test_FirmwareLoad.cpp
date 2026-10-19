@@ -1,23 +1,24 @@
 /*
- * This file is part of LSST cRIOcpp test suite. Tests firmware loading.
+ * This file is part of ts_cRIOcpp.
  *
- * Developed for the Vera C. Rubin Observatory Telescope & Site Software Systems.
- * This product includes software developed by the Vera C.Rubin Observatory Project
- * (https://www.lsst.org). See the COPYRIGHT file at the top-level directory of
- * this distribution for details of code ownership.
+ * Developed for the Vera C. Rubin Observatory Telescope and Site Systems.
+ * This product includes software developed by the LSST Project
+ * (https://www.lsst.org).
+ * See the COPYRIGHT file at the top-level directory of this distribution
+ * for details of code ownership.
  *
- * This program is free software: you can redistribute it and/or modify it
- * under the terms of the GNU General Public License as published by the Free
- * Software Foundation, either version 3 of the License, or (at your option)
- * any later version.
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
  *
- * This program is distributed in the hope that it will be useful, but WITHOUT
- * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
- * FITNESS FOR A PARTICULAR PURPOSE. See the GNU General Public License for
- * more details.
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU General Public License for more details.
  *
- * You should have received a copy of the GNU General Public License along with
- * this program. If not, see <https://www.gnu.org/licenses/>.
+ * You should have received a copy of the GNU General Public License
+ * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
 #include <fstream>
@@ -39,10 +40,10 @@ public:
     TestILC(uint8_t bus) : ILC::ILCBusList(bus), PrintILC(bus) {}
 };
 
-class TestFPGA : public FPGA {
+class FirmwareMockFPGA : public FPGA {
 public:
-    TestFPGA() : FPGA(SS), _call(0) {}
-    ~TestFPGA() { _outStream.close(); }
+    FirmwareMockFPGA() : FPGA(SS), _call(0) {}
+    ~FirmwareMockFPGA() { _outStream.close(); }
 
     void setOutFile(const char* filename) { _outStream.open(filename, std::ifstream::in); }
 
@@ -69,12 +70,12 @@ private:
     void _printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp = false);
 };
 
-void TestFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
+void FirmwareMockFPGA::writeCommandFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     _printBuffer(data, length, "C>", true);
     _call = 0xff & (data[5] >> 1);
 }
 
-void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) {
+void FirmwareMockFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeout) {
     if (length == 1) {
         switch (_call) {
             case 18:
@@ -128,7 +129,7 @@ void TestFPGA::readU16ResponseFIFO(uint16_t* data, size_t length, uint32_t timeo
     _printBuffer(data, length, "R<");
 }
 
-void TestFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp) {
+void FirmwareMockFPGA::_printBuffer(uint16_t* data, size_t length, const char* prefix, bool cmp) {
     std::stringstream ss;
     ss << prefix << " ";
     CliApp::printHexBuffer(data, length, ss);
@@ -147,7 +148,7 @@ TEST_CASE("Test load ILC", "[FirmwareLoad]") {
     hex.load("data/ILC-3.hex");
 
     TestILC tILC(1);
-    TestFPGA testFPGA;
+    FirmwareMockFPGA testFPGA;
     REQUIRE_NOTHROW(testFPGA.setOutFile("data/ILC-3.out"));
     REQUIRE_NOTHROW(tILC.programILC(&testFPGA, 18, hex));
 }
