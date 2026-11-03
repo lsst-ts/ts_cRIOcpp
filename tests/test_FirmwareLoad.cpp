@@ -35,9 +35,9 @@
 
 using namespace LSST::cRIO;
 
-class TestILC : public PrintILC {
+class TestFirmwareLoadILC : public PrintILC {
 public:
-    TestILC(uint8_t bus) : ILC::ILCBusList(bus), PrintILC(bus) {}
+    TestFirmwareLoadILC(uint8_t bus) : ILC::ILCBusList(bus), PrintILC(bus) {}
 };
 
 class FirmwareMockFPGA : public FPGA {
@@ -147,7 +147,7 @@ TEST_CASE("Test load ILC", "[FirmwareLoad]") {
     IntelHex hex;
     hex.load("data/ILC-3.hex");
 
-    TestILC tILC(1);
+    TestFirmwareLoadILC tILC(1);
     FirmwareMockFPGA testFPGA;
     REQUIRE_NOTHROW(testFPGA.setOutFile("data/ILC-3.out"));
     REQUIRE_NOTHROW(tILC.programILC(&testFPGA, 18, hex));

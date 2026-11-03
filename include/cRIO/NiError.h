@@ -23,10 +23,9 @@
 #ifndef _cRIO_NiError_H_
 #define _cRIO_NiError_H_
 
+#include <format>
 #include <stdexcept>
 #include <string>
-
-#include <spdlog/fmt/fmt.h>
 
 namespace LSST {
 namespace cRIO {
@@ -90,7 +89,7 @@ void NiThrowError(NiFpga_Status status, const char* msg, const dt&... params) {
     if (status == 0) {
         return;
     }
-    auto f_msg = fmt::format(msg, params...);
+    auto f_msg = std::vformat(msg, std::make_format_args(params...));
     if (status < 0) {
         throw NiError(f_msg, status);
     } else {

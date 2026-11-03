@@ -183,14 +183,25 @@ TEST_CASE("Removing tasks from the queue", "[ControllerThread]") {
     REQUIRE(tv == 1);
 }
 
-std::atomic<int> rv = 0;
+std::atomic<int> rv_20 = 0;
+std::atomic<int> rv_30 = 0;
+
+std::chrono::time_point<std::chrono::steady_clock> start;
 
 class TestRescheduledTask : public Task {
 public:
     TestRescheduledTask(task_return_t wait) : _wait(wait) {}
 
     task_return_t run() override {
-        rv += 1;
+        if (_wait == 20) {
+            rv_20++;
+        } else {
+            rv_30++;
+        }
+        std::cout << "TestRescheduledTask: " << rv_20 << " " << rv_30 << " " << _wait << " "
+                  << (std::chrono::duration<double, std::milli>{std::chrono::steady_clock::now() - start})
+                             .count()
+                  << " ms" << std::endl;
         return _wait;
     }
 
@@ -199,8 +210,8 @@ private:
 };
 
 TEST_CASE("Task rescheduling", "[ControllerThread]") {
-    rv = 0;
-    REQUIRE(rv == 0);
+    rv_20 = 0;
+    rv_30 = 0;
 
     for (int i = 0; i < 3; i++) {
         ControllerThread::instance().enqueue(std::make_shared<TestRescheduledTask>(20));
@@ -210,25 +221,32 @@ TEST_CASE("Task rescheduling", "[ControllerThread]") {
         ControllerThread::instance().enqueue(std::make_shared<TestRescheduledTask>(30));
     }
 
-    auto start = std::chrono::steady_clock::now();
+    start = std::chrono::steady_clock::now();
+
+    CHECK(rv_20 == 0);
+    CHECK(rv_30 == 0);
 
     ControllerThread::instance().start();
 
     std::this_thread::sleep_until(start + 22ms);
 
-    CHECK(rv >= 8);
+    CHECK(rv_20 == 6);
+    CHECK(rv_30 == 2);
 
     std::this_thread::sleep_until(start + 32ms);
 
-    CHECK(rv >= 10);
+    CHECK(rv_20 == 6);
+    CHECK(rv_30 == 4);
 
     std::this_thread::sleep_until(start + 102ms);
 
-    CHECK(rv >= 26);
+    CHECK(rv_20 == 18);
+    CHECK(rv_30 == 8);
 
     ControllerThread::instance().stop();
 
-    REQUIRE(rv >= 26);
+    CHECK(rv_20 == 18);
+    CHECK(rv_30 == 8);
 }
 
 class TestHandler : public InterruptHandler {

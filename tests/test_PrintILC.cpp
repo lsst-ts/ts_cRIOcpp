@@ -38,7 +38,9 @@ TEST_CASE("Test program ILC", "[PrintILC]") {
     TestILC ilc(1);
 
     IntelHex hex;
-    hex.load("data/hex1.hex");
+    REQUIRE_NOTHROW(hex.load("data/hex1.hex"));
+
+    REQUIRE(hex.empty() == false);
 
     uint8_t pages[PrintILC::APPLICATION_PAGE_LENGTH] = {
             0x02, 0x00, 0x23, 0x0B, 0x25, 0x0D, 0x09, 0xE5, 0x0A, 0x0C, 0xF5, 0x08, 0x00, 0x13, 0x22, 0x12,

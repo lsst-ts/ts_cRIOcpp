@@ -22,9 +22,10 @@
  */
 
 #include <algorithm>
+#include <cstdint>
+#include <cstring>
+#include <format>
 #include <fstream>
-
-#include <spdlog/spdlog.h>
 
 #include <cRIO/IntelHex.h>
 
@@ -34,8 +35,14 @@ IntelHex::IntelHex() {}
 
 void IntelHex::load(const std::string& fileName) {
     std::ifstream inputStream(fileName);
-    load(inputStream);
-    inputStream.close();
+    inputStream.exceptions(std::ifstream::failbit | std::ifstream::badbit);
+    try {
+        load(inputStream);
+        inputStream.close();
+    } catch (const std::ios_base::failure& e) {
+        _hexData.clear();
+        throw std::runtime_error(std::format("Cannot open {}: {}.", fileName, e.what()));
+    }
 }
 
 void IntelHex::load(std::istream& inputStream) {
@@ -60,7 +67,7 @@ void IntelHex::load(std::istream& inputStream) {
                 if (hexLine.data.size() != 2) {
                     throw LoadError(
                             _lineNo, 0xFFFF,
-                            fmt::format("Invalid extension size - expected 2, got {}", hexLine.data.size()));
+                            std::format("Invalid extension size - expected 2, got {}", hexLine.data.size()));
                 }
                 extensionData = *(reinterpret_cast<uint16_t*>(hexLine.data.data())) > 0;
                 break;
@@ -71,6 +78,8 @@ void IntelHex::load(std::istream& inputStream) {
         }
     }
 }
+
+bool IntelHex::empty() { return _hexData.empty(); };
 
 std::vector<uint8_t> IntelHex::getData(uint16_t& startAddress) {
     _sortByAddress();
@@ -100,7 +109,7 @@ void IntelHex::_processLine(const char* line, IntelHexLine* hexLine, IntelRecord
     int offset = 1;
     if (line[0] != ':') {
         throw LoadError(_lineNo, 0xFFFF,
-                        fmt::format("Invalid IntelHexLine StartCode '{}' expecting '{}'", line[0], ':'));
+                        std::format("Invalid IntelHexLine StartCode '{}' expecting '{}'", line[0], ':'));
     }
 
     unsigned int byteCount = 0;
@@ -140,7 +149,7 @@ void IntelHex::_processLine(const char* line, IntelHexLine* hexLine, IntelRecord
     checksum += 1;
     if (checksum != expectedChecksum) {
         throw LoadError(_lineNo, address,
-                        fmt::format("Checksum mismatch, expecting 0x{:02X}, got 0x{:02X}", expectedChecksum,
+                        std::format("Checksum mismatch, expecting 0x{:02X}, got 0x{:02X}", expectedChecksum,
                                     checksum));
     }
 }

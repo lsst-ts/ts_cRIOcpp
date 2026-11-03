@@ -1,5 +1,8 @@
 cmake_minimum_required(VERSION 3.23)
 
+set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD_REQUIRED YES)
+
 project(ts_cRIOcpp)
 
 add_library(cRIOcpp)
@@ -9,7 +12,7 @@ target_link_libraries(cRIOcpp PRIVATE spdlog::spdlog)
 
 target_compile_options(cRIOcpp
   PRIVATE
-    -Wl,--gc-sections -fPIC -fdata-sections -ffunction-sections
+  -Wall -Wl,--gc-sections -fPIC -fdata-sections -ffunction-sections
 )
 
 add_subdirectory(include)
