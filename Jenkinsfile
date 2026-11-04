@@ -67,8 +67,8 @@ node {
          M1M3sim.inside("--entrypoint=''") {
              sh """
                 source $SALUSER_HOME/.crio_setup.sh
-                cd $WORKSPACE/ts_cRIOcpp/build
-                make
+                cd $WORKSPACE/ts_cRIOcpp
+                cmake --build build --target docs
              """
          }
     }

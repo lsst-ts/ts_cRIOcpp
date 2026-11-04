@@ -19,3 +19,18 @@ add_subdirectory(include)
 add_subdirectory(src)
 
 add_subdirectory(tests)
+
+find_package(Doxygen)
+if(Doxygen_FOUND)
+  configure_file(
+    "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
+    @ONLY
+  )
+
+  doxygen_add_docs(docs
+    CONFIG_FILE "${CMAKE_CURRENT_SOURCE_DIR}/Doxyfile"
+    COMMENT "Generating docs using explicit Doxyfile template"
+  )
+else()
+  message(WARNING "Doxygen not found, cannot generate docs.")
+endif()

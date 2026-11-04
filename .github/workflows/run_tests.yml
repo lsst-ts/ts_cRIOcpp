@@ -1,6 +1,13 @@
 name: C/C++ CI
 
-on: [push]
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
 
 env:
   BUILD_TYPE: Release
