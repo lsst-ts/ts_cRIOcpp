@@ -79,7 +79,7 @@ void IntelHex::load(std::istream& inputStream) {
     }
 }
 
-bool IntelHex::empty() { return _hexData.empty(); };
+bool IntelHex::empty() const { return _hexData.empty(); };
 
 std::vector<uint8_t> IntelHex::getData(uint16_t& startAddress) {
     _sortByAddress();

@@ -8,6 +8,10 @@ find_package(yaml-cpp REQUIRED)
 
 add_executable(cRIOcpp_tests)
 
+target_include_directories(cRIOcpp_tests PUBLIC
+  "${PROJECT_BINARY_DIR}/include"
+)
+
 target_compile_options(cRIOcpp_tests
   PRIVATE
     -Wall -Wl,--gc-sections -fPIC -fdata-sections -ffunction-sections
@@ -50,7 +54,7 @@ target_sources(cRIOcpp_tests
     test_Thread.cpp
     test_Timestamp.cpp
     test_simulated_transport.cpp
-    # test_version.cpp
+    test_version.cpp
 )
 
 target_sources(cRIOcpp_tests

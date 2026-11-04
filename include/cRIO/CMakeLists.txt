@@ -45,5 +45,4 @@ target_sources(cRIOcpp
       Timestamp.h
       U16ArrayUtilities.h
       U8ArrayUtilities.h
-      version.h
 )

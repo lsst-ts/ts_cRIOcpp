@@ -5,8 +5,8 @@ target_sources(cRIOcpp
       rapidcsv.h
 )
 
-target_include_directories(cRIOcpp PRIVATE
-  ${CMAKE_CURRENT_SOURCE_DIR}/include
+target_include_directories(cRIOcpp PUBLIC
+  "${PROJECT_BINARY_DIR}/include"
 )
 
 add_subdirectory(ILC)

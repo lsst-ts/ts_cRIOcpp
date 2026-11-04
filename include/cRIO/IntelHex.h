@@ -79,7 +79,7 @@ public:
     /**
      * Returns true if the hex file does not contains any data.
      */
-    bool empty();
+    bool empty() const;
 
     /**
      * Returns data to be written into ILC. Only three bytes out of every four

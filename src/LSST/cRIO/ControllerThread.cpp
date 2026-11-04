@@ -144,7 +144,7 @@ void ControllerThread::_process_tasks() {
             if (wait != Task::DONT_RESCHEDULE) {
                 auto next = task.first + std::chrono::milliseconds(wait);
                 auto now = std::chrono::steady_clock::now();
-                if (next > now) {
+                if (next <= now) {
                     SPDLOG_WARN("Task missed re-scheduling by {:.2f} ms.",
                                 (std::chrono::duration<double, std::milli>{next - now}).count());
                 }
