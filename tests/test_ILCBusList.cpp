@@ -32,9 +32,9 @@
 
 using namespace ILC;
 
-class TestILC : public ILCBusList {
+class TestBusListILC : public ILCBusList {
 public:
-    TestILC(uint8_t bus) : ILCBusList(bus) {
+    TestBusListILC(uint8_t bus) : ILCBusList(bus) {
         serverIDCallCounter = 0;
 
         responseUniqueID = 0;
@@ -106,7 +106,7 @@ protected:
 };
 
 TEST_CASE("Generic functions", "[ILC]") {
-    TestILC ilc(1);
+    TestBusListILC ilc(1);
 
     ilc.reportServerID(125);
     ilc.reportServerStatus(31);
@@ -132,7 +132,7 @@ TEST_CASE("Generic functions", "[ILC]") {
 }
 
 TEST_CASE("Parse response", "[ILC]") {
-    TestILC ilc(1);
+    TestBusListILC ilc(1);
 
     auto constructCommands = [&ilc]() { ilc.reportServerID(132); };
 
@@ -196,7 +196,7 @@ TEST_CASE("Parse response", "[ILC]") {
 }
 
 TEST_CASE("Change ILC mode response", "[ILC]") {
-    TestILC ilc(1);
+    TestBusListILC ilc(1);
 
     ilc.changeILCMode(17, 3);
 
@@ -214,7 +214,7 @@ TEST_CASE("Change ILC mode response", "[ILC]") {
 }
 
 TEST_CASE("Set Temp ILC Address", "[ILC]") {
-    TestILC ilc(1);
+    TestBusListILC ilc(1);
 
     ilc.setTempILCAddress(22);
 
@@ -232,7 +232,7 @@ TEST_CASE("Set Temp ILC Address", "[ILC]") {
 }
 
 TEST_CASE("Unmatched response", "[ILC]") {
-    TestILC ilc(1);
+    TestBusListILC ilc(1);
 
     auto constructCommands = [&ilc]() {
         ilc.reportServerID(132);
@@ -352,7 +352,7 @@ TEST_CASE("Unmatched response", "[ILC]") {
 }
 
 TEST_CASE("Reset function", "[ILC]") {
-    TestILC ilc(1);
+    TestBusListILC ilc(1);
 
     // reset function
     Modbus::Buffer mbuf;
@@ -369,7 +369,7 @@ TEST_CASE("Reset function", "[ILC]") {
 }
 
 TEST_CASE("Error response", "[ILC]") {
-    TestILC ilc(1);
+    TestBusListILC ilc(1);
 
     ilc.reportServerID(103);
 
@@ -412,7 +412,7 @@ TEST_CASE("Error response", "[ILC]") {
 }
 
 TEST_CASE("Multiple calls to processResponse", "[ILC]") {
-    TestILC ilc(1);
+    TestBusListILC ilc(1);
 
     ilc.changeILCMode(17, 3);
     ilc.reportServerID(18);
@@ -467,7 +467,7 @@ TEST_CASE("Multiple calls to processResponse", "[ILC]") {
 }
 
 TEST_CASE("Response cache management", "[ILC]") {
-    TestILC ilc(1);
+    TestBusListILC ilc(1);
 
     ilc.reportServerID(18);
 

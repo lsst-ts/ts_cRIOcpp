@@ -1,6 +1,16 @@
 name: C/C++ CI
 
-on: [push]
+on:
+  push:
+    branches:
+      - develop
+      - main
+  pull_request:
+    branches:
+      - develop
+
+env:
+  BUILD_TYPE: Release
 
 jobs:
   almalinux:
@@ -9,28 +19,42 @@ jobs:
     container:
       image: almalinux
     steps:
+    - name: Checkout source code
+      uses: actions/checkout@v6
+
     - name: Install dependencies
       run: |
         dnf install -y epel-release
-        dnf install -y make g++ catch-devel readline-devel yaml-cpp-devel spdlog-devel
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: make junit
-      run: |
-        make
-        make junit || true
+        dnf install -y cmake make g++ catch-devel git readline-devel yaml-cpp-devel spdlog-devel
+
+    - name: Configure CMake
+      run: cmake -B build
+
+    - name: Build project
+      run: cmake --build build
+
+    - name: Run Tests
+      working-directory: build/tests
+      run: ctest --output-on-failure
 
   ubuntu:
     runs-on: ubuntu-latest
     name: Test compile on Ubuntu
     steps:
+    - name: Checkout source code
+      uses: actions/checkout@v6
+
     - name: Install dependencies
       run: |
         sudo apt update -y
-        sudo apt install -y make g++ catch libreadline-dev libyaml-cpp-dev libspdlog-dev
-    - name: Checkout
-      uses: actions/checkout@v4
-    - name: make junit
-      run: |
-        make
-        make junit || true
+        sudo apt install -y cmake make g++ catch libreadline-dev libyaml-cpp-dev libspdlog-dev
+
+    - name: Configure CMake
+      run: cmake -B build
+
+    - name: Build project
+      run: cmake --build build
+
+    - name: Run Tests
+      working-directory: build/tests
+      run: ctest --output-on-failure

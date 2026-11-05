@@ -49,9 +49,9 @@ void testAction(ILCUnit u) {
     testRuns++;
 }
 
-class AClass : public FPGACliApp {
+class FPGACliAppClass : public FPGACliApp {
 public:
-    AClass(const char* name, const char* description) : FPGACliApp(name, description) {
+    FPGACliAppClass(const char* name, const char* description) : FPGACliApp(name, description) {
         addILC(std::make_shared<PrintILC>(1));
         addILC(std::make_shared<PrintILC>(4));
 
@@ -62,7 +62,7 @@ public:
     ILCUnits getILCs(command_vec arguments) override;
 };
 
-ILCUnits AClass::getILCs(command_vec arguments) {
+ILCUnits FPGACliAppClass::getILCs(command_vec arguments) {
     ILCUnits units;
 
     if (arguments.size() == 0) {
@@ -82,17 +82,17 @@ ILCUnits AClass::getILCs(command_vec arguments) {
     return units;
 }
 
-TEST_CASE("Test CliApp", "[FPGACliApp]") { AClass cli("name", "description"); }
+TEST_CASE("Test CliApp", "[FPGACliApp]") { FPGACliAppClass cli("name", "description"); }
 
 TEST_CASE("Test getILCs", "[FPGACliApp]") {
-    AClass cli("name", "description");
+    FPGACliAppClass cli("name", "description");
 
     auto ilcs = cli.getILCs(command_vec{});
     CHECK(ilcs.size() == 4);
 }
 
 TEST_CASE("Test disable/enable ILC", "[FPGACliApp]") {
-    AClass cli("name", "description");
+    FPGACliAppClass cli("name", "description");
 
     REQUIRE_NOTHROW(cli.processCmdVector({"open"}));
 
@@ -123,7 +123,7 @@ TEST_CASE("Test disable/enable ILC", "[FPGACliApp]") {
 }
 
 TEST_CASE("Tests multiple disable/enable", "[FPGACliApp]") {
-    AClass cli("name", "description");
+    FPGACliAppClass cli("name", "description");
 
     REQUIRE_NOTHROW(cli.processCmdVector({"open"}));
 

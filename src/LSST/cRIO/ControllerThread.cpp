@@ -142,8 +142,13 @@ void ControllerThread::_process_tasks() {
             runMutex.lock();
 
             if (wait != Task::DONT_RESCHEDULE) {
-                _task_queue.push(TaskEntry(std::chrono::steady_clock::now() + std::chrono::milliseconds(wait),
-                                           task.second));
+                auto next = task.first + std::chrono::milliseconds(wait);
+                auto now = std::chrono::steady_clock::now();
+                if (next <= now) {
+                    SPDLOG_WARN("Task missed re-scheduling by {:.2f} ms.",
+                                (std::chrono::duration<double, std::milli>{next - now}).count());
+                }
+                _task_queue.push(TaskEntry(next, task.second));
             }
         } catch (std::exception& ex) {
             task.second->reportException(ex);

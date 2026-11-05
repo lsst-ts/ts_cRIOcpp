@@ -77,6 +77,11 @@ public:
     void load(std::istream& inputStream);
 
     /**
+     * Returns true if the hex file does not contains any data.
+     */
+    bool empty() const;
+
+    /**
      * Returns data to be written into ILC. Only three bytes out of every four
      * are written, but full buffer, as assembled from hex file lines, is
      * returned.

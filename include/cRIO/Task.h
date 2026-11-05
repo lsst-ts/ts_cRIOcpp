@@ -47,6 +47,13 @@ public:
      */
     virtual bool validate() { return true; }
 
+    /**
+     * Run the task. Executes one loop. Return value is next timeout (in ms).
+     * DONT_RESCHEDULE constant is used to signal no rescheduling.
+     *
+     * @return next timeout/wait in ms, or DONT_RESCHEDULE for not
+     * rescheduling.
+     */
     virtual task_return_t run() = 0;
 
     /**

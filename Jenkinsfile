@@ -42,8 +42,7 @@ node {
              M1M3sim.inside("--entrypoint=''") {
                  if (params.clean) {
                  sh """
-                    cd $WORKSPACE/ts_cRIOcpp
-                    make clean
+                    rm -rf $WORKSPACE/ts_cRIOcpp/build
                  """
                  }
                  sh """
@@ -51,13 +50,16 @@ node {
     
                     cd $WORKSPACE/ts_cRIOcpp
 
+                    cmake -B build
+                    cd build
                     make
-                    make junit
+                    cd tests
+                    ctest --output-junit all-tests.xml
                  """
              }
         }
 
-        junit 'ts_cRIOcpp/tests/*.xml'
+        junit 'ts_cRIOcpp/build/tests/all-tests.xml'
     }
 
     stage('Build documentation')
@@ -66,7 +68,7 @@ node {
              sh """
                 source $SALUSER_HOME/.crio_setup.sh
                 cd $WORKSPACE/ts_cRIOcpp
-                make doc
+                cmake --build build --target docs
              """
          }
     }

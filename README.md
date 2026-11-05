@@ -1,19 +1,31 @@
-#ts_cRIOcpp
+# ts_cRIOcpp
 
 Common functions for C++ development.
 
-## OSPL setup
+## Building the library
 
-To get history data, and faster/lower bandwidth communication, OSPL shall be
-run on a machine for multiple users. For that, /tmp/ispddskey_XXXXXX file shall
-be accessible to users requiring OSPL access. Please see
-[OSPL_SETUP.md](OSPL_SETUP.md) for details.
+Do build the library, please make sure 'spdlog' and 'yaml-cpp' development packages
+are installed. Also 'cmake' and 'make' shall be avialable on the build host.
+
+```
+cmake -B build
+cmake --build build
+```
+
+### Running tests
+
+After the binaries are build, unit tests can be executed with:
+
+```
+cd  build/tests
+ctest
+```
 
 ## Command hierarchy, Controller processing
 
 Provides abstract Command class. This shall be enqued into ControllerThread
 internal Command queue. ControllerThread command queue is thread safe (access
-to it is guarded by mutex and condition_variable). Please see [ControllerThread
+to it is guarded by mutex and condition\_variable). Please see [ControllerThread
 tests](tests/test_ControllerThread.cpp) for examples.
 
 ## ILC communication
