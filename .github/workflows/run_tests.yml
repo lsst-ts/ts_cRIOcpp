@@ -47,7 +47,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt update -y
-        sudo apt install -y cmake make g++ catch libreadline-dev libyaml-cpp-dev libspdlog-dev
+        sudo apt install -y cmake make g++ libcatch2-dev libreadline-dev libyaml-cpp-dev libspdlog-dev
 
     - name: Configure CMake
       run: cmake -B build
