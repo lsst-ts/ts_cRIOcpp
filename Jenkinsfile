@@ -47,7 +47,7 @@ node {
                  }
                  sh """
                     source $SALUSER_HOME/.crio_setup.sh
-    
+
                     cd $WORKSPACE/ts_cRIOcpp
 
                     cmake -B build
