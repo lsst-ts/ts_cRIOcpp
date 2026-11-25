@@ -6,6 +6,27 @@ Version History
 
 .. towncrier release notes start
 
+v1.17.0 (2026-11-25)
+====================
+
+New Features
+------------
+
+- Change Modbus::Buffer to use composite for std::vector instead of inheritance. (`OSW-2799 <https://rubinobs.atlassian.net//browse/OSW-2799>`_)
+- CMake integration, towncrier. (`SSW-3062 <https://rubinobs.atlassian.net//browse/SSW-3062>`_)
+
+
+Other Changes and Additions
+---------------------------
+
+- Use towncrier for version control entries. (`OSW-2799 <https://rubinobs.atlassian.net//browse/OSW-2799>`_)
+- Removed Makefiles, add LICENSE. (`SSW-2922 <https://rubinobs.atlassian.net//browse/SSW-2922>`_)
+- Insert proper license headers. (`SSW-3062 <https://rubinobs.atlassian.net//browse/SSW-3062>`_)
+- Use CMake configure_file for Doxygen and version.h, remove OSPL references. (`SSW-3080 <https://rubinobs.atlassian.net//browse/SSW-3080>`_)
+- CTest integration for CI tests. (`SSW-3080 <https://rubinobs.atlassian.net//browse/SSW-3080>`_)
+- CMake / Doxygen integration. (`SSW-3080 <https://rubinobs.atlassian.net//browse/SSW-3080>`_)
+
+
 v1.17.0
 =======
 
