@@ -51,8 +51,8 @@ ThermalILC::ThermalILC(uint8_t bus) : ILC::ILCBusList(bus) {
     add_response(ILC_THERMAL_CMD::REPORT_REHEATER_GAINS, reheaterGains);
 }
 
-std::vector<const char*> ThermalILC::getStatusString(uint16_t status) {
-    std::vector<const char*> ret = ILC::ILCBusList::getStatusString(status);
+std::vector<std::string> ThermalILC::getStatusString(uint16_t status) {
+    std::vector<std::string> ret = ILC::ILCBusList::getStatusString(status);
 
     // 0x0010 NA
     // 0x0020 NA
@@ -78,8 +78,8 @@ std::vector<const char*> ThermalILC::getStatusString(uint16_t status) {
     return ret;
 }
 
-std::vector<const char*> ThermalILC::getThermalStatusString(uint8_t status) {
-    std::vector<const char*> ret;
+std::vector<std::string> ThermalILC::getThermalStatusString(uint8_t status) {
+    std::vector<std::string> ret;
 
     if (status & ThermalStatus::ILCFault) {
         ret.push_back("ILC Fault");

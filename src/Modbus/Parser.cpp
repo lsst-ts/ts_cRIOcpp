@@ -29,13 +29,13 @@
 using namespace Modbus;
 
 CRCError::CRCError(uint16_t calculated, uint16_t received)
-        : std::runtime_error(fmt::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}.",
+        : std::runtime_error(std::format("checkCRC invalid CRC - expected 0x{:04x}, got 0x{:04x}.",
                                          calculated, received)) {}
 
 void Parser::parse(std::vector<uint8_t> buffer) {
     if (buffer.size() < 4) {
         throw std::runtime_error(
-                fmt::format("Cannot parse small buffer (size {}) - minimal Modbus buffer length is 4 bytes "
+                std::format("Cannot parse small buffer (size {}) - minimal Modbus buffer length is 4 bytes "
                             "(address, function and "
                             "2 bytes CRC)",
                             buffer.size()));

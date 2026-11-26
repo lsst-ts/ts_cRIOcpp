@@ -44,7 +44,7 @@ void Alias::load(const std::string& filename) {
                          _aliases[name].second);
         }
     } catch (YAML::Exception& ex) {
-        throw std::runtime_error(fmt::format("YAML Loading {}: {}", filename, ex.what()));
+        throw std::runtime_error(std::format("YAML Loading {}: {}", filename, ex.what()));
     }
 }
 

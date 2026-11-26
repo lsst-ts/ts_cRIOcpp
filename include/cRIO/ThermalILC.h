@@ -54,7 +54,7 @@ public:
      */
     ThermalILC(uint8_t bus);
 
-    std::vector<const char*> getStatusString(uint16_t status) override;
+    std::vector<std::string> getStatusString(uint16_t status) override;
 
     /**
      * Return thermal status. This is the lower nibble returned from thermal demand and status functions.
@@ -63,7 +63,7 @@ public:
      *
      * @return description of bits set in status
      */
-    std::vector<const char*> getThermalStatusString(uint8_t status);
+    std::vector<std::string> getThermalStatusString(uint8_t status);
 
     enum ThermalStatus {
         ILCFault = 0x0001,

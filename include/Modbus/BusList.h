@@ -50,7 +50,7 @@ public:
      */
     MissingResponse(uint8_t address, uint8_t called)
             : std::runtime_error(
-                      fmt::format("Missing response for function {0} (0x{0:02x}) from ILC with address {1}",
+                      std::format("Missing response for function {0} (0x{0:02x}) from ILC with address {1}",
                                   called, address)) {}
 };
 
@@ -69,7 +69,7 @@ public:
      */
     WrongResponse(uint8_t address, uint8_t exp_address, uint8_t called, uint8_t exp_func)
             : std::runtime_error(
-                      fmt::format("Wrong response: expected function {0} (0x{0:02x}) from ILC with "
+                      std::format("Wrong response: expected function {0} (0x{0:02x}) from ILC with "
                                   "address {1} - received {2} from {3}",
                                   exp_func, exp_address, called, address)) {}
 };
@@ -99,7 +99,7 @@ public:
      */
     UnexpectedResponse(uint8_t address, uint8_t func)
             : std::runtime_error(
-                      fmt::format("Unexpected response - received {} for address {}", address, func)) {}
+                      std::format("Unexpected response - received {} for address {}", address, func)) {}
 };
 
 /**

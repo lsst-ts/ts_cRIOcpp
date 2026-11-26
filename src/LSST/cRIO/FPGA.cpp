@@ -21,11 +21,11 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <string.h>
+#include <format>
+#include <string>
 #include <thread>
 
 #include <spdlog/spdlog.h>
-#include <spdlog/fmt/fmt.h>
 
 #include <cRIO/FPGA.h>
 #include <cRIO/MPU.h>
@@ -160,7 +160,7 @@ void FPGA::ilcCommands(ILC::ILCBusList& ilc, int32_t timeout) {
                 }
                 break;
             default:
-                throw std::runtime_error(fmt::format("Invalid reply: {0:04x} ({0})", *p));
+                throw std::runtime_error(std::format("Invalid reply: {0:04x} ({0})", *p));
         }
     }
 

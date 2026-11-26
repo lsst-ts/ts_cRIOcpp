@@ -31,7 +31,7 @@ ILCBusList::ILCBusList(uint8_t bus) : _bus(bus) {
     add_response(ILC_CMD::SERVER_ID, [this](Modbus::Parser parser) {
         uint8_t fnLen = parser.read<uint8_t>();
         if (fnLen < 12) {
-            throw std::runtime_error(fmt::format(
+            throw std::runtime_error(std::format(
                     "invalid ILC function 17 response length - expect at least 12, got {}", fnLen));
         }
         fnLen -= 12;
@@ -110,8 +110,8 @@ const char* ILCBusList::getModeStr(uint8_t mode) {
     }
 }
 
-std::vector<const char*> ILCBusList::getStatusString(uint16_t status) {
-    std::vector<const char*> ret;
+std::vector<std::string> ILCBusList::getStatusString(uint16_t status) {
+    std::vector<std::string> ret;
 
     if (status & Status::MajorFault) {
         ret.push_back("Major Fault");
@@ -128,8 +128,8 @@ std::vector<const char*> ILCBusList::getStatusString(uint16_t status) {
     return ret;
 }
 
-std::vector<const char*> ILCBusList::getFaultString(uint16_t fault) {
-    std::vector<const char*> ret;
+std::vector<std::string> ILCBusList::getFaultString(uint16_t fault) {
+    std::vector<std::string> ret;
 
     if (fault & Fault::UniqueIdCRC) {
         ret.push_back("Unique ID CRC error");

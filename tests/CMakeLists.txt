@@ -14,7 +14,8 @@ target_include_directories(cRIOcpp_tests PUBLIC
 
 target_compile_options(cRIOcpp_tests
   PRIVATE
-    -Wall -Wl,--gc-sections -fPIC -fdata-sections -ffunction-sections
+    -Wall -Wl,--gc-sections -fPIC -fdata-sections -ffunction-sections -DSPDLOG_USE_STD_FORMAT
+
 )
 
 target_link_options(cRIOcpp_tests
@@ -76,4 +77,5 @@ include(CTest)
 include(Catch)
 catch_discover_tests(cRIOcpp_tests
   WORKING_DIRECTORY "${CMAKE_CURRENT_SOURCE_DIR}"
+  DISCOVERY_MODE PRE_TEST
 )

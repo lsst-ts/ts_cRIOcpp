@@ -25,11 +25,10 @@
 
 #include <cstdint>
 #include <cstring>
+#include <format>
 #include <stdexcept>
 #include <string>
 #include <vector>
-
-#include <spdlog/fmt/fmt.h>
 
 #include "Modbus/Buffer.h"
 #include "Modbus/HexDump.h"
@@ -107,7 +106,7 @@ public:
      */
     void readBuffer(void* buf, size_t len) {
         if (_data + len > size()) {
-            throw std::out_of_range(fmt::format(
+            throw std::out_of_range(std::format(
                     "Attempt to access data beyond buffer end (buffer index {}, but buffer length is {}).",
                     _data + len, size()));
         }

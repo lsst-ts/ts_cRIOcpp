@@ -36,7 +36,7 @@ SensorMonitor::SensorMonitor(uint8_t bus) : ILCBusList(bus) {
         // shall be multiple of 4
         if (parser.size() % 4 != 0) {
             throw std::runtime_error(
-                    fmt::format("Invalid reponse length - expected 4*x, received {}", parser.size()));
+                    std::format("Invalid reponse length - expected 4*x, received {}", parser.size()));
         }
 
         for (int i = 1; i < static_cast<int>(parser.size()) / 4; i++) {

@@ -46,7 +46,7 @@ public:
      */
     MissingResponse(const std::vector<uint8_t>& commanded)
             : std::runtime_error(
-                      fmt::format("Missing response to command '{0}'", Modbus::hexDump(commanded))) {}
+                      std::format("Missing response to command '{0}'", Modbus::hexDump(commanded))) {}
 };
 
 /**
@@ -57,7 +57,7 @@ public:
 class CommunicationError : public std::runtime_error {
 public:
     CommunicationError(uint8_t req, int32_t code)
-            : std::runtime_error(fmt::format(
+            : std::runtime_error(std::format(
                       "Communication error in serial line transport - request: {}, error: {}", req, code)) {}
 };
 

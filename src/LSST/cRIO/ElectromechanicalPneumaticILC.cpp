@@ -21,9 +21,9 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <spdlog/fmt/fmt.h>
+#include <format>
 
-#include <cRIO/ElectromechanicalPneumaticILC.h>
+#include "cRIO/ElectromechanicalPneumaticILC.h"
 
 using namespace LSST::cRIO;
 
@@ -67,7 +67,7 @@ ElectromechanicalPneumaticILC::ElectromechanicalPneumaticILC(uint8_t bus) : ILC:
             }
             default:
                 throw std::runtime_error(
-                        fmt::format("Invalid reply length - {}, expected 9 or 13", parser.size()));
+                        std::format("Invalid reply length - {}, expected 9 or 13", parser.size()));
         }
     };
 
