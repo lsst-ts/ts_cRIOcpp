@@ -57,7 +57,7 @@ PseudoSerialPort::~PseudoSerialPort() {
 
 void PseudoSerialPort::init_pt() {
     if (_port_fd > 0) {
-        throw std::runtime_error(fmt::format("Port for device {} already assigned.", _device_name));
+        throw std::runtime_error(std::format("Port for device {} already assigned.", _device_name));
     }
 
     _port_fd = posix_openpt(O_RDWR);
@@ -68,7 +68,7 @@ void PseudoSerialPort::init_pt() {
 
     int flags = fcntl(_port_fd, F_GETFL, 0);
     if (fcntl(_port_fd, F_SETFL, flags | O_NONBLOCK) == -1) {
-        throw std::runtime_error(fmt::format("Cannot set flags for {} device {}: {}.", tty_name, _device_name,
+        throw std::runtime_error(std::format("Cannot set flags for {} device {}: {}.", tty_name, _device_name,
                                              strerror(errno)));
     }
 

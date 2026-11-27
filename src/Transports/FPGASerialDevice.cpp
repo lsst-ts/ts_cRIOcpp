@@ -88,7 +88,7 @@ std::vector<uint8_t> FPGASerialDevice::read(size_t len, std::chrono::microsecond
 
         if (response != READ) {
             throw std::runtime_error(
-                    fmt::format("Invalid reply from FIFO #{} - {}, expected 2", _read_fifo, response));
+                    std::format("Invalid reply from FIFO #{} - {}, expected 2", _read_fifo, response));
         }
 
         NiThrowError("Reading transport response length",
@@ -136,7 +136,7 @@ void FPGASerialDevice::flush() {
 
     if (response != FLUSH) {
         throw std::runtime_error(
-                fmt::format("Invalid response from FIFO #{} on flush request - expected {}, recieved {}",
+                std::format("Invalid response from FIFO #{} on flush request - expected {}, recieved {}",
                             _read_fifo, req, response));
     }
 }
@@ -156,7 +156,7 @@ void FPGASerialDevice::telemetry(uint64_t& write_bytes, uint64_t& read_bytes) {
 
     if (response_code != TELEMETRY) {
         throw std::runtime_error(
-                fmt::format("Invalid response from FIFO #{} on telemetry request - expected {}, received {}",
+                std::format("Invalid response from FIFO #{} on telemetry request - expected {}, received {}",
                             _read_fifo, req, response_code));
     }
 

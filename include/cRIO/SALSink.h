@@ -24,8 +24,8 @@
 #include <memory>
 #include <mutex>
 
-#include "spdlog/sinks/base_sink.h"
-#include "spdlog/details/null_mutex.h"
+#include <spdlog/sinks/base_sink.h>
+#include <spdlog/details/null_mutex.h>
 
 /**
  * Sink to send all M1M3 spdlog messages to SAL using logMessage event. Macro which creates template class. To
@@ -61,7 +61,7 @@
             remoteName##_logevent_logMessageC message;                           \
             message.name = #remoteName;                                          \
             message.level = msg.level * 10;                                      \
-            message.message = fmt::to_string(msg.payload);                       \
+            message.message = std::string(msg.payload);                          \
             message.traceback = "";                                              \
             message.filePath = msg.source.filename;                              \
             message.functionName = msg.source.funcname;                          \

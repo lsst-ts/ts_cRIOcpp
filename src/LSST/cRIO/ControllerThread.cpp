@@ -80,12 +80,12 @@ void ControllerThread::stopInterruptWatcherTask() {
 
 void ControllerThread::setInterruptHandler(std::shared_ptr<InterruptHandler> handler, uint8_t irq) {
     if ((irq == 0) || (irq > CRIO_INTERRUPTS)) {
-        throw std::runtime_error(fmt::format("Interrupt number should fall between 1 and {} - {} specified",
+        throw std::runtime_error(std::format("Interrupt number should fall between 1 and {} - {} specified",
                                              CRIO_INTERRUPTS, irq));
     }
     if (_interrupt_handlers[irq - 1] != nullptr) {
         throw std::runtime_error(
-                fmt::format("Cannot set handler for interrupt {}, as the handler was already set", irq));
+                std::format("Cannot set handler for interrupt {}, as the handler was already set", irq));
     }
     _interrupt_handlers[irq - 1] = handler;
 }

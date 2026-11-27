@@ -39,7 +39,7 @@ void ErrorRecord::record(uint8_t func, uint8_t error) {
 
 ErrorResponse::ErrorResponse(uint8_t address, uint8_t func)
         : std::runtime_error(
-                  fmt::format("Error response - address {0}. response {1} ({1:02x}), function {2} ({2:02x})",
+                  std::format("Error response - address {0}. response {1} ({1:02x}), function {2} ({2:02x})",
                               address, func, func & ~BusList::MODBUS_ERROR_MASK)) {}
 
 BusList::BusList() {}

@@ -24,8 +24,6 @@
 #include <endian.h>
 #include <iomanip>
 
-#include <spdlog/fmt/fmt.h>
-
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/MPUTelemetry.h>
 

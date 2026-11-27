@@ -21,10 +21,10 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
+#include <cstring>
 #include <iomanip>
 #include <iostream>
-
-#include <fmt/ranges.h>
+#include <ranges>
 
 #include <cRIO/ModbusBuffer.h>
 #include <cRIO/PrintILC.h>
@@ -118,7 +118,7 @@ void PrintILC::programILC(FPGA* fpga, uint8_t address, IntelHex& hex) {
             }
             if (getLastMode(address) != ILC::Mode::Bootloader) {
                 throw std::runtime_error(
-                        fmt::format("Cannot enter bootloader mode for ILC with address {}", address));
+                        std::format("Cannot enter bootloader mode for ILC with address {}", address));
             }
         }
     }
@@ -184,11 +184,29 @@ void PrintILC::processServerID(uint8_t address, uint64_t uniqueID, uint8_t ilcAp
 
 void PrintILC::processServerStatus(uint8_t address, uint8_t mode, uint16_t status, uint16_t faults) {
     printBusAddress(address);
+#ifdef __cpp_lib_format_ranges
     std::cout << "Mode: " << std::to_string(mode) << " - " << getModeStr(mode) << std::endl
               << "Status: " << std::hex << std::setw(4) << std::setfill('0') << +status << " "
-              << fmt::format("{}", fmt::join(getStatusString(status), " | ")) << std::endl
+              << std::format("{:s}", getStatusString(status) | std::views::join_with(std::string_view{" | "}))
+              << std::endl
               << "Faults: " << std::hex << std::setw(4) << std::setfill('0') << +faults << " "
-              << fmt::format("{}", fmt::join(getFaultString(faults), " | ")) << std::endl;
+              << std::format("{:s}", getFaultString(faults) | std::views::join_with(std::string_view{" | "}))
+              << std::endl;
+#else
+    auto status_view = getStatusString(status) | std::views::join_with(std::string_view{" | "});
+    std::string status_joined;
+    std::ranges::copy(status_view, std::back_inserter(status_joined));
+
+    auto faults_view = getFaultString(faults) | std::views::join_with(std::string_view{" | "});
+    std::string faults_joined;
+    std::ranges::copy(faults_view, std::back_inserter(faults_joined));
+
+    std::cout << "Mode: " << std::to_string(mode) << " - " << getModeStr(mode) << std::endl
+              << "Status: " << std::hex << std::setw(4) << std::setfill('0') << +status << " "
+              << std::format("{:s}", status_joined) << std::endl
+              << "Faults: " << std::hex << std::setw(4) << std::setfill('0') << +faults << " "
+              << std::format("{:s}", faults_joined) << std::endl;
+#endif
 }
 
 void PrintILC::processChangeILCMode(uint8_t address, uint16_t mode) {

@@ -21,7 +21,8 @@
  * along with this program. If not, see <https://www.gnu.org/licenses/>.
  */
 
-#include <spdlog/fmt/fmt.h>
+#include <format>
+
 #include <spdlog/spdlog.h>
 
 #include <cRIO/CliApp.h>
@@ -40,12 +41,12 @@ MPU::MPU(uint8_t node_address) : _bus(0), _node_address(node_address) {
         }
         if (parser.address() != _node_address) {
             throw std::runtime_error(
-                    fmt::format("Invalid ModBus address {}, expected {}", parser.address(), _node_address));
+                    std::format("Invalid ModBus address {}, expected {}", parser.address(), _node_address));
         }
         uint8_t len = parser.read<uint8_t>();
         uint8_t data = 0x00;
         if (commanded.length / 8 + (commanded.length % 8 == 0 ? 0 : 1) != len) {
-            throw std::runtime_error(fmt::format("Invalid reply length - received {}, ceiling from {} / 8",
+            throw std::runtime_error(std::format("Invalid reply length - received {}, ceiling from {} / 8",
                                                  len, commanded.length));
         }
         for (uint16_t i = 0; i < commanded.length; i++) {
@@ -64,7 +65,7 @@ MPU::MPU(uint8_t node_address) : _bus(0), _node_address(node_address) {
 
         if (parser.address() != _node_address) {
             throw std::runtime_error(
-                    fmt::format("Invalid ModBus address {}, expected {}", parser.address(), _node_address));
+                    std::format("Invalid ModBus address {}, expected {}", parser.address(), _node_address));
         }
         uint8_t len = parser.read<uint8_t>() / 2;
         {
@@ -83,13 +84,13 @@ MPU::MPU(uint8_t node_address) : _bus(0), _node_address(node_address) {
 
         if (parser.address() != _node_address) {
             throw std::runtime_error(
-                    fmt::format("Invalid ModBus address {}, expected {}", parser.address(), _node_address));
+                    std::format("Invalid ModBus address {}, expected {}", parser.address(), _node_address));
         }
         uint16_t reg = parser.read<uint16_t>();
         uint16_t value = parser.read<uint16_t>();
         if (reg != commanded.address) {
             throw std::runtime_error(
-                    fmt::format("Invalid register {:04x}, expected {:04x}", reg, commanded.address));
+                    std::format("Invalid register {:04x}, expected {:04x}", reg, commanded.address));
         }
         {
             std::lock_guard<std::mutex> lg(_registerMutex);
@@ -104,16 +105,16 @@ MPU::MPU(uint8_t node_address) : _bus(0), _node_address(node_address) {
 
         if (parser.address() != _node_address) {
             throw std::runtime_error(
-                    fmt::format("Invalid ModBus address {}, expected {}", parser.address(), _node_address));
+                    std::format("Invalid ModBus address {}, expected {}", parser.address(), _node_address));
         }
         uint16_t reg = parser.read<uint16_t>();
         uint16_t len = parser.read<uint16_t>();
         if (reg != commanded.address) {
             throw std::runtime_error(
-                    fmt::format("Invalid register {:04x}, expected {:04x}", reg, commanded.address));
+                    std::format("Invalid register {:04x}, expected {:04x}", reg, commanded.address));
         }
         if (len != commanded.length) {
-            throw std::runtime_error(fmt::format("Invalid length - register {:04x}, length {}, expected {}",
+            throw std::runtime_error(std::format("Invalid length - register {:04x}, length {}, expected {}",
                                                  reg, len, commanded.length));
         }
         parser.checkCRC();
@@ -142,7 +143,7 @@ int MPU::responseLength(const std::vector<uint8_t>& response) {
             if ((response[1] & 0x80) == 0x80) {
                 return 5;
             }
-            throw std::runtime_error(fmt::format("Invalid function for responseLength: {}", response[1]));
+            throw std::runtime_error(std::format("Invalid function for responseLength: {}", response[1]));
     }
 }
 
@@ -181,6 +182,6 @@ uint16_t MPU::getRegister(uint16_t address) {
         return _registers.at(address);
     } catch (std::out_of_range& e) {
         throw std::runtime_error(
-                fmt::format("Cannot retrieve holding register {} (0x{:04x})", address, address));
+                std::format("Cannot retrieve holding register {} (0x{:04x})", address, address));
     }
 }

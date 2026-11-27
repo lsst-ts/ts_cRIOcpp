@@ -30,8 +30,6 @@
 #include <vector>
 #include <cstdint>
 
-#include <spdlog/fmt/fmt.h>
-
 #include <cRIO/FPGA.h>
 #include <Modbus/BusList.h>
 

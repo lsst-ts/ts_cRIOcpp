@@ -29,7 +29,7 @@
 using namespace Modbus;
 
 Exception::Exception(uint8_t address, uint8_t func, uint8_t exception)
-        : std::runtime_error(fmt::format(
+        : std::runtime_error(std::format(
                   "ModBus Exception {2} (ModBus address {0}, ModBus response function {1} (0x{1:02x})).",
                   address, func, exception)) {}
 
